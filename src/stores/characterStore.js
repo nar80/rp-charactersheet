@@ -42,17 +42,116 @@ const createDefaultCharacter = () => ({
 
   // Basic Skills (immer vorhanden, können mit halbem Attribut verwendet werden)
   basicSkills: [
-    { name: 'Akrobatik', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Aufmerksamkeit', attribute: 'WA', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Ausweichen', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Befehligen', attribute: 'CH', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Beschatten', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Charme', attribute: 'CH', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Einschüchtern', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Klettern', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schleichen', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schwimmen', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Zechen', attribute: 'WI', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 }
+    {
+      name: 'Akrobatik',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Ermöglicht akrobatische Stunts wie Saltos, Rollen und Balance-Akte. Wird für waghalsige Manöver und spektakuläre Bewegungen verwendet.'
+    },
+    {
+      name: 'Aufmerksamkeit',
+      attribute: 'WA',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Passives Wahrnehmen der Umgebung. Wird verwendet um versteckte Gefahren, Hinterhalte oder wichtige Details zu bemerken.'
+    },
+    {
+      name: 'Ausweichen',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Ermöglicht das Ausweichen von Angriffen im Nahkampf. Eine erfolgreiche Probe verhindert einen Treffer.'
+    },
+    {
+      name: 'Befehligen',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Führungsqualitäten und Autorität. Wird verwendet um NPCs zu befehligen, Moral zu stärken oder Untergebene zu koordinieren.'
+    },
+    {
+      name: 'Beschatten',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Ermöglicht das unauffällige Verfolgen einer Person durch Menschenmengen oder Umgebungen ohne entdeckt zu werden.'
+    },
+    {
+      name: 'Charme',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Freundliche und gewinnende Art. Wird verwendet um NSCs positiv zu beeinflussen, Sympathie zu gewinnen oder Gefallen zu erbitten.'
+    },
+    {
+      name: 'Einschüchtern',
+      attribute: 'ST',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Durch physische Präsenz oder Drohungen andere einschüchtern. Kann verwendet werden um Informationen zu erzwingen oder Gegner zu demoralisieren.'
+    },
+    {
+      name: 'Klettern',
+      attribute: 'ST',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Ermöglicht das Erklettern von Wänden, Felsen, Seilen und anderen Hindernissen. Schwierigkeit variiert je nach Oberfläche.'
+    },
+    {
+      name: 'Schleichen',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Leise und unauffällig bewegen. Wird verwendet um unentdeckt zu bleiben und sich an Feinden vorbeizuschleichen.'
+    },
+    {
+      name: 'Schwimmen',
+      attribute: 'ST',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Schwimmen und sich über Wasser halten. Wird in rauhem Gewässer, bei langen Distanzen oder unter schwierigen Bedingungen benötigt.'
+    },
+    {
+      name: 'Zechen',
+      attribute: 'WI',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Widerstandsfähigkeit gegen Alkohol und andere Rauschmittel. Auch nützlich um in Tavernen Informationen zu sammeln.'
+    }
   ],
 
   // Learned Skills (erlernte Fertigkeiten - werden nur angezeigt wenn hinzugefügt)
@@ -154,7 +253,8 @@ export const useCharacterStore = defineStore('character', () => {
       trained: true, // Erlernte Skills sind immer trained
       plus10: false,
       plus20: false,
-      bonus: 0
+      bonus: 0,
+      description: skillData.description || ''
     })
   }
 
