@@ -4,9 +4,12 @@
     <q-card-section>
       <div class="row items-center">
         <div class="col">
-          <div class="text-h5">Waffen</div>
+          <div class="text-h5">
+            <q-icon name="gavel" class="q-mr-sm" />
+            Waffen
+          </div>
           <div class="text-caption text-grey-6">
-            Nahkampf- und Fernkampfwaffen
+            Nahkampf- und Fernkampfwaffen des Imperiums
           </div>
         </div>
         <div class="col-auto">
@@ -130,9 +133,12 @@
     <q-card-section>
       <div class="row items-center">
         <div class="col">
-          <div class="text-h5">Rüstung</div>
+          <div class="text-h5">
+            <q-icon name="shield" class="q-mr-sm" />
+            Rüstung
+          </div>
           <div class="text-caption text-grey-6">
-            Schutzausrüstung und Panzerung
+            Schutzausrüstung und imperiale Panzerung
           </div>
         </div>
         <div class="col-auto">
@@ -230,9 +236,12 @@
     <q-card-section>
       <div class="row items-center q-mb-md">
         <div class="col">
-          <div class="text-h5">Ausrüstung</div>
+          <div class="text-h5">
+            <q-icon name="inventory_2" class="q-mr-sm" />
+            Ausrüstung
+          </div>
           <div class="text-caption text-grey-6">
-            Allgemeine Gegenstände und Ausrüstung
+            Gegenstände, Werkzeuge und Versorgungsgüter
           </div>
         </div>
         <div class="col-auto">

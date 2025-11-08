@@ -3,16 +3,19 @@
     <q-card-section>
       <div class="row items-center">
         <div class="col">
-          <div class="text-h5">Notizen</div>
+          <div class="text-h5">
+            <q-icon name="library_books" class="q-mr-sm" />
+            Vox-Log
+          </div>
           <div class="text-caption text-grey-6">
-            Halte wichtige Informationen, Questnotizen oder Charakterhintergründe fest
+            Aufzeichnungen, Missionsberichte und wichtige Erkenntnisse
           </div>
         </div>
         <div class="col-auto">
           <q-btn
             color="primary"
             icon="add"
-            label="Notiz hinzufügen"
+            label="Eintrag hinzufügen"
             @click="showAddNoteDialog = true"
           />
         </div>
@@ -23,9 +26,9 @@
 
     <q-card-section>
       <div v-if="character.notes.length === 0" class="text-center text-grey-6 q-pa-lg">
-        <q-icon name="note" size="4rem" color="grey-6" />
-        <div class="q-mt-md">Noch keine Notizen vorhanden</div>
-        <div class="text-caption">Klicke auf "Notiz hinzufügen" um zu beginnen</div>
+        <q-icon name="library_books" size="4rem" color="grey-6" />
+        <div class="q-mt-md">Keine Vox-Einträge vorhanden</div>
+        <div class="text-caption">Klicke auf "Eintrag hinzufügen" um zu beginnen</div>
       </div>
 
       <div v-else class="q-gutter-md">
@@ -79,7 +82,7 @@
     <q-dialog v-model="showAddNoteDialog">
       <q-card style="min-width: 500px">
         <q-card-section>
-          <div class="text-h6">{{ editingNoteIndex !== null ? 'Notiz bearbeiten' : 'Notiz hinzufügen' }}</div>
+          <div class="text-h6">{{ editingNoteIndex !== null ? 'Vox-Eintrag bearbeiten' : 'Vox-Eintrag hinzufügen' }}</div>
         </q-card-section>
 
         <q-separator />

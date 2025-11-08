@@ -3,9 +3,12 @@
     <q-card-section>
       <div class="row items-center">
         <div class="col">
-          <div class="text-h5">Psy-Kräfte</div>
+          <div class="text-h5">
+            <q-icon name="local_fire_department" class="q-mr-sm" />
+            Psy-Kräfte
+          </div>
           <div class="text-caption text-grey-6">
-            Psionische Fähigkeiten und Disziplinen
+            Psionische Fähigkeiten und gefährliche Warp-Mächte
           </div>
         </div>
         <div class="col-auto">
@@ -32,8 +35,8 @@
 
     <q-card-section>
       <div v-if="character.psiPowers.length === 0" class="text-center text-grey-6 q-pa-lg">
-        <q-icon name="psychology" size="4rem" color="grey-6" />
-        <div class="q-mt-md">Noch keine Psy-Kräfte vorhanden</div>
+        <q-icon name="local_fire_department" size="4rem" color="grey-6" />
+        <div class="q-mt-md">Keine Psy-Kräfte vorhanden</div>
         <div class="text-caption">Klicke auf "Psy-Kraft hinzufügen" um zu beginnen</div>
       </div>
 

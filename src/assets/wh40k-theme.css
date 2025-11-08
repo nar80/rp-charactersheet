@@ -38,6 +38,35 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--imperial-gold);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+/* Gothic decorated headings */
+.gothic-heading {
+  position: relative;
+  display: inline-block;
+  padding: 0 24px;
+}
+
+.gothic-heading::before,
+.gothic-heading::after {
+  content: '◈';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--imperial-bronze);
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.gothic-heading::before {
+  left: 0;
+}
+
+.gothic-heading::after {
+  right: 0;
 }
 
 /* Toolbar styling */
@@ -46,17 +75,60 @@ h1, h2, h3, h4, h5, h6,
   border-bottom: 2px solid var(--imperial-bronze);
 }
 
-/* Cards with gothic border effect */
+/* Cards with gothic border effect and parchment texture */
 .q-card {
   background: var(--parchment-dark) !important;
   border: 1px solid var(--imperial-bronze);
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(212, 175, 55, 0.1);
+    inset 0 1px 0 rgba(212, 175, 55, 0.1),
+    inset 0 0 30px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
 
+/* Parchment texture overlay */
+.q-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.02) 2px,
+      rgba(212, 175, 55, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.015) 2px,
+      rgba(212, 175, 55, 0.015) 4px
+    );
+  opacity: 0.6;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Gothic borders for main cards */
 .q-card--bordered {
   border: 2px solid var(--imperial-bronze);
+  border-image: linear-gradient(
+    135deg,
+    var(--dark-gold),
+    var(--imperial-bronze),
+    var(--imperial-gold),
+    var(--imperial-bronze),
+    var(--dark-gold)
+  ) 1;
+  box-shadow:
+    0 0 20px rgba(212, 175, 55, 0.15),
+    inset 0 1px 2px rgba(212, 175, 55, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Tab styling */
@@ -83,24 +155,67 @@ h1, h2, h3, h4, h5, h6,
   background: var(--parchment-light) !important;
 }
 
-/* Buttons with Imperial styling */
+/* Buttons with Imperial styling and wax seal effect */
 .q-btn {
   font-family: 'Cinzel', serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   font-size: 0.85em;
+  position: relative;
 }
 
 .q-btn--standard {
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Stats cards with metallic look */
+/* Wax seal effect for primary buttons */
+.q-btn.bg-primary {
+  box-shadow:
+    0 3px 6px rgba(212, 175, 55, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
+    0 0 15px rgba(212, 175, 55, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.q-btn.bg-primary:hover {
+  box-shadow:
+    0 4px 8px rgba(212, 175, 55, 0.6),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(212, 175, 55, 0.3);
+}
+
+/* Stats cards with metallic look and embossed effect */
 .stat-card {
   background: linear-gradient(145deg, var(--parchment-dark), var(--parchment-medium)) !important;
   border: 1px solid var(--imperial-brass);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(212, 175, 55, 0.1);
+  position: relative;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(212, 175, 55, 0.05),
+      transparent 50%
+    );
+  pointer-events: none;
+  border-radius: inherit;
 }
 
 /* Aquila watermark background */
@@ -119,6 +234,22 @@ body::before {
   opacity: 0.05;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Film grain / noise overlay for aged look */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: overlay;
 }
 
 /* Gothic divider lines */
@@ -160,15 +291,54 @@ body::before {
 
 /* Purity seal effect for important badges */
 .purity-seal {
-  background: radial-gradient(circle, var(--blood-red), var(--imperial-purple));
+  background: radial-gradient(
+    circle at center,
+    var(--blood-red) 0%,
+    var(--imperial-purple) 100%
+  );
   color: var(--imperial-gold);
-  border: 2px solid var(--imperial-gold);
+  border: 3px solid var(--imperial-gold);
   font-family: 'Cinzel', serif;
   text-transform: uppercase;
   font-size: 0.7em;
   letter-spacing: 0.05em;
-  padding: 4px 8px;
-  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.5);
+  padding: 6px 12px;
+  box-shadow:
+    0 3px 10px rgba(139, 0, 0, 0.7),
+    inset 0 1px 2px rgba(212, 175, 55, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5),
+    0 0 15px rgba(139, 0, 0, 0.4);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 0 5px rgba(212, 175, 55, 0.5);
+  position: relative;
+  display: inline-block;
+}
+
+.purity-seal::before {
+  content: '❖';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--imperial-gold);
+  font-size: 16px;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.8);
+}
+
+/* Purity seal ribbon effect */
+.purity-seal::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid var(--blood-red);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 /* Metallic text effect for important values */
@@ -183,6 +353,12 @@ body::before {
 /* Aged paper texture overlay */
 .aged-paper {
   position: relative;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(42, 38, 34, 0.9),
+      rgba(42, 38, 34, 0.95)
+    );
 }
 
 .aged-paper::after {
@@ -201,4 +377,95 @@ body::before {
       rgba(212, 175, 55, 0.03) 4px
     );
   pointer-events: none;
+}
+
+/* Gothic ornamental corners */
+.gothic-border {
+  position: relative;
+  border: 2px solid var(--imperial-bronze);
+  padding: 16px;
+}
+
+.gothic-border::before,
+.gothic-border::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--imperial-gold);
+}
+
+.gothic-border::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.gothic-border::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Weathered edges effect */
+.weathered {
+  position: relative;
+  overflow: visible;
+}
+
+.weathered::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 40px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* 3D embossed effect for important sections */
+.embossed {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Imperial decoration lines */
+.imperial-divider {
+  position: relative;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--imperial-bronze) 20%,
+    var(--imperial-gold) 50%,
+    var(--imperial-bronze) 80%,
+    transparent 100%
+  );
+  margin: 16px 0;
+}
+
+.imperial-divider::before,
+.imperial-divider::after {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--imperial-gold);
+  font-size: 12px;
+}
+
+.imperial-divider::before {
+  left: -16px;
+}
+
+.imperial-divider::after {
+  right: -16px;
 }

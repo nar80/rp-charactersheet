@@ -3,9 +3,12 @@
     <q-card-section>
       <div class="row items-center">
         <div class="col">
-          <div class="text-h5">Talente & Eigenschaften</div>
+          <div class="text-h5">
+            <q-icon name="military_tech" class="q-mr-sm" />
+            Purity Seals & Talente
+          </div>
           <div class="text-caption text-grey-6">
-            Spezielle Fähigkeiten, Eigenschaften und Vorteile deines Charakters
+            Besondere Fähigkeiten und imperiale Auszeichnungen
           </div>
         </div>
         <div class="col-auto">
@@ -32,8 +35,8 @@
 
     <q-card-section>
       <div v-if="character.talents.length === 0" class="text-center text-grey-6 q-pa-lg">
-        <q-icon name="stars" size="4rem" color="grey-6" />
-        <div class="q-mt-md">Noch keine Talente hinzugefügt</div>
+        <q-icon name="military_tech" size="4rem" color="grey-6" />
+        <div class="q-mt-md">Keine Talente vorhanden</div>
         <div class="text-caption">Klicke auf "Talent hinzufügen" um zu beginnen</div>
       </div>
 

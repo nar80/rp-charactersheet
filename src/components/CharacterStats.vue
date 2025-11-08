@@ -182,7 +182,7 @@
                   <div class="column items-center">
                     <div class="text-caption text-grey-6">Rang</div>
                     <div
-                      class="text-h6 text-bold text-amber"
+                      class="text-h6 text-bold metallic-text"
                       style="
                         min-height: 40px;
                         display: flex;

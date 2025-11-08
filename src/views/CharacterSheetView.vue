@@ -14,11 +14,11 @@
       narrow-indicator
     >
       <q-tab name="info" icon="person" label="Charakter" />
-      <q-tab v-if="settings.showSkills" name="skills" icon="school" label="Fertigkeiten" />
-      <q-tab v-if="settings.showTalents" name="talents" icon="stars" label="Talente" />
-      <q-tab v-if="settings.showPsiPowers" name="psi" icon="psychology" label="Psy-Kräfte" />
-      <q-tab v-if="settings.showEquipment" name="equipment" icon="inventory_2" label="Ausrüstung" />
-      <q-tab v-if="settings.showNotes" name="notes" icon="notes" label="Notizen" />
+      <q-tab v-if="settings.showSkills" name="skills" icon="psychology" label="Fertigkeiten" />
+      <q-tab v-if="settings.showTalents" name="talents" icon="military_tech" label="Purity Seals" />
+      <q-tab v-if="settings.showPsiPowers" name="psi" icon="local_fire_department" label="Psy-Kräfte" />
+      <q-tab v-if="settings.showEquipment" name="equipment" icon="shield" label="Ausrüstung" />
+      <q-tab v-if="settings.showNotes" name="notes" icon="library_books" label="Vox-Log" />
     </q-tabs>
 
     <q-separator />

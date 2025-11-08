@@ -19,27 +19,37 @@
               v-model="settings.showSkills"
               label="Fertigkeiten"
               color="primary"
-            />
+            >
+              <q-icon name="psychology" class="q-ml-sm" size="sm" />
+            </q-toggle>
             <q-toggle
               v-model="settings.showTalents"
-              label="Talente"
+              label="Purity Seals & Talente"
               color="primary"
-            />
+            >
+              <q-icon name="military_tech" class="q-ml-sm" size="sm" />
+            </q-toggle>
             <q-toggle
               v-model="settings.showPsiPowers"
               label="Psy-Kräfte"
               color="primary"
-            />
+            >
+              <q-icon name="local_fire_department" class="q-ml-sm" size="sm" />
+            </q-toggle>
             <q-toggle
               v-model="settings.showEquipment"
               label="Ausrüstung"
               color="primary"
-            />
+            >
+              <q-icon name="shield" class="q-ml-sm" size="sm" />
+            </q-toggle>
             <q-toggle
               v-model="settings.showNotes"
-              label="Notizen"
+              label="Vox-Log"
               color="primary"
-            />
+            >
+              <q-icon name="library_books" class="q-ml-sm" size="sm" />
+            </q-toggle>
           </div>
         </q-card-section>
 
