@@ -1,0 +1,27 @@
+{
+  "name": "rp-charactersheet",
+  "version": "1.0.0",
+  "description": "Charakterbogen-Tool für Pen&Paper-Rollenspiele",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["rpg", "charactersheet", "warhammer40k", "rogue-trader"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@quasar/extras": "^1.17.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.24",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@quasar/vite-plugin": "^1.10.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "quasar": "^2.18.5",
+    "sass": "^1.93.3",
+    "vite": "^7.2.2"
+  }
+}
