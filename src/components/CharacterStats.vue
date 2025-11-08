@@ -1,8 +1,8 @@
 <template>
-  <q-card flat bordered class="q-mb-md">
+  <q-card flat bordered class="sticky-stats q-mb-md">
     <q-card-section class="q-pa-md">
       <!-- Row 1: Attributes -->
-      <div class="row q-col-gutter-md q-mb-md">
+      <div class="row justify-center q-col-gutter-md q-mb-md">
         <div
           v-for="(value, attr) in character.attributes"
           :key="attr"
@@ -19,7 +19,7 @@
                 borderless
                 @update:model-value="updateAttribute(attr, parseInt($event) || 0)"
                 input-class="text-center text-h5 text-bold text-primary"
-                style="width: 60px;"
+                class="centered-input"
               />
               <!-- Dots for increases -->
               <div class="flex justify-center q-gutter-xs q-mt-xs" style="min-height: 16px;">
@@ -39,16 +39,16 @@
       </div>
 
       <!-- Row 2: Combat Stats -->
-      <div class="row q-col-gutter-md q-mb-md">
+      <div class="row justify-evenly q-col-gutter-md q-mb-md">
         <!-- Hit Points -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="favorite" size="xs" class="q-mr-xs" />
                 Lebenspunkte
               </div>
-              <div class="row q-gutter-sm items-center justify-center">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <q-input
                   :model-value="character.hitPoints.current"
                   type="number"
@@ -76,12 +76,12 @@
         <!-- Experience Points -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="emoji_events" size="xs" class="q-mr-xs" />
                 Erfahrungspunkte
               </div>
-              <div class="row q-gutter-sm items-center justify-center">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Gesamt</div>
                   <q-input
@@ -108,7 +108,7 @@
                 </div>
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Verfügbar</div>
-                  <div class="text-h6 text-bold text-positive q-pa-sm">
+                  <div class="text-h6 text-bold text-positive" style="min-height: 40px; display: flex; align-items: center;">
                     {{ character.experience.total - character.experience.spent }}
                   </div>
                 </div>
@@ -120,12 +120,12 @@
         <!-- Profit Factor -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="monetization_on" size="xs" class="q-mr-xs" />
                 Profitfaktor
               </div>
-              <div class="row q-gutter-sm items-center justify-center">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Anfänglich</div>
                   <q-input
@@ -157,16 +157,16 @@
       </div>
 
       <!-- Row 3: Movement & Carrying -->
-      <div class="row q-col-gutter-md">
+      <div class="row justify-evenly q-col-gutter-md">
         <!-- Movement -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="directions_run" size="xs" class="q-mr-xs" />
                 Bewegung (GEb: {{ agilityBonus }})
               </div>
-              <div class="row q-gutter-sm">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Halbe</div>
                   <div class="text-h6 text-bold bg-grey-9 q-pa-xs rounded-borders" style="min-width: 50px; text-align: center;">
@@ -199,12 +199,12 @@
         <!-- Jumps -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="flight_takeoff" size="xs" class="q-mr-xs" />
                 Sprünge (STb: {{ strengthBonus }})
               </div>
-              <div class="row q-gutter-sm">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Weitsprung</div>
                   <div class="text-h6 text-bold bg-grey-9 q-pa-xs rounded-borders" style="min-width: 60px; text-align: center;">
@@ -225,12 +225,12 @@
         <!-- Carrying Capacity -->
         <div class="col-auto">
           <q-card bordered flat class="stat-card">
-            <q-card-section class="q-pa-sm">
+            <q-card-section class="q-pa-sm stat-card-content">
               <div class="text-caption text-grey-5 q-mb-sm">
                 <q-icon name="fitness_center" size="xs" class="q-mr-xs" />
                 Tragkraft (STb + WIb: {{ carryBonus }})
               </div>
-              <div class="row q-gutter-sm">
+              <div class="row q-gutter-sm items-center justify-center flex-grow">
                 <div class="column items-center">
                   <div class="text-caption text-grey-6">Heben</div>
                   <q-input
@@ -336,9 +336,19 @@ const highJump = computed(() => strengthBonus.value * 20)
 </script>
 
 <style scoped>
+.sticky-stats {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--q-dark);
+}
+
 .attribute-card {
-  min-width: 100px;
+  width: 110px;
+  height: 140px;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .attribute-card:hover {
@@ -346,14 +356,35 @@ const highJump = computed(() => strengthBonus.value * 20)
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+.centered-input {
+  width: 100%;
+}
+
+.centered-input >>> input {
+  text-align: center !important;
+}
+
 .stat-card {
   min-width: 200px;
+  height: 120px;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.flex-grow {
+  flex-grow: 1;
 }
 
 .q-icon {
