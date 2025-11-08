@@ -13,6 +13,7 @@ const createDefaultCharacter = () => ({
   homeworld: '',
   motivation: '',
   description: '',
+  notes: '',
 
   // Attributes (WH40k Rogue Trader)
   attributes: {
@@ -193,7 +194,22 @@ export const useCharacterStore = defineStore('character', () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        character.value = { ...createDefaultCharacter(), ...parsed }
+        const defaultChar = createDefaultCharacter()
+
+        // Merge basic skills to ensure descriptions are added
+        if (parsed.basicSkills) {
+          parsed.basicSkills = parsed.basicSkills.map(skill => {
+            const defaultSkill = defaultChar.basicSkills.find(s => s.name === skill.name)
+            return {
+              ...defaultSkill,
+              ...skill,
+              // Ensure description from default if not present
+              description: skill.description || (defaultSkill?.description || '')
+            }
+          })
+        }
+
+        character.value = { ...defaultChar, ...parsed }
       } catch (error) {
         console.error('Error loading character:', error)
       }
