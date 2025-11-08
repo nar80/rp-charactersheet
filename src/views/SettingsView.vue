@@ -16,37 +16,29 @@
         <q-card-section>
           <div class="q-gutter-md">
             <q-toggle
-              v-model="settings.showBasicInfo"
-              label="Basis-Informationen"
-              color="primary"
-            />
-            <q-toggle
-              v-model="settings.showAttributes"
-              label="Attribute"
-              color="primary"
-            />
-            <q-toggle
               v-model="settings.showSkills"
               label="Fertigkeiten"
               color="primary"
             />
             <q-toggle
               v-model="settings.showTalents"
-              label="Talente & Eigenschaften"
+              label="Talente"
               color="primary"
-              disable
-            />
-            <q-toggle
-              v-model="settings.showWeapons"
-              label="Waffen"
-              color="primary"
-              disable
             />
             <q-toggle
               v-model="settings.showPsiPowers"
-              label="Psi-Kräfte"
+              label="Psy-Kräfte"
               color="primary"
-              disable
+            />
+            <q-toggle
+              v-model="settings.showEquipment"
+              label="Ausrüstung"
+              color="primary"
+            />
+            <q-toggle
+              v-model="settings.showNotes"
+              label="Notizen"
+              color="primary"
             />
           </div>
         </q-card-section>
@@ -80,22 +72,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useQuasar } from 'quasar'
+import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../stores/characterStore'
+import { useSettingsStore } from '../stores/settingsStore'
 
 const $q = useQuasar()
 const characterStore = useCharacterStore()
+const settingsStore = useSettingsStore()
 
-// Settings (placeholder for now)
-const settings = ref({
-  showBasicInfo: true,
-  showAttributes: true,
-  showSkills: true,
-  showTalents: true,
-  showWeapons: true,
-  showPsiPowers: true
-})
+const { settings } = storeToRefs(settingsStore)
 
 const confirmReset = () => {
   $q.dialog({

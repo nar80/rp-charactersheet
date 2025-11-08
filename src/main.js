@@ -1,10 +1,13 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { Quasar, Dark } from 'quasar'
+import { Quasar, Dark, Dialog, Notify } from 'quasar'
 
 // Import Quasar css
 import '@quasar/extras/material-icons/material-icons.css'
 import 'quasar/src/css/index.sass'
+
+// Import WH40k Theme
+import './assets/wh40k-theme.css'
 
 import App from './App.vue'
 import router from './router'
@@ -15,7 +18,9 @@ app.use(createPinia())
 app.use(router)
 app.use(Quasar, {
   plugins: {
-    Dark
+    Dark,
+    Dialog,
+    Notify
   },
   config: {
     dark: true // Dark mode by default

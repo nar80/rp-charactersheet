@@ -15,7 +15,9 @@
         >
           <q-card bordered flat>
             <q-card-section class="text-center">
-              <div class="text-h6 text-grey-7">{{ getAttributeName(attr) }}</div>
+              <div class="text-h6 text-grey-7">
+                {{ getAttributeName(attr) }}
+              </div>
               <div class="text-caption text-grey-6">({{ attr }})</div>
 
               <!-- Attribute Value -->
@@ -26,7 +28,9 @@
                   filled
                   dense
                   class="text-h4 text-center"
-                  @update:model-value="updateAttribute(attr, parseInt($event) || 0)"
+                  @update:model-value="
+                    updateAttribute(attr, parseInt($event) || 0)
+                  "
                   input-style="text-align: center; font-size: 2rem; font-weight: bold;"
                 />
               </div>
@@ -38,10 +42,18 @@
                   <q-icon
                     v-for="i in 4"
                     :key="i"
-                    :name="i <= character.attributeIncreases[attr] ? 'circle' : 'circle'"
-                    :class="i <= character.attributeIncreases[attr] ? 'text-primary' : 'text-grey-7'"
+                    :name="
+                      i <= character.attributeIncreases[attr]
+                        ? 'circle'
+                        : 'circle'
+                    "
+                    :class="
+                      i <= character.attributeIncreases[attr]
+                        ? 'text-primary'
+                        : 'text-grey-7'
+                    "
                     size="sm"
-                    style="cursor: pointer;"
+                    style="cursor: pointer"
                     @click="toggleIncrease(attr, i)"
                   />
                 </div>
@@ -55,38 +67,41 @@
 </template>
 
 <script setup>
-import { storeToRefs } from 'pinia'
-import { useCharacterStore } from '../../stores/characterStore'
+import { storeToRefs } from "pinia";
+import { useCharacterStore } from "../../stores/characterStore";
 
-const characterStore = useCharacterStore()
-const { character } = storeToRefs(characterStore)
+const characterStore = useCharacterStore();
+const { character } = storeToRefs(characterStore);
 
 const attributeNames = {
-  KG: 'Kampfgeschick',
-  BF: 'Ballistische Fertigkeit',
-  ST: 'Stärke',
-  WI: 'Widerstand',
-  GE: 'Gewandtheit',
-  IN: 'Intelligenz',
-  WA: 'Wahrnehmung',
-  WK: 'Willenskraft',
-  CH: 'Charisma'
-}
+  KG: "Kampfgeschick",
+  BF: "Ballistische Fe",
+  ST: "Stärke",
+  WI: "Widerstand",
+  GE: "Gewandtheit",
+  IN: "Intelligenz",
+  WA: "Wahrnehmung",
+  WK: "Willenskraft",
+  CH: "Charisma",
+};
 
 const getAttributeName = (attr) => {
-  return attributeNames[attr] || attr
-}
+  return attributeNames[attr] || attr;
+};
 
 const updateAttribute = (attr, value) => {
-  characterStore.updateAttribute(attr, value)
-}
+  characterStore.updateAttribute(attr, value);
+};
 
 const toggleIncrease = (attr, level) => {
-  const current = character.value.attributeIncreases[attr]
+  const current = character.value.attributeIncreases[attr];
   // If clicking the same level, decrease by 1, otherwise set to that level
-  const newValue = current === level ? level - 1 : level
-  characterStore.updateAttributeIncrease(attr, Math.max(0, Math.min(4, newValue)))
-}
+  const newValue = current === level ? level - 1 : level;
+  characterStore.updateAttributeIncrease(
+    attr,
+    Math.max(0, Math.min(4, newValue))
+  );
+};
 </script>
 
 <style scoped>

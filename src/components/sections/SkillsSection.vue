@@ -24,6 +24,15 @@
         </div>
         <div class="col-auto">
           <q-btn
+            flat
+            dense
+            icon="sort_by_alpha"
+            :color="sortAlphabetically ? 'primary' : 'grey'"
+            @click="sortAlphabetically = !sortAlphabetically"
+          >
+            <q-tooltip>Alphabetisch sortieren</q-tooltip>
+          </q-btn>
+          <q-btn
             color="primary"
             icon="add"
             label="Neue Fertigkeit"
@@ -57,48 +66,31 @@
                       size="xs"
                       icon="info"
                       color="grey-6"
-                      @click="showInfoDialog(skill, 'basic')"
+                      @click="showInfoDialog(skill)"
                     >
                       <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
                     </q-btn>
                   </div>
 
                   <!-- Skill Name -->
-                  <div class="col-4 text-body2">
+                  <div class="col-5 text-body2">
                     {{ skill.name }}
+                    <span v-if="skill.specialization" class="text-caption text-grey-6">
+                      ({{ skill.specialization }})
+                    </span>
                     <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
                   </div>
 
-                  <!-- Checkboxes -->
-                  <div class="col-4 flex justify-center q-gutter-xs">
+                  <!-- E Checkbox only -->
+                  <div class="col-2 flex justify-center">
                     <q-checkbox
                       :model-value="skill.trained"
                       label="E"
                       size="xs"
                       dense
-                      @update:model-value="updateBasicSkill(skill.name, { trained: $event })"
+                      @update:model-value="updateSkill(skill, { trained: $event })"
                     >
                       <q-tooltip>Erlernt (volles Attribut)</q-tooltip>
-                    </q-checkbox>
-
-                    <q-checkbox
-                      :model-value="skill.plus10"
-                      label="+10"
-                      size="xs"
-                      dense
-                      @update:model-value="updateBasicSkill(skill.name, { plus10: $event })"
-                    >
-                      <q-tooltip>+10%</q-tooltip>
-                    </q-checkbox>
-
-                    <q-checkbox
-                      :model-value="skill.plus20"
-                      label="+20"
-                      size="xs"
-                      dense
-                      @update:model-value="updateBasicSkill(skill.name, { plus20: $event })"
-                    >
-                      <q-tooltip>+20%</q-tooltip>
                     </q-checkbox>
                   </div>
 
@@ -110,13 +102,13 @@
                       dense
                       filled
                       placeholder="+"
-                      @update:model-value="updateBasicSkill(skill.name, { bonus: parseInt($event) || 0 })"
+                      @update:model-value="updateSkill(skill, { bonus: parseInt($event) || 0 })"
                       input-style="text-align: center; font-size: 0.9rem;"
                     />
                   </div>
 
                   <!-- Value -->
-                  <div class="col-1 text-right">
+                  <div class="col-2 text-right">
                     <div class="text-body1 text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
@@ -147,48 +139,31 @@
                       size="xs"
                       icon="info"
                       color="grey-6"
-                      @click="showInfoDialog(skill, 'basic')"
+                      @click="showInfoDialog(skill)"
                     >
                       <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
                     </q-btn>
                   </div>
 
                   <!-- Skill Name -->
-                  <div class="col-4 text-body2">
+                  <div class="col-5 text-body2">
                     {{ skill.name }}
+                    <span v-if="skill.specialization" class="text-caption text-grey-6">
+                      ({{ skill.specialization }})
+                    </span>
                     <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
                   </div>
 
-                  <!-- Checkboxes -->
-                  <div class="col-4 flex justify-center q-gutter-xs">
+                  <!-- E Checkbox only -->
+                  <div class="col-2 flex justify-center">
                     <q-checkbox
                       :model-value="skill.trained"
                       label="E"
                       size="xs"
                       dense
-                      @update:model-value="updateBasicSkill(skill.name, { trained: $event })"
+                      @update:model-value="updateSkill(skill, { trained: $event })"
                     >
                       <q-tooltip>Erlernt (volles Attribut)</q-tooltip>
-                    </q-checkbox>
-
-                    <q-checkbox
-                      :model-value="skill.plus10"
-                      label="+10"
-                      size="xs"
-                      dense
-                      @update:model-value="updateBasicSkill(skill.name, { plus10: $event })"
-                    >
-                      <q-tooltip>+10%</q-tooltip>
-                    </q-checkbox>
-
-                    <q-checkbox
-                      :model-value="skill.plus20"
-                      label="+20"
-                      size="xs"
-                      dense
-                      @update:model-value="updateBasicSkill(skill.name, { plus20: $event })"
-                    >
-                      <q-tooltip>+20%</q-tooltip>
                     </q-checkbox>
                   </div>
 
@@ -200,13 +175,13 @@
                       dense
                       filled
                       placeholder="+"
-                      @update:model-value="updateBasicSkill(skill.name, { bonus: parseInt($event) || 0 })"
+                      @update:model-value="updateSkill(skill, { bonus: parseInt($event) || 0 })"
                       input-style="text-align: center; font-size: 0.9rem;"
                     />
                   </div>
 
                   <!-- Value -->
-                  <div class="col-1 text-right">
+                  <div class="col-2 text-right">
                     <div class="text-body1 text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
@@ -220,18 +195,7 @@
 
       <!-- Learned Skills Section - Full Width -->
       <div v-if="sortedFilteredLearnedSkills.length > 0" class="q-mt-md">
-        <div class="row items-center q-mb-sm">
-          <div class="col">
-            <div class="text-subtitle2 text-grey-7">Erlernte Fertigkeiten</div>
-          </div>
-          <div class="col-auto">
-            <q-toggle
-              v-model="sortAlphabetically"
-              label="Alphabetisch sortieren"
-              size="xs"
-            />
-          </div>
-        </div>
+        <div class="text-subtitle2 text-grey-7 q-mb-sm">Erlernte Fertigkeiten</div>
 
         <div class="row q-col-gutter-md">
           <!-- Left Column Learned -->
@@ -254,26 +218,23 @@
                         size="xs"
                         icon="info"
                         color="grey-6"
-                        @click="showInfoDialog(skill, 'learned')"
+                        @click="showInfoDialog(skill)"
                       >
                         <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
                       </q-btn>
                     </div>
 
                     <!-- Skill Name with specialization -->
-                    <div class="col-3 text-body2">
+                    <div class="col-4 text-body2">
                       {{ skill.name }}
                       <span v-if="skill.specialization" class="text-caption text-grey-6">
                         ({{ skill.specialization }})
                       </span>
                       <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
-                      <q-badge v-if="skill.isBasic" color="orange" label="GF" class="q-ml-xs">
-                        <q-tooltip>Als Grundfertigkeit gewährt</q-tooltip>
-                      </q-badge>
                     </div>
 
                     <!-- Checkboxes -->
-                    <div class="col-4 flex justify-center q-gutter-xs">
+                    <div class="col-3 flex justify-center q-gutter-xs">
                       <q-checkbox
                         :model-value="skill.plus10"
                         label="+10"
@@ -320,9 +281,9 @@
                         size="xs"
                         icon="delete"
                         color="negative"
-                        @click="removeSkill(skill.id)"
+                        @click="removeSkill(skill)"
                       >
-                        <q-tooltip>Fertigkeit entfernen</q-tooltip>
+                        <q-tooltip>{{ skill.isBasic ? 'Zurück zu Grundfertigkeiten' : 'Fertigkeit löschen' }}</q-tooltip>
                       </q-btn>
                     </div>
                   </div>
@@ -351,26 +312,23 @@
                         size="xs"
                         icon="info"
                         color="grey-6"
-                        @click="showInfoDialog(skill, 'learned')"
+                        @click="showInfoDialog(skill)"
                       >
                         <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
                       </q-btn>
                     </div>
 
                     <!-- Skill Name with specialization -->
-                    <div class="col-3 text-body2">
+                    <div class="col-4 text-body2">
                       {{ skill.name }}
                       <span v-if="skill.specialization" class="text-caption text-grey-6">
                         ({{ skill.specialization }})
                       </span>
                       <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
-                      <q-badge v-if="skill.isBasic" color="orange" label="GF" class="q-ml-xs">
-                        <q-tooltip>Als Grundfertigkeit gewährt</q-tooltip>
-                      </q-badge>
                     </div>
 
                     <!-- Checkboxes -->
-                    <div class="col-4 flex justify-center q-gutter-xs">
+                    <div class="col-3 flex justify-center q-gutter-xs">
                       <q-checkbox
                         :model-value="skill.plus10"
                         label="+10"
@@ -417,9 +375,9 @@
                         size="xs"
                         icon="delete"
                         color="negative"
-                        @click="removeSkill(skill.id)"
+                        @click="removeSkill(skill)"
                       >
-                        <q-tooltip>Fertigkeit entfernen</q-tooltip>
+                        <q-tooltip>{{ skill.isBasic ? 'Zurück zu Grundfertigkeiten' : 'Fertigkeit löschen' }}</q-tooltip>
                       </q-btn>
                     </div>
                   </div>
@@ -549,7 +507,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 
@@ -564,6 +522,19 @@ const editDescription = ref('')
 const filterText = ref('')
 const sortAlphabetically = ref(true)
 
+// Load sort preference from localStorage
+onMounted(() => {
+  const saved = localStorage.getItem('skills-sort-alpha')
+  if (saved !== null) {
+    sortAlphabetically.value = saved === 'true'
+  }
+})
+
+// Save sort preference to localStorage
+watch(sortAlphabetically, (newValue) => {
+  localStorage.setItem('skills-sort-alpha', newValue.toString())
+})
+
 const newSkill = ref({
   name: '',
   specialization: '',
@@ -574,27 +545,40 @@ const newSkill = ref({
 
 const attributeOptions = ['KG', 'BF', 'ST', 'WI', 'GE', 'IN', 'WA', 'WK', 'CH']
 
-// Filter basic skills by search text
-const filteredBasicSkills = computed(() => {
-  if (!filterText.value) return character.value.basicSkills
-
-  const filter = filterText.value.toLowerCase()
-  return character.value.basicSkills.filter(skill =>
-    skill.name.toLowerCase().includes(filter) ||
-    skill.attribute.toLowerCase().includes(filter)
-  )
+// Combine all skills (basic + learned)
+const allSkills = computed(() => {
+  return [...character.value.basicSkills, ...character.value.learnedSkills]
 })
 
-// Filter learned skills by search text
-const filteredLearnedSkills = computed(() => {
-  if (!filterText.value) return character.value.learnedSkills
+// Filter basic skills: isBasic=true AND trained=false
+const filteredBasicSkills = computed(() => {
+  let skills = allSkills.value.filter(skill => skill.isBasic && !skill.trained)
 
-  const filter = filterText.value.toLowerCase()
-  return character.value.learnedSkills.filter(skill =>
-    skill.name.toLowerCase().includes(filter) ||
-    skill.attribute.toLowerCase().includes(filter) ||
-    (skill.specialization && skill.specialization.toLowerCase().includes(filter))
-  )
+  if (filterText.value) {
+    const filter = filterText.value.toLowerCase()
+    skills = skills.filter(skill =>
+      skill.name.toLowerCase().includes(filter) ||
+      skill.attribute.toLowerCase().includes(filter)
+    )
+  }
+
+  return skills
+})
+
+// Filter learned skills: trained=true (regardless of isBasic)
+const filteredLearnedSkills = computed(() => {
+  let skills = allSkills.value.filter(skill => skill.trained)
+
+  if (filterText.value) {
+    const filter = filterText.value.toLowerCase()
+    skills = skills.filter(skill =>
+      skill.name.toLowerCase().includes(filter) ||
+      skill.attribute.toLowerCase().includes(filter) ||
+      (skill.specialization && skill.specialization.toLowerCase().includes(filter))
+    )
+  }
+
+  return skills
 })
 
 // Sort and filter learned skills
@@ -630,6 +614,17 @@ const rightLearnedSkills = computed(() => {
   return sortedFilteredLearnedSkills.value.slice(half)
 })
 
+const updateSkill = (skill, updates) => {
+  // Check if skill has id (learned skill) or is from basicSkills
+  if (skill.id !== undefined) {
+    // It's a learned skill
+    characterStore.updateLearnedSkill(skill.id, updates)
+  } else {
+    // It's a basic skill (identified by name)
+    characterStore.updateBasicSkill(skill.name, updates)
+  }
+}
+
 const updateBasicSkill = (skillName, updates) => {
   characterStore.updateBasicSkill(skillName, updates)
 }
@@ -659,13 +654,26 @@ const addNewSkill = () => {
   }
 }
 
-const removeSkill = (skillId) => {
-  characterStore.removeLearnedSkill(skillId)
+const removeSkill = (skill) => {
+  // Wenn es eine Grundfertigkeit ist (isBasic=true), dann nur trained auf false setzen
+  // Wenn es eine regulär erlernte Fertigkeit ist, dann wirklich löschen
+  if (skill.isBasic) {
+    // Zurück zu Grundfertigkeiten
+    updateSkill(skill, { trained: false, plus10: false, plus20: false })
+  } else if (skill.id !== undefined) {
+    // Wirklich löschen (nur bei learnedSkills mit ID)
+    characterStore.removeLearnedSkill(skill.id)
+  }
 }
 
 const showInfoDialog = (skill, type) => {
   selectedSkill.value = skill
-  selectedSkillType.value = type
+  // Auto-detect type if not provided
+  if (type) {
+    selectedSkillType.value = type
+  } else {
+    selectedSkillType.value = skill.id !== undefined ? 'learned' : 'basic'
+  }
   editDescription.value = skill.description || ''
   showSkillInfoDialog.value = true
 }

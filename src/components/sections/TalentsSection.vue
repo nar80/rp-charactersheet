@@ -10,6 +10,15 @@
         </div>
         <div class="col-auto">
           <q-btn
+            flat
+            dense
+            icon="sort_by_alpha"
+            :color="alphabetSort ? 'primary' : 'grey'"
+            @click="alphabetSort = !alphabetSort"
+          >
+            <q-tooltip>Alphabetisch sortieren</q-tooltip>
+          </q-btn>
+          <q-btn
             color="primary"
             icon="add"
             label="Talent hinzufügen"
@@ -30,15 +39,28 @@
 
       <div v-else class="row q-col-gutter-md">
         <div
-          v-for="(talent, index) in character.talents"
-          :key="index"
+          v-for="(talent, index) in sortedTalents"
+          :key="talent.originalIndex"
           class="col-12 col-md-6"
         >
           <q-card bordered flat class="bg-grey-9">
-            <q-card-section>
-              <div class="row items-start">
+            <q-card-section class="q-pa-sm">
+              <div class="row items-center">
+                <div class="col-auto q-pr-xs">
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="info"
+                    color="grey-6"
+                    @click="showInfoDialog(talent)"
+                  >
+                    <q-tooltip>Beschreibung anzeigen</q-tooltip>
+                  </q-btn>
+                </div>
                 <div class="col">
-                  <div class="text-h6">{{ talent.name }}</div>
+                  <div class="text-subtitle1 text-bold">{{ talent.name }}</div>
                   <div v-if="talent.tier" class="text-caption text-grey-6">
                     {{ talent.tier }}
                   </div>
@@ -51,7 +73,7 @@
                     size="sm"
                     icon="edit"
                     color="grey-6"
-                    @click="editTalent(index)"
+                    @click="editTalent(talent.originalIndex)"
                   >
                     <q-tooltip>Bearbeiten</q-tooltip>
                   </q-btn>
@@ -62,17 +84,11 @@
                     size="sm"
                     icon="delete"
                     color="negative"
-                    @click="removeTalent(index)"
+                    @click="removeTalent(talent.originalIndex)"
                   >
                     <q-tooltip>Entfernen</q-tooltip>
                   </q-btn>
                 </div>
-              </div>
-
-              <q-separator class="q-my-sm" />
-
-              <div class="text-body2">
-                {{ talent.description || 'Keine Beschreibung vorhanden' }}
               </div>
             </q-card-section>
           </q-card>
@@ -135,11 +151,48 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Info Dialog -->
+    <q-dialog v-model="showInfo">
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">{{ currentTalent?.name }}</div>
+          <div v-if="currentTalent?.tier" class="text-caption text-grey-6">
+            {{ currentTalent.tier }}
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <div class="text-body2" style="white-space: pre-wrap;">
+            {{ currentTalent?.description || 'Keine Beschreibung vorhanden' }}
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Schließen"
+            color="primary"
+            @click="showInfo = false"
+          />
+          <q-btn
+            flat
+            label="Bearbeiten"
+            color="primary"
+            @click="editFromInfo"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 
@@ -148,12 +201,52 @@ const { character } = storeToRefs(characterStore)
 
 const showAddTalentDialog = ref(false)
 const editingIndex = ref(null)
+const alphabetSort = ref(false)
+const showInfo = ref(false)
+const currentTalent = ref(null)
+
+// Load sort preference from localStorage
+onMounted(() => {
+  const saved = localStorage.getItem('talents-sort-alpha')
+  if (saved !== null) {
+    alphabetSort.value = saved === 'true'
+  }
+})
+
+// Save sort preference to localStorage
+watch(alphabetSort, (newValue) => {
+  localStorage.setItem('talents-sort-alpha', newValue.toString())
+})
 
 const newTalent = ref({
   name: '',
   tier: '',
   description: ''
 })
+
+// Sorted talents
+const sortedTalents = computed(() => {
+  const talentsWithIndex = character.value.talents.map((talent, index) => ({
+    ...talent,
+    originalIndex: index
+  }))
+
+  if (alphabetSort.value) {
+    return talentsWithIndex.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  }
+
+  return talentsWithIndex
+})
+
+const showInfoDialog = (talent) => {
+  currentTalent.value = talent
+  showInfo.value = true
+}
+
+const editFromInfo = () => {
+  showInfo.value = false
+  editTalent(currentTalent.value.originalIndex)
+}
 
 const saveTalent = () => {
   if (!newTalent.value.name) return

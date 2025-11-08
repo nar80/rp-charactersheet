@@ -1,0 +1,204 @@
+/* Warhammer 40k Rogue Trader Theme */
+
+:root {
+  /* Imperial Gold/Bronze Colors */
+  --imperial-gold: #d4af37;
+  --imperial-bronze: #cd7f32;
+  --imperial-brass: #b5a642;
+  --dark-gold: #9d8234;
+
+  /* Parchment Colors */
+  --parchment-dark: #2a2622;
+  --parchment-medium: #3d3834;
+  --parchment-light: #4a4540;
+
+  /* Accent Colors */
+  --blood-red: #8b0000;
+  --imperial-purple: #5c1a33;
+}
+
+/* Override Quasar primary color to Imperial Gold */
+.q-btn--standard.bg-primary,
+.q-btn.bg-primary {
+  background: linear-gradient(145deg, var(--imperial-gold), var(--dark-gold)) !important;
+}
+
+.text-primary {
+  color: var(--imperial-gold) !important;
+}
+
+.bg-primary {
+  background: var(--imperial-gold) !important;
+}
+
+/* Gothic Font for Headings */
+h1, h2, h3, h4, h5, h6,
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6 {
+  font-family: 'Cinzel', serif !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--imperial-gold);
+}
+
+/* Toolbar styling */
+.q-toolbar {
+  background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%) !important;
+  border-bottom: 2px solid var(--imperial-bronze);
+}
+
+/* Cards with gothic border effect */
+.q-card {
+  background: var(--parchment-dark) !important;
+  border: 1px solid var(--imperial-bronze);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(212, 175, 55, 0.1);
+}
+
+.q-card--bordered {
+  border: 2px solid var(--imperial-bronze);
+}
+
+/* Tab styling */
+.q-tab {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.q-tab--active {
+  color: var(--imperial-gold) !important;
+}
+
+.q-tabs__indicator {
+  background: var(--imperial-gold) !important;
+}
+
+/* Input fields with parchment look */
+.q-field--filled .q-field__control {
+  background: var(--parchment-medium) !important;
+}
+
+.q-field--filled .q-field__control:hover {
+  background: var(--parchment-light) !important;
+}
+
+/* Buttons with Imperial styling */
+.q-btn {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 0.85em;
+}
+
+.q-btn--standard {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Stats cards with metallic look */
+.stat-card {
+  background: linear-gradient(145deg, var(--parchment-dark), var(--parchment-medium)) !important;
+  border: 1px solid var(--imperial-brass);
+}
+
+/* Aquila watermark background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40vw;
+  height: 40vh;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 20 L30 40 L35 60 L50 70 L65 60 L70 40 Z M35 45 L20 50 L35 55 Z M65 45 L80 50 L65 55 Z' fill='%23d4af37' opacity='0.03'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gothic divider lines */
+.q-separator {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--imperial-bronze) 50%,
+    transparent 100%
+  ) !important;
+  opacity: 0.5;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--parchment-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--imperial-bronze);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--imperial-gold);
+}
+
+/* High Gothic Flavour Text */
+.imperial-motto {
+  font-family: 'IM Fell English SC', serif;
+  font-size: 0.75em;
+  letter-spacing: 0.1em;
+  color: var(--imperial-brass);
+  opacity: 0.7;
+}
+
+/* Purity seal effect for important badges */
+.purity-seal {
+  background: radial-gradient(circle, var(--blood-red), var(--imperial-purple));
+  color: var(--imperial-gold);
+  border: 2px solid var(--imperial-gold);
+  font-family: 'Cinzel', serif;
+  text-transform: uppercase;
+  font-size: 0.7em;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.5);
+}
+
+/* Metallic text effect for important values */
+.metallic-text {
+  background: linear-gradient(180deg, #f4e4c1, var(--imperial-gold), #8b7355);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
+}
+
+/* Aged paper texture overlay */
+.aged-paper {
+  position: relative;
+}
+
+.aged-paper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(212, 175, 55, 0.03) 2px,
+      rgba(212, 175, 55, 0.03) 4px
+    );
+  pointer-events: none;
+}

@@ -193,17 +193,42 @@ const createDefaultCharacter = () => ({
     fatePoints: 0
   },
 
+  // Ship Points (Rogue Trader specific)
+  shipPoints: {
+    current: 0,
+    max: 0
+  },
+
+  // Insanity (Wahnsinn)
+  insanity: {
+    points: 0,
+    degree: 0,
+    disorders: [] // Geisteskrankheiten
+  },
+
+  // Corruption (Verderbniss)
+  corruption: {
+    points: 0,
+    degree: 0,
+    malignancies: [] // Metastasen
+  },
+
   // Talents & Traits
   talents: [],
 
   // Special Abilities
   specialAbilities: [],
 
-  // Psi Powers (if applicable)
-  psiPowers: {
-    disciplines: [],
-    techniques: []
-  }
+  // Psi Powers
+  psiPowers: [],
+
+  // Equipment
+  weapons: [],
+  armor: [],
+  gear: [],
+
+  // Notes
+  notes: []
 })
 
 export const useCharacterStore = defineStore('character', () => {
@@ -228,6 +253,20 @@ export const useCharacterStore = defineStore('character', () => {
               description: skill.description || (defaultSkill?.description || '')
             }
           })
+        }
+
+        // Ensure notes is an array (migrate from old string format)
+        if (typeof parsed.notes === 'string') {
+          parsed.notes = []
+        } else if (!Array.isArray(parsed.notes)) {
+          parsed.notes = []
+        }
+
+        // Ensure psiPowers is an array (migrate from old object format)
+        if (parsed.psiPowers && typeof parsed.psiPowers === 'object' && !Array.isArray(parsed.psiPowers)) {
+          parsed.psiPowers = []
+        } else if (!Array.isArray(parsed.psiPowers)) {
+          parsed.psiPowers = []
         }
 
         character.value = { ...defaultChar, ...parsed }
@@ -281,13 +320,18 @@ export const useCharacterStore = defineStore('character', () => {
   const addLearnedSkill = (skillData) => {
     // Create unique ID for the skill
     const id = Date.now() + Math.random()
+
+    // Wenn isBasic=true, dann trained=false (erscheint in Grundfertigkeiten)
+    // Wenn isBasic=false, dann trained=true (erscheint in erlernten Fertigkeiten)
+    const trained = !skillData.isBasic
+
     character.value.learnedSkills.push({
       id,
       name: skillData.name,
       attribute: skillData.attribute,
       specialization: skillData.specialization || '',
-      isBasic: skillData.isBasic || false, // Kann als Grundfertigkeit markiert werden
-      trained: true, // Erlernte Skills sind immer trained
+      isBasic: skillData.isBasic || false,
+      trained: trained,
       plus10: false,
       plus20: false,
       bonus: 0,
@@ -308,6 +352,76 @@ export const useCharacterStore = defineStore('character', () => {
 
   const removeTalent = (index) => {
     character.value.talents.splice(index, 1)
+  }
+
+  const addWeapon = (weapon) => {
+    character.value.weapons.push(weapon)
+  }
+
+  const updateWeapon = (index, updates) => {
+    if (character.value.weapons[index]) {
+      Object.assign(character.value.weapons[index], updates)
+    }
+  }
+
+  const removeWeapon = (index) => {
+    character.value.weapons.splice(index, 1)
+  }
+
+  const addArmor = (armor) => {
+    character.value.armor.push(armor)
+  }
+
+  const updateArmor = (index, updates) => {
+    if (character.value.armor[index]) {
+      Object.assign(character.value.armor[index], updates)
+    }
+  }
+
+  const removeArmor = (index) => {
+    character.value.armor.splice(index, 1)
+  }
+
+  const addGear = (gear) => {
+    character.value.gear.push(gear)
+  }
+
+  const updateGear = (index, updates) => {
+    if (character.value.gear[index]) {
+      Object.assign(character.value.gear[index], updates)
+    }
+  }
+
+  const removeGear = (index) => {
+    character.value.gear.splice(index, 1)
+  }
+
+  const addNote = (note) => {
+    character.value.notes.push(note)
+  }
+
+  const updateNote = (index, updates) => {
+    if (character.value.notes[index]) {
+      Object.assign(character.value.notes[index], updates)
+    }
+  }
+
+  const removeNote = (index) => {
+    character.value.notes.splice(index, 1)
+  }
+
+  const addPsiPower = (power) => {
+    character.value.psiPowers.push(power)
+  }
+
+  const updatePsiPower = (index, updates) => {
+    if (character.value.psiPowers[index]) {
+      Object.assign(character.value.psiPowers[index], updates)
+    }
+  }
+
+  const removePsiPower = (index) => {
+    character.value.psiPowers.splice(index, 1)
   }
 
   const loadCharacter = (data) => {
@@ -349,6 +463,21 @@ export const useCharacterStore = defineStore('character', () => {
     removeLearnedSkill,
     addTalent,
     removeTalent,
+    addWeapon,
+    updateWeapon,
+    removeWeapon,
+    addArmor,
+    updateArmor,
+    removeArmor,
+    addGear,
+    updateGear,
+    removeGear,
+    addNote,
+    updateNote,
+    removeNote,
+    addPsiPower,
+    updatePsiPower,
+    removePsiPower,
     loadCharacter,
     resetCharacter,
     getSkillValue

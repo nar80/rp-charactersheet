@@ -90,60 +90,151 @@
 
     <q-separator />
 
+    <!-- Wahnsinn und Verderbniss -->
     <q-card-section>
       <div class="row q-col-gutter-md">
-        <!-- Experience Points -->
-        <div class="col-12 col-md-4">
-          <q-input
-            v-model.number="character.experience.total"
-            label="Gesamt EP"
-            type="number"
-            filled
-            dense
-          />
-        </div>
-
-        <div class="col-12 col-md-4">
-          <q-input
-            v-model.number="character.experience.spent"
-            label="Vergebene EP"
-            type="number"
-            filled
-            dense
-          />
-        </div>
-
-        <div class="col-12 col-md-4">
-          <q-input
-            :model-value="character.experience.total - character.experience.spent"
-            label="Verfügbare EP"
-            type="number"
-            filled
-            dense
-            readonly
-            bg-color="grey-9"
-          />
-        </div>
-
-        <!-- Profit Factor (Rogue Trader specific) -->
+        <!-- Insanity (Wahnsinn) -->
         <div class="col-12 col-md-6">
-          <q-input
-            v-model.number="character.profitFactor.initial"
-            label="Anfänglicher Profitfaktor"
-            type="number"
-            filled
-            dense
-          />
+          <q-card bordered flat>
+            <q-card-section class="bg-grey-9">
+              <div class="text-h6">
+                <q-icon name="psychology" class="q-mr-sm" />
+                Wahnsinn
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <div class="row q-col-gutter-md q-mb-md">
+                <div class="col-6">
+                  <q-input
+                    v-model.number="character.insanity.points"
+                    label="Punkte"
+                    type="number"
+                    filled
+                    dense
+                  />
+                </div>
+                <div class="col-6">
+                  <q-input
+                    v-model.number="character.insanity.degree"
+                    label="Grad"
+                    type="number"
+                    filled
+                    dense
+                  />
+                </div>
+              </div>
+
+              <div class="text-subtitle2 q-mb-sm">Geisteskrankheiten</div>
+              <q-list bordered>
+                <q-item v-for="(disorder, index) in character.insanity.disorders" :key="index">
+                  <q-item-section>
+                    <q-item-label>{{ disorder }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                      size="sm"
+                      @click="removeDisorder(index)"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <q-input
+                v-model="newDisorder"
+                label="Neue Geisteskrankheit"
+                filled
+                dense
+                class="q-mt-md"
+                @keyup.enter="addDisorder"
+              >
+                <template v-slot:append>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    icon="add"
+                    @click="addDisorder"
+                  />
+                </template>
+              </q-input>
+            </q-card-section>
+          </q-card>
         </div>
 
+        <!-- Corruption (Verderbniss) -->
         <div class="col-12 col-md-6">
-          <q-input
-            v-model.number="character.profitFactor.current"
-            label="Gegenwärtiger Profitfaktor"
-            type="number"
-            filled
-            dense
-          />
+          <q-card bordered flat>
+            <q-card-section class="bg-grey-9">
+              <div class="text-h6">
+                <q-icon name="coronavirus" class="q-mr-sm" />
+                Verderbniss
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <div class="row q-col-gutter-md q-mb-md">
+                <div class="col-6">
+                  <q-input
+                    v-model.number="character.corruption.points"
+                    label="Punkte"
+                    type="number"
+                    filled
+                    dense
+                  />
+                </div>
+                <div class="col-6">
+                  <q-input
+                    v-model.number="character.corruption.degree"
+                    label="Grad"
+                    type="number"
+                    filled
+                    dense
+                  />
+                </div>
+              </div>
+
+              <div class="text-subtitle2 q-mb-sm">Metastasen</div>
+              <q-list bordered>
+                <q-item v-for="(malignancy, index) in character.corruption.malignancies" :key="index">
+                  <q-item-section>
+                    <q-item-label>{{ malignancy }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                      size="sm"
+                      @click="removeMalignancy(index)"
+                    />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <q-input
+                v-model="newMalignancy"
+                label="Neue Metastase"
+                filled
+                dense
+                class="q-mt-md"
+                @keyup.enter="addMalignancy"
+              >
+                <template v-slot:append>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    icon="add"
+                    @click="addMalignancy"
+                  />
+                </template>
+              </q-input>
+            </q-card-section>
+          </q-card>
         </div>
       </div>
     </q-card-section>
@@ -151,13 +242,39 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
 
+const newDisorder = ref('')
+const newMalignancy = ref('')
+
 const updateField = (field, value) => {
   characterStore.updateBasicInfo(field, value)
+}
+
+const addDisorder = () => {
+  if (newDisorder.value.trim()) {
+    character.value.insanity.disorders.push(newDisorder.value.trim())
+    newDisorder.value = ''
+  }
+}
+
+const removeDisorder = (index) => {
+  character.value.insanity.disorders.splice(index, 1)
+}
+
+const addMalignancy = () => {
+  if (newMalignancy.value.trim()) {
+    character.value.corruption.malignancies.push(newMalignancy.value.trim())
+    newMalignancy.value = ''
+  }
+}
+
+const removeMalignancy = (index) => {
+  character.value.corruption.malignancies.splice(index, 1)
 }
 </script>
