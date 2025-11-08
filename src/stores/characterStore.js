@@ -40,44 +40,23 @@ const createDefaultCharacter = () => ({
     CH: 0
   },
 
-  // Skills
-  skills: [
-    // Basic Skills
-    { name: 'Akrobatik', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Aufmerksamkeit', attribute: 'WA', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Ausweichen', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Befehligen', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Beschatten', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Charme', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Einschüchtern', attribute: 'ST', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Feilschen', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Fingerfertigkeit', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Forschender Blick', attribute: 'WA', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Glücksspiel', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Handel', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Klettern', attribute: 'ST', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Lesen/schreiben', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Logik', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Medizin', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Nachforschen', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Navigation', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Redeschwall', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schätzen', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schlangenmensch', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schleichen', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Schwimmen', attribute: 'ST', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Sicherheit', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Suchen', attribute: 'WA', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Tarnung', attribute: 'GE', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Tech-Gebrauch', attribute: 'IN', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Verhör', attribute: 'WK', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Verkleiden', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Vorgaukeln', attribute: 'CH', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 },
-    { name: 'Zechen', attribute: 'WI', type: 'basic', trained: false, plus10: false, plus20: false, bonus: 0 }
+  // Basic Skills (immer vorhanden, können mit halbem Attribut verwendet werden)
+  basicSkills: [
+    { name: 'Akrobatik', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Aufmerksamkeit', attribute: 'WA', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Ausweichen', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Befehligen', attribute: 'CH', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Beschatten', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Charme', attribute: 'CH', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Einschüchtern', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Klettern', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Schleichen', attribute: 'GE', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Schwimmen', attribute: 'ST', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 },
+    { name: 'Zechen', attribute: 'WI', isBasic: true, trained: false, plus10: false, plus20: false, bonus: 0 }
   ],
 
-  // Advanced Skills (can be added)
-  advancedSkills: [],
+  // Learned Skills (erlernte Fertigkeiten - werden nur angezeigt wenn hinzugefügt)
+  learnedSkills: [],
 
   // Experience
   experience: {
@@ -149,19 +128,41 @@ export const useCharacterStore = defineStore('character', () => {
     character.value.attributeIncreases[attr] = value
   }
 
-  const updateSkill = (skillName, updates) => {
-    const skill = character.value.skills.find(s => s.name === skillName)
+  const updateBasicSkill = (skillName, updates) => {
+    const skill = character.value.basicSkills.find(s => s.name === skillName)
     if (skill) {
       Object.assign(skill, updates)
     }
   }
 
-  const addAdvancedSkill = (skillData) => {
-    character.value.advancedSkills.push(skillData)
+  const updateLearnedSkill = (skillId, updates) => {
+    const skill = character.value.learnedSkills.find(s => s.id === skillId)
+    if (skill) {
+      Object.assign(skill, updates)
+    }
   }
 
-  const removeAdvancedSkill = (index) => {
-    character.value.advancedSkills.splice(index, 1)
+  const addLearnedSkill = (skillData) => {
+    // Create unique ID for the skill
+    const id = Date.now() + Math.random()
+    character.value.learnedSkills.push({
+      id,
+      name: skillData.name,
+      attribute: skillData.attribute,
+      specialization: skillData.specialization || '',
+      isBasic: skillData.isBasic || false, // Kann als Grundfertigkeit markiert werden
+      trained: true, // Erlernte Skills sind immer trained
+      plus10: false,
+      plus20: false,
+      bonus: 0
+    })
+  }
+
+  const removeLearnedSkill = (skillId) => {
+    const index = character.value.learnedSkills.findIndex(s => s.id === skillId)
+    if (index !== -1) {
+      character.value.learnedSkills.splice(index, 1)
+    }
   }
 
   const addTalent = (talent) => {
@@ -181,10 +182,15 @@ export const useCharacterStore = defineStore('character', () => {
   }
 
   const getSkillValue = (skill) => {
-    const baseValue = character.value.attributes[skill.attribute] || 0
-    let modifier = 0
+    const baseAttribute = character.value.attributes[skill.attribute] || 0
 
-    if (skill.trained) modifier += 0
+    // Grundfertigkeiten ohne Training: halbes Attribut (abgerundet)
+    // Grundfertigkeiten mit Training oder erlernte Fertigkeiten: volles Attribut
+    const baseValue = (skill.isBasic && !skill.trained)
+      ? Math.floor(baseAttribute / 2)
+      : baseAttribute
+
+    let modifier = 0
     if (skill.plus10) modifier += 10
     if (skill.plus20) modifier += 20
     modifier += skill.bonus || 0
@@ -200,9 +206,10 @@ export const useCharacterStore = defineStore('character', () => {
     updateBasicInfo,
     updateAttribute,
     updateAttributeIncrease,
-    updateSkill,
-    addAdvancedSkill,
-    removeAdvancedSkill,
+    updateBasicSkill,
+    updateLearnedSkill,
+    addLearnedSkill,
+    removeLearnedSkill,
     addTalent,
     removeTalent,
     loadCharacter,
