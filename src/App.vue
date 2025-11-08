@@ -2,18 +2,20 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-dark">
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
         <q-toolbar-title>
-          RP Charakterbogen
+          <div class="row items-center q-gutter-md">
+            <div>RP Charakterbogen</div>
+            <q-separator vertical dark />
+            <router-link to="/" class="text-white text-decoration-none">
+              <q-btn flat dense label="Charakterbogen" />
+            </router-link>
+            <router-link to="/settings" class="text-white text-decoration-none">
+              <q-btn flat dense label="Einstellungen" />
+            </router-link>
+          </div>
         </q-toolbar-title>
+
+        <q-space />
 
         <q-btn
           flat
@@ -36,47 +38,6 @@
         </q-btn>
       </q-toolbar>
     </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      :width="250"
-      :breakpoint="1024"
-      bordered
-    >
-      <q-scroll-area class="fit">
-        <q-list>
-          <q-item-label header>Navigation</q-item-label>
-
-          <q-item
-            clickable
-            :to="{ name: 'characterSheet' }"
-            exact
-            v-ripple
-          >
-            <q-item-section avatar>
-              <q-icon name="person" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Charakterbogen</q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item
-            clickable
-            :to="{ name: 'settings' }"
-            v-ripple
-          >
-            <q-item-section avatar>
-              <q-icon name="settings" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Einstellungen</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-scroll-area>
-    </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -101,12 +62,7 @@ import { useCharacterStore } from './stores/characterStore'
 const $q = useQuasar()
 const characterStore = useCharacterStore()
 
-const leftDrawerOpen = ref(false)
 const fileInput = ref(null)
-
-const toggleLeftDrawer = () => {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
 
 const handleExport = () => {
   const character = characterStore.character
@@ -162,5 +118,9 @@ const onFileSelected = (event) => {
 <style>
 body {
   font-family: 'Roboto', sans-serif;
+}
+
+.text-decoration-none {
+  text-decoration: none;
 }
 </style>

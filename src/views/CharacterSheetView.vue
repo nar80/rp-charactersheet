@@ -1,8 +1,8 @@
 <template>
   <q-page>
-    <!-- Basic Info Section - Always visible at top -->
+    <!-- Permanent Stats Section - Always visible at top -->
     <div class="q-pa-md">
-      <BasicInfoSection />
+      <CharacterStats />
     </div>
 
     <!-- Tabs for different sections -->
@@ -15,7 +15,7 @@
       align="center"
       narrow-indicator
     >
-      <q-tab name="attributes" icon="psychology" label="Attribute" />
+      <q-tab name="info" icon="person" label="Charakter" />
       <q-tab name="skills" icon="school" label="Fertigkeiten" />
       <q-tab name="talents" icon="stars" label="Talente" />
       <q-tab name="equipment" icon="inventory_2" label="Ausrüstung" />
@@ -26,8 +26,8 @@
 
     <!-- Tab Panels -->
     <q-tab-panels v-model="activeTab" animated>
-      <q-tab-panel name="attributes">
-        <AttributesSection />
+      <q-tab-panel name="info">
+        <BasicInfoSection />
       </q-tab-panel>
 
       <q-tab-panel name="skills">
@@ -51,14 +51,14 @@
 
 <script setup>
 import { ref } from 'vue'
+import CharacterStats from '../components/CharacterStats.vue'
 import BasicInfoSection from '../components/sections/BasicInfoSection.vue'
-import AttributesSection from '../components/sections/AttributesSection.vue'
 import SkillsSection from '../components/sections/SkillsSection.vue'
 import TalentsSection from '../components/sections/TalentsSection.vue'
 import EquipmentSection from '../components/sections/EquipmentSection.vue'
 import NotesSection from '../components/sections/NotesSection.vue'
 
-const activeTab = ref('attributes')
+const activeTab = ref('info')
 </script>
 
 <style scoped>

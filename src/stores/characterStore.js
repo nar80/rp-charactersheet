@@ -41,6 +41,27 @@ const createDefaultCharacter = () => ({
     CH: 0
   },
 
+  // Combat & Physical Stats
+  hitPoints: {
+    current: 10,
+    max: 10
+  },
+
+  // Movement (based on Agility Bonus)
+  movement: {
+    half: 0,
+    full: 0,
+    charge: 0,
+    run: 0
+  },
+
+  // Carrying Capacity (based on Strength & Toughness)
+  carryingCapacity: {
+    lift: 0,
+    carry: 0,
+    push: 0
+  },
+
   // Basic Skills (immer vorhanden, können mit halbem Attribut verwendet werden)
   basicSkills: [
     {
