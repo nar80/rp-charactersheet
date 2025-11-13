@@ -416,16 +416,24 @@ export const useCharacterStore = defineStore('character', () => {
   }
 
   const updateBasicSkill = (skillName, updates) => {
-    const skill = character.value.basicSkills.find(s => s.name === skillName)
-    if (skill) {
-      Object.assign(skill, updates)
+    const skillIndex = character.value.basicSkills.findIndex(s => s.name === skillName)
+    if (skillIndex !== -1) {
+      // Use array replacement to ensure reactivity
+      character.value.basicSkills[skillIndex] = {
+        ...character.value.basicSkills[skillIndex],
+        ...updates
+      }
     }
   }
 
   const updateLearnedSkill = (skillId, updates) => {
-    const skill = character.value.learnedSkills.find(s => s.id === skillId)
-    if (skill) {
-      Object.assign(skill, updates)
+    const skillIndex = character.value.learnedSkills.findIndex(s => s.id === skillId)
+    if (skillIndex !== -1) {
+      // Use array replacement to ensure reactivity
+      character.value.learnedSkills[skillIndex] = {
+        ...character.value.learnedSkills[skillIndex],
+        ...updates
+      }
     }
   }
 

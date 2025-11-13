@@ -266,7 +266,7 @@
                         label="+10"
                         size="xs"
                         dense
-                        @update:model-value="updateLearnedSkill(skill.id, { plus10: $event })"
+                        @update:model-value="updateSkill(skill, { plus10: $event })"
                       >
                         <q-tooltip>+10%</q-tooltip>
                       </q-checkbox>
@@ -276,7 +276,7 @@
                         label="+20"
                         size="xs"
                         dense
-                        @update:model-value="updateLearnedSkill(skill.id, { plus20: $event })"
+                        @update:model-value="updateSkill(skill, { plus20: $event })"
                       >
                         <q-tooltip>+20%</q-tooltip>
                       </q-checkbox>
@@ -290,7 +290,7 @@
                         dense
                         filled
                         placeholder="+"
-                        @update:model-value="updateLearnedSkill(skill.id, { bonus: parseInt($event) || 0 })"
+                        @update:model-value="updateSkill(skill, { bonus: parseInt($event) || 0 })"
                         input-style="text-align: center; font-size: 0.9rem;"
                       />
                     </div>
@@ -360,7 +360,7 @@
                         label="+10"
                         size="xs"
                         dense
-                        @update:model-value="updateLearnedSkill(skill.id, { plus10: $event })"
+                        @update:model-value="updateSkill(skill, { plus10: $event })"
                       >
                         <q-tooltip>+10%</q-tooltip>
                       </q-checkbox>
@@ -370,7 +370,7 @@
                         label="+20"
                         size="xs"
                         dense
-                        @update:model-value="updateLearnedSkill(skill.id, { plus20: $event })"
+                        @update:model-value="updateSkill(skill, { plus20: $event })"
                       >
                         <q-tooltip>+20%</q-tooltip>
                       </q-checkbox>
@@ -384,7 +384,7 @@
                         dense
                         filled
                         placeholder="+"
-                        @update:model-value="updateLearnedSkill(skill.id, { bonus: parseInt($event) || 0 })"
+                        @update:model-value="updateSkill(skill, { bonus: parseInt($event) || 0 })"
                         input-style="text-align: center; font-size: 0.9rem;"
                       />
                     </div>
