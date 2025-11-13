@@ -488,10 +488,9 @@
           <q-checkbox
             v-model="newSkill.isBasic"
             label="Als Grundfertigkeit gewährt"
-            :disable="!!newSkill.selectedSkill"
           >
             <q-tooltip>
-              Wenn aktiviert, kann diese Fertigkeit mit halbem Attributwert verwendet werden
+              Wenn aktiviert, kann diese Fertigkeit mit halbem Attributwert verwendet werden (z.B. durch Talente oder Karriere-Boni)
             </q-tooltip>
           </q-checkbox>
         </q-card-section>
@@ -612,7 +611,7 @@ watch(() => newSkill.value.selectedSkill, (skill) => {
     newSkill.value.name = skill.name
     newSkill.value.attribute = skill.attribute
     newSkill.value.description = skill.description || ''
-    newSkill.value.isBasic = false
+    // Don't reset isBasic - user should be able to mark advanced skills as basic
     // Clear specialization when changing skill
     if (!skill.requiresSpecialization) {
       newSkill.value.specialization = ''
@@ -654,6 +653,9 @@ const filteredBasicSkills = computed(() => {
       skill.attribute.toLowerCase().includes(filter)
     )
   }
+
+  // Always sort alphabetically
+  skills.sort((a, b) => a.name.localeCompare(b.name, 'de'))
 
   return skills
 })
