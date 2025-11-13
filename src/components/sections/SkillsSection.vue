@@ -107,11 +107,24 @@
                     />
                   </div>
 
-                  <!-- Value -->
-                  <div class="col-2 text-right">
+                  <!-- Value and Delete (for custom basic skills) -->
+                  <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
                     <div class="text-body1 text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
+                    <!-- Delete button only for custom-added basic skills (have an id) -->
+                    <q-btn
+                      v-if="skill.id !== undefined"
+                      flat
+                      dense
+                      round
+                      size="xs"
+                      icon="delete"
+                      color="grey-6"
+                      @click="removeSkill(skill)"
+                    >
+                      <q-tooltip>Fertigkeit löschen</q-tooltip>
+                    </q-btn>
                   </div>
                 </div>
               </q-item-section>
@@ -180,11 +193,24 @@
                     />
                   </div>
 
-                  <!-- Value -->
-                  <div class="col-2 text-right">
+                  <!-- Value and Delete (for custom basic skills) -->
+                  <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
                     <div class="text-body1 text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
+                    <!-- Delete button only for custom-added basic skills (have an id) -->
+                    <q-btn
+                      v-if="skill.id !== undefined"
+                      flat
+                      dense
+                      round
+                      size="xs"
+                      icon="delete"
+                      color="grey-6"
+                      @click="removeSkill(skill)"
+                    >
+                      <q-tooltip>Fertigkeit löschen</q-tooltip>
+                    </q-btn>
                   </div>
                 </div>
               </q-item-section>
@@ -280,7 +306,7 @@
                         round
                         size="xs"
                         icon="delete"
-                        color="negative"
+                        color="grey-6"
                         @click="removeSkill(skill)"
                       >
                         <q-tooltip>{{ skill.isBasic ? 'Zurück zu Grundfertigkeiten' : 'Fertigkeit löschen' }}</q-tooltip>
@@ -374,7 +400,7 @@
                         round
                         size="xs"
                         icon="delete"
-                        color="negative"
+                        color="grey-6"
                         @click="removeSkill(skill)"
                       >
                         <q-tooltip>{{ skill.isBasic ? 'Zurück zu Grundfertigkeiten' : 'Fertigkeit löschen' }}</q-tooltip>
@@ -399,19 +425,46 @@
         <q-separator />
 
         <q-card-section class="q-gutter-md">
-          <q-input
-            v-model="newSkill.name"
-            label="Fertigkeitenname"
+          <q-select
+            v-model="newSkill.selectedSkill"
+            :options="advancedSkills"
+            option-label="name"
+            label="Fertigkeit auswählen"
             filled
             dense
-          />
+            clearable
+            use-input
+            input-debounce="0"
+            @filter="filterSkills"
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.name }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.attribute }}
+                    <span v-if="scope.opt.requiresSpecialization">• Benötigt Spezialisierung</span>
+                    <span v-if="scope.opt.category"> • {{ scope.opt.category }}</span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Keine Fertigkeiten gefunden
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <q-input
             v-model="newSkill.specialization"
-            label="Spezialisierung (optional)"
+            :label="requiresSpecialization ? 'Spezialisierung (erforderlich)' : 'Spezialisierung (optional)'"
             filled
             dense
-            hint="z.B. 'Verbotenes Wissen (Dämonen)'"
+            :hint="requiresSpecialization ? 'Diese Fertigkeit benötigt eine Spezialisierung' : 'z.B. \'Verbotenes Wissen (Dämonen)\''"
+            :rules="requiresSpecialization ? [val => !!val || 'Spezialisierung erforderlich'] : []"
           />
 
           <q-select
@@ -420,6 +473,8 @@
             label="Attribut"
             filled
             dense
+            :disable="!!newSkill.selectedSkill"
+            hint="Wird automatisch gesetzt bei Auswahl einer vordefinierten Fertigkeit"
           />
 
           <q-input
@@ -433,6 +488,7 @@
           <q-checkbox
             v-model="newSkill.isBasic"
             label="Als Grundfertigkeit gewährt"
+            :disable="!!newSkill.selectedSkill"
           >
             <q-tooltip>
               Wenn aktiviert, kann diese Fertigkeit mit halbem Attributwert verwendet werden
@@ -454,7 +510,7 @@
             label="Hinzufügen"
             color="primary"
             @click="addNewSkill"
-            :disable="!newSkill.name || !newSkill.attribute"
+            :disable="!newSkill.name || !newSkill.attribute || (requiresSpecialization && !newSkill.specialization)"
           />
         </q-card-actions>
       </q-card>
@@ -510,6 +566,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
+import { advancedSkills } from '../../data/advancedSkills'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
@@ -536,6 +593,7 @@ watch(sortAlphabetically, (newValue) => {
 })
 
 const newSkill = ref({
+  selectedSkill: null,
   name: '',
   specialization: '',
   attribute: 'IN',
@@ -543,7 +601,42 @@ const newSkill = ref({
   description: ''
 })
 
+// Computed: Check if selected skill requires specialization
+const requiresSpecialization = computed(() => {
+  return newSkill.value.selectedSkill?.requiresSpecialization || false
+})
+
+// Watch selected skill and auto-fill data
+watch(() => newSkill.value.selectedSkill, (skill) => {
+  if (skill) {
+    newSkill.value.name = skill.name
+    newSkill.value.attribute = skill.attribute
+    newSkill.value.description = skill.description || ''
+    newSkill.value.isBasic = false
+    // Clear specialization when changing skill
+    if (!skill.requiresSpecialization) {
+      newSkill.value.specialization = ''
+    }
+  }
+})
+
 const attributeOptions = ['KG', 'BF', 'ST', 'WI', 'GE', 'IN', 'WA', 'WK', 'CH']
+
+// Filter function for skill selection
+const skillOptions = ref(advancedSkills)
+
+const filterSkills = (val, update) => {
+  update(() => {
+    if (val === '') {
+      skillOptions.value = advancedSkills
+    } else {
+      const needle = val.toLowerCase()
+      skillOptions.value = advancedSkills.filter(
+        skill => skill.name.toLowerCase().includes(needle)
+      )
+    }
+  })
+}
 
 // Combine all skills (basic + learned)
 const allSkills = computed(() => {
@@ -639,10 +732,16 @@ const getSkillValue = (skill) => {
 
 const addNewSkill = () => {
   if (newSkill.value.name && newSkill.value.attribute) {
+    // Check if specialization is required
+    if (requiresSpecialization.value && !newSkill.value.specialization) {
+      return
+    }
+
     characterStore.addLearnedSkill(newSkill.value)
 
     // Reset form
     newSkill.value = {
+      selectedSkill: null,
       name: '',
       specialization: '',
       attribute: 'IN',
@@ -655,14 +754,14 @@ const addNewSkill = () => {
 }
 
 const removeSkill = (skill) => {
-  // Wenn es eine Grundfertigkeit ist (isBasic=true), dann nur trained auf false setzen
-  // Wenn es eine regulär erlernte Fertigkeit ist, dann wirklich löschen
-  if (skill.isBasic) {
-    // Zurück zu Grundfertigkeiten
-    updateSkill(skill, { trained: false, plus10: false, plus20: false })
-  } else if (skill.id !== undefined) {
-    // Wirklich löschen (nur bei learnedSkills mit ID)
+  // Wenn es eine benutzerdefinierte Fertigkeit mit ID ist, wirklich löschen
+  if (skill.id !== undefined) {
     characterStore.removeLearnedSkill(skill.id)
+  }
+  // Wenn es eine vordefinierte Grundfertigkeit ist (kein ID), die erlernt wurde,
+  // dann nur trained auf false setzen (zurück zu Grundfertigkeiten)
+  else if (skill.isBasic) {
+    updateSkill(skill, { trained: false, plus10: false, plus20: false })
   }
 }
 

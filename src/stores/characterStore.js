@@ -65,16 +65,6 @@ const createDefaultCharacter = () => ({
   // Basic Skills (immer vorhanden, können mit halbem Attribut verwendet werden)
   basicSkills: [
     {
-      name: 'Akrobatik',
-      attribute: 'GE',
-      isBasic: true,
-      trained: false,
-      plus10: false,
-      plus20: false,
-      bonus: 0,
-      description: 'Ermöglicht akrobatische Stunts wie Saltos, Rollen und Balance-Akte. Wird für waghalsige Manöver und spektakuläre Bewegungen verwendet.'
-    },
-    {
       name: 'Aufmerksamkeit',
       attribute: 'WA',
       isBasic: true,
@@ -105,16 +95,6 @@ const createDefaultCharacter = () => ({
       description: 'Führungsqualitäten und Autorität. Wird verwendet um NPCs zu befehligen, Moral zu stärken oder Untergebene zu koordinieren.'
     },
     {
-      name: 'Beschatten',
-      attribute: 'GE',
-      isBasic: true,
-      trained: false,
-      plus10: false,
-      plus20: false,
-      bonus: 0,
-      description: 'Ermöglicht das unauffällige Verfolgen einer Person durch Menschenmengen oder Umgebungen ohne entdeckt zu werden.'
-    },
-    {
       name: 'Charme',
       attribute: 'CH',
       isBasic: true,
@@ -135,6 +115,36 @@ const createDefaultCharacter = () => ({
       description: 'Durch physische Präsenz oder Drohungen andere einschüchtern. Kann verwendet werden um Informationen zu erzwingen oder Gegner zu demoralisieren.'
     },
     {
+      name: 'Feilschen',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Geschickt handeln und bessere Preise aushandeln. Wird beim Kaufen und Verkaufen von Waren verwendet.'
+    },
+    {
+      name: 'Flinkender Blick',
+      attribute: 'WA',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Schnelles Erfassen von Details und Situationen auf einen Blick.'
+    },
+    {
+      name: 'Glücksspiel',
+      attribute: 'IN',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Kenntnisse über Glücksspiele und die Fähigkeit, beim Spiel zu gewinnen.'
+    },
+    {
       name: 'Klettern',
       attribute: 'ST',
       isBasic: true,
@@ -143,6 +153,46 @@ const createDefaultCharacter = () => ({
       plus20: false,
       bonus: 0,
       description: 'Ermöglicht das Erklettern von Wänden, Felsen, Seilen und anderen Hindernissen. Schwierigkeit variiert je nach Oberfläche.'
+    },
+    {
+      name: 'Logik',
+      attribute: 'IN',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Logisches Denken und Problemlösung. Wird verwendet um Rätsel zu lösen oder komplexe Zusammenhänge zu verstehen.'
+    },
+    {
+      name: 'Nachforschen',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Informationen durch Befragung und Recherche sammeln.'
+    },
+    {
+      name: 'Schätzen',
+      attribute: 'IN',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Den Wert von Gegenständen einschätzen können.'
+    },
+    {
+      name: 'Schlangenmensch',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Körper verdrehen und durch enge Räume zwängen.'
     },
     {
       name: 'Schleichen',
@@ -163,6 +213,46 @@ const createDefaultCharacter = () => ({
       plus20: false,
       bonus: 0,
       description: 'Schwimmen und sich über Wasser halten. Wird in rauhem Gewässer, bei langen Distanzen oder unter schwierigen Bedingungen benötigt.'
+    },
+    {
+      name: 'Suchen',
+      attribute: 'WA',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Aktives Durchsuchen von Räumen und Gegenständen um versteckte Objekte zu finden.'
+    },
+    {
+      name: 'Tarnung',
+      attribute: 'GE',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Sich und Ausrüstung in der Umgebung tarnen und verbergen.'
+    },
+    {
+      name: 'Verkleiden',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Aussehen und Identität durch Kostüme und Maskierung verändern.'
+    },
+    {
+      name: 'Vorgaukeln',
+      attribute: 'CH',
+      isBasic: true,
+      trained: false,
+      plus10: false,
+      plus20: false,
+      bonus: 0,
+      description: 'Lügen und täuschen. Wird verwendet um falsche Informationen glaubhaft zu vermitteln.'
     },
     {
       name: 'Zechen',
@@ -227,6 +317,9 @@ const createDefaultCharacter = () => ({
   armor: [],
   gear: [],
 
+  // Acquisitions (Beschaffungen)
+  acquisitions: [],
+
   // Notes
   notes: []
 })
@@ -242,8 +335,15 @@ export const useCharacterStore = defineStore('character', () => {
         const parsed = JSON.parse(stored)
         const defaultChar = createDefaultCharacter()
 
-        // Merge basic skills to ensure descriptions are added
+        // Merge basic skills to ensure descriptions are added and new skills are included
         if (parsed.basicSkills) {
+          // Remove skills that are no longer basic skills (now advanced skills)
+          const removedBasicSkills = ['Akrobatik', 'Beschatten']
+          parsed.basicSkills = parsed.basicSkills.filter(
+            skill => !removedBasicSkills.includes(skill.name)
+          )
+
+          // First, update existing skills
           parsed.basicSkills = parsed.basicSkills.map(skill => {
             const defaultSkill = defaultChar.basicSkills.find(s => s.name === skill.name)
             return {
@@ -253,6 +353,18 @@ export const useCharacterStore = defineStore('character', () => {
               description: skill.description || (defaultSkill?.description || '')
             }
           })
+
+          // Then, add new skills from default that are not in parsed
+          const existingSkillNames = parsed.basicSkills.map(s => s.name)
+          const newSkills = defaultChar.basicSkills.filter(
+            defaultSkill => !existingSkillNames.includes(defaultSkill.name)
+          )
+
+          // Add new skills to the list
+          parsed.basicSkills = [...parsed.basicSkills, ...newSkills]
+        } else {
+          // If no basicSkills at all, use default
+          parsed.basicSkills = defaultChar.basicSkills
         }
 
         // Ensure notes is an array (migrate from old string format)

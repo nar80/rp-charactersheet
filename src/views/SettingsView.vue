@@ -24,7 +24,7 @@
             </q-toggle>
             <q-toggle
               v-model="settings.showTalents"
-              label="Purity Seals & Talente"
+              label="Talente"
               color="primary"
             >
               <q-icon name="military_tech" class="q-ml-sm" size="sm" />
@@ -42,6 +42,13 @@
               color="primary"
             >
               <q-icon name="shield" class="q-ml-sm" size="sm" />
+            </q-toggle>
+            <q-toggle
+              v-model="settings.showAcquisitions"
+              label="Beschaffungen"
+              color="primary"
+            >
+              <q-icon name="inventory_2" class="q-ml-sm" size="sm" />
             </q-toggle>
             <q-toggle
               v-model="settings.showNotes"

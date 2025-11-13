@@ -9,6 +9,7 @@ export const useSettingsStore = defineStore('settings', () => {
     showTalents: true,
     showPsiPowers: true,
     showEquipment: true,
+    showAcquisitions: true,
     showNotes: true
   })
 

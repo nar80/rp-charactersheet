@@ -161,25 +161,15 @@ const formatDate = (dateString) => {
   if (!dateString) return 'Kein Datum'
 
   const date = new Date(dateString)
-  const now = new Date()
-  const diffTime = Math.abs(now - date)
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  if (isNaN(date.getTime())) return 'Ungültiges Datum'
 
-  if (diffDays === 0) {
-    return 'Heute, ' + date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  } else if (diffDays === 1) {
-    return 'Gestern, ' + date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  } else if (diffDays < 7) {
-    return diffDays + ' Tage her'
-  } else {
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  return date.toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 const editNote = (index) => {

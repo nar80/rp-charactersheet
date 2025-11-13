@@ -5,7 +5,7 @@
         <div class="col">
           <div class="text-h5">
             <q-icon name="military_tech" class="q-mr-sm" />
-            Purity Seals & Talente
+            Talente
           </div>
           <div class="text-caption text-grey-6">
             Besondere Fähigkeiten und imperiale Auszeichnungen

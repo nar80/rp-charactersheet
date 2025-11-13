@@ -67,6 +67,7 @@
                   <div class="text-subtitle1 text-bold">{{ weapon.name }}</div>
                   <div class="text-caption text-grey-6">
                     {{ weapon.type || 'Waffe' }}
+                    <span v-if="weapon.subtype"> ({{ weapon.subtype }})</span>
                   </div>
                 </div>
                 <div class="col-auto">
@@ -87,7 +88,7 @@
                     round
                     size="sm"
                     icon="delete"
-                    color="negative"
+                    color="grey-6"
                     @click="removeWeapon(weapon.originalIndex)"
                   >
                     <q-tooltip>Entfernen</q-tooltip>
@@ -95,14 +96,18 @@
                 </div>
               </div>
 
-              <!-- Weapon Details -->
-              <div class="text-caption" style="line-height: 1.5;">
+              <!-- Weapon Details - Reihenfolge wie Charakterbogen -->
+              <div class="text-body2" style="line-height: 1.8;">
                 <span v-if="weapon.damage">
                   <span class="text-grey-6">Schaden:</span> <span class="text-bold">{{ weapon.damage }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
+                <span v-if="weapon.damageType">
+                  <span class="text-grey-6">Art:</span> <span class="text-bold">{{ weapon.damageType }}</span>
+                  <span class="q-mx-sm">•</span>
+                </span>
                 <span v-if="weapon.penetration !== undefined && weapon.penetration !== null">
-                  <span class="text-grey-6">Pen:</span> <span class="text-bold">{{ weapon.penetration }}</span>
+                  <span class="text-grey-6">DS:</span> <span class="text-bold">{{ weapon.penetration }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.range">
@@ -110,7 +115,7 @@
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.rof">
-                  <span class="text-grey-6">RoF:</span> <span class="text-bold">{{ weapon.rof }}</span>
+                  <span class="text-grey-6">SF:</span> <span class="text-bold">{{ weapon.rof }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.magazine">
@@ -120,6 +125,22 @@
                 <span v-if="weapon.reload">
                   <span class="text-grey-6">Nachladen:</span> <span class="text-bold">{{ weapon.reload }}</span>
                 </span>
+              </div>
+
+              <!-- Speziell / Eigenschaften (besonders wichtig!) -->
+              <div v-if="weapon.special" class="q-mt-sm q-pa-xs" style="background: rgba(255, 213, 79, 0.1); border-left: 3px solid #ffd54f; border-radius: 4px;">
+                <div class="text-body2 text-bold text-amber">Eigenschaften:</div>
+                <div class="text-body2">{{ weapon.special }}</div>
+              </div>
+
+              <!-- Quality Display -->
+              <div v-if="weapon.quality && weapon.quality !== 'Normal'" class="q-mt-sm">
+                <div class="text-body2 text-grey-6">
+                  Qualität: <span class="text-bold" :class="getQualityColor(weapon.quality)">{{ weapon.quality }}</span>
+                </div>
+                <div class="text-body2" :class="getQualityColor(weapon.quality)">
+                  {{ getWeaponQualityEffect(weapon.quality, weapon.type, weapon.subtype) }}
+                </div>
               </div>
             </q-card-section>
           </q-card>
@@ -197,7 +218,7 @@
                     round
                     size="sm"
                     icon="delete"
-                    color="negative"
+                    color="grey-6"
                     @click="characterStore.removeArmor(index)"
                   >
                     <q-tooltip>Entfernen</q-tooltip>
@@ -206,20 +227,20 @@
               </div>
 
               <!-- Armor Details -->
-              <div class="row q-col-gutter-xs text-caption">
+              <div class="row q-col-gutter-xs text-body2">
                 <div class="col-6">
                   <span class="text-grey-6">RP:</span>
                   <span class="text-bold text-primary">{{ getEffectiveAP(armor) }}</span>
-                  <span v-if="armor.quality === 'Hervorragend' && armor.ap" class="text-grey-6"> (Basis: {{ armor.ap }})</span>
+                  <span v-if="armor.quality === 'Hervorragend' && armor.ap" class="text-caption text-grey-6"> (Basis: {{ armor.ap }})</span>
                 </div>
                 <div class="col-6" v-if="armor.weight">
                   <span class="text-grey-6">Gewicht:</span>
                   <span class="text-bold">{{ getEffectiveWeight(armor) }}kg</span>
-                  <span v-if="armor.quality === 'Hervorragend'" class="text-grey-6"> (Basis: {{ armor.weight }}kg)</span>
+                  <span v-if="armor.quality === 'Hervorragend'" class="text-caption text-grey-6"> (Basis: {{ armor.weight }}kg)</span>
                 </div>
-                <div class="col-12" v-if="armor.quality && armor.quality !== 'Standard'">
+                <div class="col-12 q-mt-xs" v-if="armor.quality && armor.quality !== 'Standard'">
                   <div class="text-grey-6">Qualität: <span class="text-bold" :class="getQualityColor(armor.quality)">{{ armor.quality }}</span></div>
-                  <div class="text-caption" :class="getQualityColor(armor.quality)">
+                  <div class="text-body2" :class="getQualityColor(armor.quality)">
                     {{ getQualityEffect(armor.quality) }}
                   </div>
                 </div>
@@ -324,6 +345,7 @@
         <q-separator />
 
         <q-card-section class="q-gutter-md">
+          <!-- Name -->
           <q-input
             v-model="newWeapon.name"
             label="Waffenname"
@@ -331,53 +353,100 @@
             dense
           />
 
-          <q-input
+          <!-- Gattung -->
+          <q-select
             v-model="newWeapon.type"
-            label="Typ"
+            :options="weaponTypeOptions"
+            label="Gattung"
             filled
             dense
-            hint="z.B. 'Nahkampf', 'Pistole', 'Laswaffe', etc."
+            hint="Kategorie nach Regelwerk"
+          >
+            <template v-slot:append>
+              <q-icon name="info" class="cursor-pointer" color="grey-6">
+                <q-tooltip max-width="300px">
+                  <div class="text-bold">Waffengattungen:</div>
+                  <div class="q-mt-xs"><b>Nahkampfwaffen:</b> Schwerter, Äxte, Kraftwaffen</div>
+                  <div class="q-mt-xs"><b>Wurfwaffen:</b> Messer, Granaten, etc.</div>
+                  <div class="q-mt-xs"><b>Pistolen:</b> Ein-Hand-Fernkampfwaffen</div>
+                  <div class="q-mt-xs"><b>Leichte Waffen:</b> Gewehre, leichte Bolter</div>
+                  <div class="q-mt-xs"><b>Schwere Waffen:</b> Schwere Bolter, Plasma-Kanonen</div>
+                  <div class="q-mt-xs"><b>Exotisch:</b> Seltene/ungewöhnliche Waffen</div>
+                </q-tooltip>
+              </q-icon>
+            </template>
+          </q-select>
+
+          <!-- Subtype for Exotic weapons -->
+          <q-select
+            v-if="newWeapon.type && newWeapon.type.includes('Exotisch')"
+            v-model="newWeapon.subtype"
+            :options="['Nahkampf', 'Fernkampf']"
+            label="Exotisch-Untertyp"
+            filled
+            dense
+            hint="Ist diese exotische Waffe für Nah- oder Fernkampf?"
           />
 
+          <!-- Schaden -->
           <q-input
             v-model="newWeapon.damage"
             label="Schaden"
             filled
             dense
-            hint="z.B. '1d10+3'"
+            hint="z.B. '1d10+3' oder '2d10'"
           />
 
+          <!-- Art (Schadensart) -->
+          <q-select
+            v-model="newWeapon.damageType"
+            :options="['E (Energie)', 'I (Einschlag)', 'R (Reißend)', 'X (Explosiv)']"
+            label="Art (Schadensart)"
+            filled
+            dense
+            clearable
+            hint="E, I, R oder X"
+          />
+
+          <!-- DS (Durchschlag/Penetration) -->
           <q-input
             v-model.number="newWeapon.penetration"
-            label="Penetration"
+            label="DS (Durchschlag)"
             type="number"
             filled
             dense
+            hint="Panzerungsdurchschlag"
           />
 
+          <!-- Reichweite -->
           <q-input
             v-model="newWeapon.range"
             label="Reichweite"
             filled
             dense
+            hint="z.B. '30m' oder '-' für Nahkampf"
           />
 
+          <!-- SF (Schussfolge/RoF) -->
           <q-input
             v-model="newWeapon.rof"
-            label="RoF"
+            label="SF (Schussfolge)"
             filled
             dense
-            hint="z.B. 'S/3/-'"
+            hint="z.B. 'S/3/-' oder '-' für Nahkampf"
           />
 
+          <!-- Mag (Magazin) -->
           <q-input
             v-model.number="newWeapon.magazine"
-            label="Magazin"
+            label="Mag (Magazin)"
             type="number"
             filled
             dense
+            hint="Magazingröße"
           />
 
+          <!-- Nachladen -->
           <q-select
             v-model="newWeapon.reload"
             :options="['Halbe', 'Volle', '2 Volle', '3 Volle', '4 Volle', '5 Volle']"
@@ -388,13 +457,36 @@
             hint="Wie viele Runden dauert das Nachladen"
           />
 
+          <!-- Speziell (Eigenschaften) -->
           <q-input
             v-model="newWeapon.special"
-            label="Besondere Eigenschaften"
+            label="Speziell (Eigenschaften)"
             type="textarea"
             filled
-            rows="2"
+            rows="3"
+            hint="z.B. 'Reißend, Unwuchtig, Primitiv'"
           />
+
+          <!-- Qualität -->
+          <q-select
+            v-model="newWeapon.quality"
+            :options="['Gering', 'Normal', 'Gut', 'Hervorragend']"
+            label="Qualität"
+            filled
+            dense
+          >
+            <template v-slot:append>
+              <q-icon name="info" class="cursor-pointer" color="grey-6">
+                <q-tooltip max-width="300px">
+                  <div class="text-bold">Waffenqualität:</div>
+                  <div class="q-mt-xs"><b>Gering:</b> Fernkampf: Unzuverlässig. Nahkampf: -10 auf Angriffe/Paraden</div>
+                  <div class="q-mt-xs"><b>Normal:</b> Standard-Waffe ohne Modifikationen</div>
+                  <div class="q-mt-xs"><b>Gut:</b> Fernkampf: Zuverlässig. Nahkampf: +5 auf Angriffe</div>
+                  <div class="q-mt-xs"><b>Hervorragend:</b> Fernkampf: Keine Ladehemmung/Überhitzung. Nahkampf: +10 Angriffe, +1 Schaden</div>
+                </q-tooltip>
+              </q-icon>
+            </template>
+          </q-select>
         </q-card-section>
 
         <q-separator />
@@ -659,16 +751,28 @@ const editingWeaponIndex = ref(null)
 const currentWeapon = ref(null)
 const sortWeaponsAlpha = ref(false)
 
+const weaponTypeOptions = [
+  'Nahkampfwaffen',
+  'Wurfwaffen',
+  'Pistolen',
+  'Leichte Waffen',
+  'Schwere Waffen',
+  'Exotische Waffen'
+]
+
 const newWeapon = ref({
   name: '',
   type: '',
+  subtype: '',
   damage: '',
+  damageType: '',
   penetration: 0,
   range: '',
   rof: '',
   magazine: 0,
   reload: '',
-  special: ''
+  special: '',
+  quality: 'Normal'
 })
 
 // Armor state
@@ -733,7 +837,13 @@ const editFromWeaponInfo = () => {
 
 const editWeapon = (index) => {
   editingWeaponIndex.value = index
-  newWeapon.value = { ...character.value.weapons[index] }
+  const weapon = character.value.weapons[index]
+  newWeapon.value = {
+    ...weapon,
+    quality: weapon.quality || 'Normal', // Default for old weapons
+    subtype: weapon.subtype || '', // Default for old weapons
+    damageType: weapon.damageType || '' // Default for old weapons
+  }
   showAddWeaponDialog.value = true
 }
 
@@ -759,13 +869,16 @@ const cancelWeaponDialog = () => {
   newWeapon.value = {
     name: '',
     type: '',
+    subtype: '',
     damage: '',
+    damageType: '',
     penetration: 0,
     range: '',
     rof: '',
     magazine: 0,
     reload: '',
-    special: ''
+    special: '',
+    quality: 'Normal'
   }
 }
 
@@ -799,7 +912,7 @@ const getQualityColor = (quality) => {
     case 'Gut':
       return 'text-positive'
     case 'Hervorragend':
-      return 'text-accent'
+      return 'text-positive'
     default:
       return 'text-grey-6'
   }
@@ -813,6 +926,42 @@ const getQualityEffect = (quality) => {
       return 'Gegen ersten Angriff pro Runde +1 RP'
     case 'Hervorragend':
       return 'Halbes Gewicht, +1 RP an allen Zonen'
+    default:
+      return ''
+  }
+}
+
+const getWeaponQualityEffect = (quality, weaponType, weaponSubtype) => {
+  // Determine if weapon is ranged based on type
+  const isRanged = weaponType && (
+    weaponType === 'Pistolen' ||
+    weaponType === 'Leichte Waffen' ||
+    weaponType === 'Schwere Waffen' ||
+    weaponType === 'Wurfwaffen' ||
+    (weaponType === 'Exotische Waffen' && weaponSubtype === 'Fernkampf') ||
+    // Fallback for old weapons with text-based types
+    weaponType.toLowerCase().includes('fern') ||
+    weaponType.toLowerCase().includes('pistole') ||
+    weaponType.toLowerCase().includes('laser') ||
+    weaponType.toLowerCase().includes('bolter') ||
+    weaponType.toLowerCase().includes('plasma') ||
+    weaponType.toLowerCase().includes('gewehr') ||
+    weaponType.toLowerCase().includes('schuss')
+  )
+
+  switch (quality) {
+    case 'Gering':
+      return isRanged
+        ? 'Eigenschaft Unzuverlässig (oder Ladehemmung bei jedem Fehlschuss)'
+        : '-10 auf Angriffswürfe und Paraden'
+    case 'Gut':
+      return isRanged
+        ? 'Eigenschaft Zuverlässig'
+        : '+5 auf Angriffswürfe'
+    case 'Hervorragend':
+      return isRanged
+        ? 'Keine Ladehemmung oder Überhitzung (werden zu Fehlschuss)'
+        : '+10 auf Angriffswürfe, +1 Schaden'
     default:
       return ''
   }

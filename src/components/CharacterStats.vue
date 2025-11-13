@@ -2,8 +2,48 @@
   <div class="sticky-stats-wrapper">
     <q-card flat bordered class="q-mb-md">
       <q-card-section class="q-pa-md">
-        <!-- Row 1: Attributes -->
-        <div class="row justify-center q-col-gutter-md q-mb-md">
+        <!-- Attributes Header with Toggle -->
+        <div class="row items-center q-mb-sm">
+          <div class="col">
+            <div class="text-caption text-grey-5">Attribute</div>
+          </div>
+          <div class="col-auto">
+            <q-btn
+              flat
+              dense
+              round
+              size="sm"
+              :icon="attributesExpanded ? 'expand_less' : 'expand_more'"
+              @click="toggleAttributes"
+            >
+              <q-tooltip>{{ attributesExpanded ? 'Einklappen' : 'Ausklappen' }}</q-tooltip>
+            </q-btn>
+          </div>
+        </div>
+
+        <!-- Collapsed View: Compact single row -->
+        <div v-if="!attributesExpanded" class="row justify-center q-gutter-sm q-mb-md">
+          <div
+            v-for="(value, attr) in character.attributes"
+            :key="attr"
+            class="attribute-compact"
+          >
+            <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
+            <div class="text-h6 text-bold text-primary text-center">{{ value }}</div>
+            <!-- Small dots indicator -->
+            <div class="flex justify-center q-gutter-xs" style="min-height: 12px">
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="dot-indicator"
+                :class="{ 'dot-active': i <= character.attributeIncreases[attr] }"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Expanded View: Full edit mode -->
+        <div v-if="attributesExpanded" class="row justify-center q-col-gutter-md q-mb-md">
           <div
             v-for="(value, attr) in character.attributes"
             :key="attr"
@@ -53,8 +93,8 @@
           </div>
         </div>
 
-        <!-- Row 2: All Stats in one line -->
-        <div class="row justify-center q-col-gutter-md">
+        <!-- Row 2: All Stats in one line (only when expanded) -->
+        <div v-if="attributesExpanded" class="row justify-center q-col-gutter-md">
           <!-- Hit Points -->
           <div class="col-auto">
             <q-card bordered flat class="stat-card">
@@ -66,26 +106,22 @@
                 <div
                   class="row q-gutter-sm items-center justify-center flex-grow"
                 >
-                  <q-input
+                  <NumberInput
                     :model-value="character.hitPoints.current"
-                    type="number"
-                    dense
-                    filled
-                    @update:model-value="
-                      updateHP('current', parseInt($event) || 0)
-                    "
-                    style="width: 60px"
-                    input-class="text-center text-h6"
+                    :min="0"
+                    :max="character.hitPoints.max"
+                    button-color="red"
+                    text-color="#ef5350"
+                    @update:model-value="updateHP('current', $event)"
                   />
                   <div class="text-h6 text-grey-6">/</div>
-                  <q-input
+                  <NumberInput
                     :model-value="character.hitPoints.max"
-                    type="number"
-                    dense
-                    filled
-                    @update:model-value="updateHP('max', parseInt($event) || 0)"
-                    style="width: 60px"
-                    input-class="text-center text-h6"
+                    :min="0"
+                    :max="999"
+                    button-color="red"
+                    text-color="#ef5350"
+                    @update:model-value="updateHP('max', $event)"
                   />
                 </div>
               </q-card-section>
@@ -103,28 +139,22 @@
                 <div
                   class="row q-gutter-sm items-center justify-center flex-grow"
                 >
-                  <q-input
+                  <NumberInput
                     :model-value="character.shipPoints.current"
-                    type="number"
-                    dense
-                    filled
-                    @update:model-value="
-                      character.shipPoints.current = parseInt($event) || 0
-                    "
-                    style="width: 50px"
-                    input-class="text-center text-h6"
+                    :min="0"
+                    :max="character.shipPoints.max"
+                    button-color="blue"
+                    text-color="#42a5f5"
+                    @update:model-value="updateShipPoints('current', $event)"
                   />
                   <div class="text-h6 text-grey-6">/</div>
-                  <q-input
+                  <NumberInput
                     :model-value="character.shipPoints.max"
-                    type="number"
-                    dense
-                    filled
-                    @update:model-value="
-                      character.shipPoints.max = parseInt($event) || 0
-                    "
-                    style="width: 50px"
-                    input-class="text-center text-h6"
+                    :min="0"
+                    :max="999"
+                    button-color="blue"
+                    text-color="#42a5f5"
+                    @update:model-value="updateShipPoints('max', $event)"
                   />
                   <q-btn
                     flat
@@ -132,8 +162,9 @@
                     round
                     size="sm"
                     icon="refresh"
-                    color="primary"
+                    color="blue"
                     @click="resetShipPoints"
+                    class="reset-btn"
                   >
                     <q-tooltip>Ship-Points auffüllen</q-tooltip>
                   </q-btn>
@@ -156,26 +187,26 @@
                   <div class="column items-center">
                     <div class="text-caption text-grey-6">Gesamt</div>
                     <q-input
-                      :model-value="character.experience.total"
+                      :model-value="formatNumber(character.experience.total)"
                       dense
                       filled
                       @update:model-value="
-                        character.experience.total = parseInt($event) || 0
+                        character.experience.total = parseFormattedNumber($event)
                       "
-                      style="width: 70px"
+                      style="width: 80px"
                       input-class="text-center"
                     />
                   </div>
                   <div class="column items-center">
                     <div class="text-caption text-grey-6">Vergeben</div>
                     <q-input
-                      :model-value="character.experience.spent"
+                      :model-value="formatNumber(character.experience.spent)"
                       dense
                       filled
                       @update:model-value="
-                        character.experience.spent = parseInt($event) || 0
+                        character.experience.spent = parseFormattedNumber($event)
                       "
-                      style="width: 70px"
+                      style="width: 80px"
                       input-class="text-center"
                     />
                   </div>
@@ -233,7 +264,7 @@
                         character.profitFactor.current = parseInt($event) || 0
                       "
                       style="width: 60px"
-                      input-class="text-center text-h6 text-bold"
+                      input-class="text-center"
                     />
                   </div>
                 </div>
@@ -376,12 +407,33 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useCharacterStore } from "../stores/characterStore";
+import NumberInput from "./NumberInput.vue";
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
+
+// Attributes expand/collapse state
+const attributesExpanded = ref(false);
+
+// Load state from localStorage
+onMounted(() => {
+  const saved = localStorage.getItem('attributes-expanded');
+  if (saved !== null) {
+    attributesExpanded.value = saved === 'true';
+  }
+});
+
+// Save state to localStorage
+watch(attributesExpanded, (newValue) => {
+  localStorage.setItem('attributes-expanded', newValue.toString());
+});
+
+const toggleAttributes = () => {
+  attributesExpanded.value = !attributesExpanded.value;
+};
 
 const attributeNames = {
   KG: "Kampfgeschick",
@@ -413,7 +465,35 @@ const toggleIncrease = (attr, level) => {
 };
 
 const updateHP = (field, value) => {
-  character.value.hitPoints[field] = value;
+  if (field === "current") {
+    // Ensure current HP doesn't exceed max HP
+    character.value.hitPoints[field] = Math.min(
+      value,
+      character.value.hitPoints.max
+    );
+  } else {
+    character.value.hitPoints[field] = value;
+    // If max is reduced below current, adjust current
+    if (character.value.hitPoints.current > value) {
+      character.value.hitPoints.current = value;
+    }
+  }
+};
+
+const updateShipPoints = (field, value) => {
+  if (field === "current") {
+    // Ensure current ship points don't exceed max
+    character.value.shipPoints[field] = Math.min(
+      value,
+      character.value.shipPoints.max
+    );
+  } else {
+    character.value.shipPoints[field] = value;
+    // If max is reduced below current, adjust current
+    if (character.value.shipPoints.current > value) {
+      character.value.shipPoints.current = value;
+    }
+  }
 };
 
 const updateCarrying = (field, value) => {
@@ -422,6 +502,19 @@ const updateCarrying = (field, value) => {
 
 const resetShipPoints = () => {
   character.value.shipPoints.current = character.value.shipPoints.max;
+};
+
+// Number formatting functions
+const formatNumber = (num) => {
+  if (!num) return "0";
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseFormattedNumber = (value) => {
+  if (!value) return 0;
+  // Remove dots (thousand separators) and parse
+  const cleaned = value.toString().replace(/\./g, "");
+  return parseInt(cleaned) || 0;
 };
 
 // Carrying capacity table (STb + WIb)
@@ -498,8 +591,8 @@ const calculatedRank = computed(() => {
 <style scoped>
 .sticky-stats-wrapper {
   position: sticky;
-  top: 0;
-  z-index: 1000;
+  top: 50px;
+  z-index: 999;
   background: var(--q-dark);
   padding: 16px;
   margin: -16px -16px 16px -16px;
@@ -559,5 +652,42 @@ const calculatedRank = computed(() => {
 
 .rounded-borders {
   border-radius: 4px;
+}
+
+.reset-btn {
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.reset-btn:hover {
+  transform: rotate(180deg) scale(1.1);
+}
+
+/* Compact attribute view */
+.attribute-compact {
+  min-width: 60px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 213, 79, 0.2);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.attribute-compact:hover {
+  border-color: rgba(255, 213, 79, 0.4);
+  box-shadow: 0 0 8px rgba(255, 213, 79, 0.2);
+}
+
+.dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(158, 158, 158, 0.5);
+  transition: all 0.2s ease;
+}
+
+.dot-active {
+  background: #ffd54f;
+  box-shadow: 0 0 4px #ffd54f;
 }
 </style>
