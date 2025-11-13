@@ -125,7 +125,7 @@ const createDefaultCharacter = () => ({
       description: 'Geschickt handeln und bessere Preise aushandeln. Wird beim Kaufen und Verkaufen von Waren verwendet.'
     },
     {
-      name: 'Flinkender Blick',
+      name: 'Forschender Blick',
       attribute: 'WA',
       isBasic: true,
       trained: false,
@@ -337,8 +337,8 @@ export const useCharacterStore = defineStore('character', () => {
 
         // Merge basic skills to ensure descriptions are added and new skills are included
         if (parsed.basicSkills) {
-          // Remove skills that are no longer basic skills (now advanced skills)
-          const removedBasicSkills = ['Akrobatik', 'Beschatten']
+          // Remove skills that are no longer basic skills or have been renamed
+          const removedBasicSkills = ['Akrobatik', 'Beschatten', 'Flinkender Blick']
           parsed.basicSkills = parsed.basicSkills.filter(
             skill => !removedBasicSkills.includes(skill.name)
           )
