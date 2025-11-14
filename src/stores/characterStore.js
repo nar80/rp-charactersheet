@@ -112,7 +112,7 @@ const createDefaultCharacter = () => ({
       plus10: false,
       plus20: false,
       bonus: 0,
-      description: 'Durch physische Präsenz oder Drohungen andere einschüchtern. Kann verwendet werden um Informationen zu erzwingen oder Gegner zu demoralisieren.'
+      description: 'Durch physische Präsenz (ST), psychologische Manipulation (IN) oder Charisma (CH) andere einschüchtern. Kann verwendet werden um Informationen zu erzwingen oder Gegner zu demoralisieren. Das Attribut kann je nach Situation angepasst werden.'
     },
     {
       name: 'Feilschen',
@@ -584,8 +584,9 @@ export const useCharacterStore = defineStore('character', () => {
       : baseAttribute
 
     let modifier = 0
-    if (skill.plus10) modifier += 10
+    // plus20 represents total advancement of +20, not additional +10 on top of plus10
     if (skill.plus20) modifier += 20
+    else if (skill.plus10) modifier += 10
     modifier += skill.bonus || 0
 
     return baseValue + modifier

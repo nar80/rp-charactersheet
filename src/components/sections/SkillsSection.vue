@@ -473,8 +473,8 @@
             label="Attribut"
             filled
             dense
-            :disable="!!newSkill.selectedSkill && newSkill.selectedSkill?.name !== 'Beruf'"
-            :hint="newSkill.selectedSkill?.name === 'Beruf' ? 'Wähle das Attribut für diesen Beruf' : 'Wird automatisch gesetzt bei Auswahl einer vordefinierten Fertigkeit'"
+            :disable="!!newSkill.selectedSkill && !canChangeAttribute(newSkill.selectedSkill?.name)"
+            :hint="canChangeAttribute(newSkill.selectedSkill?.name) ? 'Wähle das passende Attribut für diese Fertigkeit' : 'Wird automatisch gesetzt bei Auswahl einer vordefinierten Fertigkeit'"
           />
 
           <q-input
@@ -531,13 +531,13 @@
 
         <q-card-section class="q-gutter-md">
           <q-select
-            v-if="selectedSkill?.name === 'Beruf'"
+            v-if="canChangeAttribute(selectedSkill?.name)"
             v-model="editAttribute"
             :options="attributeOptions"
             label="Attribut"
             filled
             dense
-            hint="Wähle das passende Attribut für diesen Beruf"
+            hint="Wähle das passende Attribut für diese Fertigkeit"
           />
 
           <q-input
@@ -631,6 +631,11 @@ watch(() => newSkill.value.selectedSkill, (skill) => {
 })
 
 const attributeOptions = ['KG', 'BF', 'ST', 'WI', 'GE', 'IN', 'WA', 'WK', 'CH']
+
+// Helper function to check if a skill can have its attribute changed
+const canChangeAttribute = (skillName) => {
+  return skillName === 'Beruf' || skillName === 'Einschüchtern'
+}
 
 // Filter function for skill selection
 const skillOptions = ref(advancedSkills)
@@ -794,8 +799,8 @@ const showInfoDialog = (skill, type) => {
 const saveDescription = () => {
   const updates = { description: editDescription.value }
 
-  // For "Beruf" skills, also update the attribute
-  if (selectedSkill.value?.name === 'Beruf') {
+  // For skills that can change their attribute (Beruf, Einschüchtern), also update the attribute
+  if (canChangeAttribute(selectedSkill.value?.name)) {
     updates.attribute = editAttribute.value
   }
 
