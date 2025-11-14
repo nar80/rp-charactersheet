@@ -113,7 +113,27 @@
         <q-separator />
 
         <q-card-section class="q-gutter-md">
+          <div class="row q-gutter-sm">
+            <q-btn
+              :outline="isCustomTalent"
+              :flat="!isCustomTalent"
+              :color="!isCustomTalent ? 'primary' : 'grey'"
+              label="Aus Grundregelwerk"
+              @click="switchToRulebookTalent"
+              class="col"
+            />
+            <q-btn
+              :outline="!isCustomTalent"
+              :flat="isCustomTalent"
+              :color="isCustomTalent ? 'primary' : 'grey'"
+              label="Eigenes Talent"
+              @click="switchToCustomTalent"
+              class="col"
+            />
+          </div>
+
           <q-select
+            v-if="!isCustomTalent"
             v-model="newTalent.selectedTalent"
             :options="availableTalents"
             option-label="name"
@@ -143,13 +163,24 @@
           </q-select>
 
           <q-input
-            v-if="newTalent.selectedTalent?.requiresSpecialization"
+            v-if="isCustomTalent"
+            v-model="newTalent.name"
+            label="Talentname (erforderlich)"
+            filled
+            dense
+            hint="z.B. 'Meister der Dunkelheit', 'Xeno-Linguist'"
+            :rules="[val => !!val || 'Name erforderlich']"
+            lazy-rules
+          />
+
+          <q-input
+            v-if="newTalent.selectedTalent?.requiresSpecialization || isCustomTalent"
             v-model="newTalent.specialization"
-            label="Spezialisierung (erforderlich)"
+            :label="newTalent.selectedTalent?.requiresSpecialization ? 'Spezialisierung (erforderlich)' : 'Spezialisierung (optional)'"
             filled
             dense
             hint="z.B. 'Orks', 'Plasma-Waffen', 'Handelsgüter'"
-            :rules="[val => !!val || 'Spezialisierung erforderlich']"
+            :rules="newTalent.selectedTalent?.requiresSpecialization ? [val => !!val || 'Spezialisierung erforderlich'] : []"
             lazy-rules
           />
 
@@ -166,8 +197,8 @@
             label="Voraussetzungen"
             filled
             dense
-            readonly
-            hint="Automatisch aus Grundregelwerk"
+            :readonly="!isCustomTalent"
+            :hint="isCustomTalent ? 'z.B. \'WK 40, ST 35\' oder \'--\' für keine' : 'Automatisch aus Grundregelwerk'"
           />
 
           <q-input
@@ -176,8 +207,8 @@
             type="textarea"
             filled
             rows="3"
-            readonly
-            hint="Automatisch aus Grundregelwerk"
+            :readonly="!isCustomTalent"
+            :hint="isCustomTalent ? 'Beschreibe den Vorteil, den das Talent bietet' : 'Automatisch aus Grundregelwerk'"
           />
 
           <q-input
@@ -204,7 +235,7 @@
             label="Speichern"
             color="primary"
             @click="saveTalent"
-            :disable="!newTalent.name || (newTalent.selectedTalent?.requiresSpecialization && !newTalent.specialization)"
+            :disable="!newTalent.name || (!isCustomTalent && newTalent.selectedTalent?.requiresSpecialization && !newTalent.specialization)"
           />
         </q-card-actions>
       </q-card>
@@ -282,6 +313,7 @@ const alphabetSort = ref(false)
 const showInfo = ref(false)
 const currentTalent = ref(null)
 const searchFilteredTalents = ref(talents)
+const isCustomTalent = ref(false)
 
 // Available talents (filter out already added talents without specialization)
 const availableTalents = computed(() => {
@@ -363,6 +395,29 @@ const filterTalents = (val, update) => {
   })
 }
 
+const switchToCustomTalent = () => {
+  isCustomTalent.value = true
+  // Clear selected talent from rulebook
+  newTalent.value.selectedTalent = null
+  // Clear fields for custom entry if not editing
+  if (editingIndex.value === null) {
+    newTalent.value.name = ''
+    newTalent.value.prerequisites = '--'
+    newTalent.value.benefit = ''
+  }
+}
+
+const switchToRulebookTalent = () => {
+  isCustomTalent.value = false
+  // Clear fields when switching back
+  if (editingIndex.value === null) {
+    newTalent.value.selectedTalent = null
+    newTalent.value.name = ''
+    newTalent.value.prerequisites = ''
+    newTalent.value.benefit = ''
+  }
+}
+
 const showInfoDialog = (talent) => {
   currentTalent.value = talent
   showInfo.value = true
@@ -404,6 +459,9 @@ const editTalent = (index) => {
   // Try to find the talent in the talents list to populate selectedTalent
   const foundTalent = talents.find(t => t.name === talent.name)
 
+  // If talent is not in the rulebook, it's a custom talent
+  isCustomTalent.value = !foundTalent
+
   newTalent.value = {
     selectedTalent: foundTalent || null,
     name: talent.name || '',
@@ -424,6 +482,7 @@ const removeTalent = (index) => {
 const cancelTalentDialog = () => {
   showAddTalentDialog.value = false
   editingIndex.value = null
+  isCustomTalent.value = false
   newTalent.value = {
     selectedTalent: null,
     name: '',

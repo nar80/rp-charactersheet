@@ -294,6 +294,12 @@ export const talents = [
     benefit: 'WaB statt GeB für die Initiative verwenden'
   },
   {
+    name: 'Kampfinformation',
+    requiresSpecialization: false,
+    prerequisites: 'IN 40',
+    benefit: '1W10 für die Initiative verwenden'
+  },
+  {
     name: 'Kampfrausch',
     requiresSpecialization: false,
     prerequisites: 'Raserei',
@@ -302,7 +308,7 @@ export const talents = [
   {
     name: 'Katzenhafte Beweglichkeit',
     requiresSpecialization: false,
-    prerequisites: 'GE 30',
+    prerequisites: 'GE 40',
     benefit: 'Weniger Fallschaden'
   },
   {
@@ -453,7 +459,67 @@ export const talents = [
     name: 'Navigator',
     requiresSpecialization: false,
     prerequisites: '--',
-    benefit: 'Zugriff auf zusätzliche Psi-Disziplin'
+    benefit: 'Der Entdecker verfügt über das Navigatoren'
+  },
+  {
+    name: 'Navigatorenkraft',
+    requiresSpecialization: false,
+    prerequisites: 'Navigator',
+    benefit: 'Die Fähigkeit, eine Kraft aus einer der Navigatorenkräftegruppen zu verwenden'
+  },
+  {
+    name: 'Orthoproxie',
+    requiresSpecialization: false,
+    prerequisites: '--',
+    benefit: '+20 zum Widerstand gegen Gedankenkontrolle und Verhöre'
+  },
+  {
+    name: 'Panzer aus Geringschätzung',
+    requiresSpecialization: false,
+    prerequisites: 'WK 40',
+    benefit: 'Widerstandsfähigkeit gegen Korrumpierung'
+  },
+  {
+    name: 'Paranoia',
+    requiresSpecialization: false,
+    prerequisites: '--',
+    benefit: 'Gespür für Gefahren'
+  },
+  {
+    name: 'Pflichtbewußt bis in den Tod',
+    requiresSpecialization: false,
+    prerequisites: 'WK 45',
+    benefit: 'Verletzungen vorübergehend ignorieren'
+  },
+  {
+    name: 'Pilotrausch',
+    requiresSpecialization: true,
+    prerequisites: 'Pilot, GE 40',
+    benefit: 'Alle Pilotenfähigkeiten sind Grundfertigkeiten'
+  },
+  {
+    name: 'Pistolen',
+    requiresSpecialization: true,
+    prerequisites: '--',
+    benefit: 'Nutzung einer Gruppe von Pistolen ohne Abzug'
+  },
+  {
+    name: 'Polyglott',
+    requiresSpecialization: false,
+    prerequisites: 'IN 30, CH 30',
+    benefit: 'Angeborenes Talent für Sprachen'
+  },
+  {
+    name: 'Präziser Schlag',
+    requiresSpecialization: false,
+    prerequisites: 'KG 40, Sicherer Schlag',
+    benefit: 'Kein Abzug für Angriffe auf bestimmte Trefferzonen'
+  },
+  {
+    name: 'Psi-Disziplin',
+    requiresSpecialization: false,
+    prerequisites: '--',
+    benefit: 'Zugriff auf eine zusätzliche Psi-Disziplin'
   },
   {
     name: 'Psi-Technik',
@@ -463,6 +529,12 @@ export const talents = [
   },
   {
     name: 'Psi-Wert',
+    requiresSpecialization: false,
+    prerequisites: '--',
+    benefit: 'Psionisch mächtiger werden (unterteilt von 1 bis 10)'
+  },
+  {
+    name: 'Psistärke',
     requiresSpecialization: false,
     prerequisites: '--',
     benefit: 'Psionisch mächtiger werden (unterteilt von 1 bis 10)'
