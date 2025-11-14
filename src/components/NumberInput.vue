@@ -1,17 +1,17 @@
 <template>
-  <div class="number-input-container">
+  <div class="number-input-container" :class="{ 'vertical': vertical }">
     <q-btn
       round
       dense
       flat
-      :disable="isAtMin"
+      :disable="vertical ? isAtMax : isAtMin"
       :color="buttonColor"
-      icon="remove"
-      @click="decrement"
+      :icon="vertical ? 'add' : 'remove'"
+      @click="vertical ? increment() : decrement()"
       size="sm"
       class="number-btn"
     >
-      <q-tooltip v-if="isAtMin">Minimum erreicht</q-tooltip>
+      <q-tooltip v-if="vertical ? isAtMax : isAtMin">{{ vertical ? 'Maximum erreicht' : 'Minimum erreicht' }}</q-tooltip>
     </q-btn>
 
     <input
@@ -29,14 +29,14 @@
       round
       dense
       flat
-      :disable="isAtMax"
+      :disable="vertical ? isAtMin : isAtMax"
       :color="buttonColor"
-      icon="add"
-      @click="increment"
+      :icon="vertical ? 'remove' : 'add'"
+      @click="vertical ? decrement() : increment()"
       size="sm"
       class="number-btn"
     >
-      <q-tooltip v-if="isAtMax">Maximum erreicht</q-tooltip>
+      <q-tooltip v-if="vertical ? isAtMin : isAtMax">{{ vertical ? 'Minimum erreicht' : 'Maximum erreicht' }}</q-tooltip>
     </q-btn>
   </div>
 </template>
@@ -64,6 +64,10 @@ const props = defineProps({
   textColor: {
     type: String,
     default: "#ffd54f",
+  },
+  vertical: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -111,6 +115,22 @@ const handleBlur = (event) => {
   border-radius: 8px;
   padding: 4px 8px;
   transition: all 0.2s ease;
+}
+
+.number-input-container.vertical {
+  flex-direction: column;
+  padding: 2px 4px;
+  gap: 0px;
+}
+
+.number-input-container.vertical .number-input {
+  width: 32px;
+  font-size: 0.95rem;
+}
+
+.number-input-container.vertical .number-btn {
+  min-width: 24px;
+  min-height: 24px;
 }
 
 .number-input-container:hover {

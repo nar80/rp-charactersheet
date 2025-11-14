@@ -22,23 +22,95 @@
         </div>
 
         <!-- Collapsed View: Compact single row -->
-        <div v-if="!attributesExpanded" class="row justify-center q-gutter-sm q-mb-md">
-          <div
-            v-for="(value, attr) in character.attributes"
-            :key="attr"
-            class="attribute-compact"
-          >
-            <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
-            <div class="text-h6 text-bold text-primary text-center">{{ value }}</div>
-            <!-- Small dots indicator -->
-            <div class="flex justify-center q-gutter-xs" style="min-height: 12px">
-              <div
-                v-for="i in 4"
-                :key="i"
-                class="dot-indicator"
-                :class="{ 'dot-active': i <= character.attributeIncreases[attr] }"
-              />
+        <div v-if="!attributesExpanded" class="row items-center q-gutter-sm q-mb-md">
+          <!-- Left side: HP and Exhaustion -->
+          <div class="row items-center q-gutter-sm">
+            <div class="column q-gutter-xs">
+              <!-- HP Compact -->
+              <div class="stat-compact">
+                <q-icon name="favorite" size="xs" color="red" class="q-mr-xs" />
+                <span class="text-caption text-grey-6 stat-label">{{ character.hitPoints.current }}/{{ character.hitPoints.max }}</span>
+                <NumberInput
+                  :model-value="character.hitPoints.current"
+                  :min="0"
+                  :max="character.hitPoints.max"
+                  button-color="red"
+                  text-color="#ef5350"
+                  @update:model-value="updateHP('current', $event)"
+                />
+              </div>
+              <!-- Exhaustion Compact -->
+              <div class="stat-compact" :class="{ 'stat-compact-danger': isUnconscious }">
+                <q-icon name="local_fire_department" size="xs" color="orange" class="q-mr-xs" />
+                <span class="text-caption text-grey-6 stat-label">{{ character.exhaustion }}/{{ toughnessBonus }}</span>
+                <NumberInput
+                  :model-value="character.exhaustion"
+                  :min="0"
+                  :max="99"
+                  button-color="orange"
+                  text-color="#ff9800"
+                  @update:model-value="updateExhaustion($event)"
+                />
+              </div>
             </div>
+
+            <!-- Status Badges -->
+            <div class="column q-gutter-xs">
+              <q-badge v-if="character.exhaustion > 0" color="red" class="text-caption">
+                -10 Würfe
+              </q-badge>
+              <q-badge v-if="isUnconscious" color="negative" class="text-caption text-bold">
+                BEWUSSTLOS!
+              </q-badge>
+            </div>
+          </div>
+
+          <!-- Center: Attributes -->
+          <div class="row justify-center q-gutter-sm flex-grow">
+            <div
+              v-for="(value, attr) in character.attributes"
+              :key="attr"
+              class="attribute-compact"
+            >
+              <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
+              <div class="text-h6 text-bold text-primary text-center">{{ value }}</div>
+              <!-- Small dots indicator -->
+              <div class="flex justify-center q-gutter-xs" style="min-height: 12px">
+                <div
+                  v-for="i in 4"
+                  :key="i"
+                  class="dot-indicator"
+                  :class="{ 'dot-active': i <= character.attributeIncreases[attr] }"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Right side: Ship Points -->
+          <div class="stat-compact">
+            <q-icon name="rocket_launch" size="xs" color="blue" class="q-mr-xs" />
+            <span class="text-caption text-grey-6">{{ character.shipPoints.current }}/{{ character.shipPoints.max }}</span>
+            <NumberInput
+              :model-value="character.shipPoints.current"
+              :min="0"
+              :max="character.shipPoints.max"
+              button-color="blue"
+              text-color="#42a5f5"
+              @update:model-value="updateShipPoints('current', $event)"
+            />
+            <q-btn
+              flat
+              dense
+              round
+              size="xs"
+              icon="refresh"
+              color="blue"
+              @click="resetShipPoints"
+              class="q-ml-xs"
+              style="width: 20px; height: 20px;"
+            >
+              <q-tooltip>Ship-Points auffüllen</q-tooltip>
+            </q-btn>
           </div>
         </div>
 
@@ -97,14 +169,14 @@
         <div v-if="attributesExpanded" class="row justify-center q-col-gutter-md">
           <!-- Hit Points -->
           <div class="col-auto">
-            <q-card bordered flat class="stat-card">
+            <q-card bordered flat class="stat-card stat-card-compact">
               <q-card-section class="q-pa-sm stat-card-content">
                 <div class="text-caption text-grey-5 q-mb-sm">
                   <q-icon name="favorite" size="xs" class="q-mr-xs" />
                   Lebenspunkte
                 </div>
                 <div
-                  class="row q-gutter-sm items-center justify-center flex-grow"
+                  class="row q-gutter-xs items-center justify-center flex-grow"
                 >
                   <NumberInput
                     :model-value="character.hitPoints.current"
@@ -112,15 +184,17 @@
                     :max="character.hitPoints.max"
                     button-color="red"
                     text-color="#ef5350"
+                    vertical
                     @update:model-value="updateHP('current', $event)"
                   />
-                  <div class="text-h6 text-grey-6">/</div>
+                  <div class="text-body1 text-grey-6">/</div>
                   <NumberInput
                     :model-value="character.hitPoints.max"
                     :min="0"
                     :max="999"
                     button-color="red"
                     text-color="#ef5350"
+                    vertical
                     @update:model-value="updateHP('max', $event)"
                   />
                 </div>
@@ -130,14 +204,26 @@
 
           <!-- Ship Points -->
           <div class="col-auto">
-            <q-card bordered flat class="stat-card">
+            <q-card bordered flat class="stat-card stat-card-compact">
               <q-card-section class="q-pa-sm stat-card-content">
                 <div class="text-caption text-grey-5 q-mb-sm">
                   <q-icon name="rocket_launch" size="xs" class="q-mr-xs" />
                   Ship-Points
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="xs"
+                    icon="refresh"
+                    color="blue"
+                    @click="resetShipPoints"
+                    class="reset-btn-inline"
+                  >
+                    <q-tooltip>Ship-Points auffüllen</q-tooltip>
+                  </q-btn>
                 </div>
                 <div
-                  class="row q-gutter-sm items-center justify-center flex-grow"
+                  class="row q-gutter-xs items-center justify-center flex-grow"
                 >
                   <NumberInput
                     :model-value="character.shipPoints.current"
@@ -145,29 +231,50 @@
                     :max="character.shipPoints.max"
                     button-color="blue"
                     text-color="#42a5f5"
+                    vertical
                     @update:model-value="updateShipPoints('current', $event)"
                   />
-                  <div class="text-h6 text-grey-6">/</div>
+                  <div class="text-body1 text-grey-6">/</div>
                   <NumberInput
                     :model-value="character.shipPoints.max"
                     :min="0"
                     :max="999"
                     button-color="blue"
                     text-color="#42a5f5"
+                    vertical
                     @update:model-value="updateShipPoints('max', $event)"
                   />
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="refresh"
-                    color="blue"
-                    @click="resetShipPoints"
-                    class="reset-btn"
-                  >
-                    <q-tooltip>Ship-Points auffüllen</q-tooltip>
-                  </q-btn>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <!-- Exhaustion -->
+          <div class="col-auto">
+            <q-card bordered flat class="stat-card stat-card-compact" :class="{ 'unconscious-card': isUnconscious }">
+              <q-card-section class="q-pa-sm stat-card-content">
+                <div class="text-caption text-grey-5 q-mb-sm">
+                  <q-icon name="local_fire_department" size="xs" class="q-mr-xs" />
+                  Erschöpfung (Max: {{ toughnessBonus }})
+                </div>
+                <div class="column items-center justify-center flex-grow q-gutter-xs">
+                  <NumberInput
+                    :model-value="character.exhaustion"
+                    :min="0"
+                    :max="99"
+                    button-color="orange"
+                    text-color="#ff9800"
+                    vertical
+                    @update:model-value="updateExhaustion($event)"
+                  />
+                  <div v-if="character.exhaustion > 0">
+                    <q-badge color="red" class="text-caption">
+                      -10 Würfe
+                    </q-badge>
+                  </div>
+                  <div v-if="isUnconscious" class="text-caption text-red text-bold">
+                    BEWUSSTLOS!
+                  </div>
                 </div>
               </q-card-section>
             </q-card>
@@ -552,7 +659,19 @@ const strengthBonus = computed(() =>
 const toughnessBonus = computed(() =>
   Math.floor(character.value.attributes.WI / 10)
 );
+const willpowerBonus = computed(() =>
+  Math.floor(character.value.attributes.WK / 10)
+);
 const carryBonus = computed(() => strengthBonus.value + toughnessBonus.value);
+
+// Exhaustion system
+const isUnconscious = computed(() =>
+  character.value.exhaustion > toughnessBonus.value
+);
+
+const updateExhaustion = (value) => {
+  character.value.exhaustion = value;
+};
 
 // Carrying capacity (automatically calculated from table)
 const calculatedCarry = computed(() => {
@@ -627,6 +746,10 @@ const calculatedRank = computed(() => {
   flex-direction: column;
 }
 
+.stat-card-compact {
+  min-width: 120px;
+}
+
 .stat-card-content {
   display: flex;
   flex-direction: column;
@@ -663,6 +786,16 @@ const calculatedRank = computed(() => {
   transform: rotate(180deg) scale(1.1);
 }
 
+.reset-btn-inline {
+  transition: all 0.2s ease;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.reset-btn-inline:hover {
+  transform: rotate(180deg) scale(1.1);
+}
+
 /* Compact attribute view */
 .attribute-compact {
   min-width: 60px;
@@ -689,5 +822,49 @@ const calculatedRank = computed(() => {
 .dot-active {
   background: #ffd54f;
   box-shadow: 0 0 4px #ffd54f;
+}
+
+/* Compact stat display in collapsed view */
+.stat-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 213, 79, 0.2);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.stat-compact:hover {
+  border-color: rgba(255, 213, 79, 0.4);
+  box-shadow: 0 0 8px rgba(255, 213, 79, 0.2);
+}
+
+.stat-compact-danger {
+  border-color: rgba(244, 67, 54, 0.5) !important;
+  background: rgba(244, 67, 54, 0.1) !important;
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+.stat-label {
+  display: inline-block;
+  min-width: 36px;
+  text-align: right;
+}
+
+.unconscious-card {
+  border: 2px solid #f44336 !important;
+  background: rgba(244, 67, 54, 0.1) !important;
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(244, 67, 54, 0.8);
+  }
 }
 </style>

@@ -35,10 +35,15 @@
     <q-separator />
 
     <q-card-section>
-      <div v-if="character.weapons.length === 0" class="text-center text-grey-6 q-pa-lg">
+      <div
+        v-if="character.weapons.length === 0"
+        class="text-center text-grey-6 q-pa-lg"
+      >
         <q-icon name="swords" size="4rem" color="grey-6" />
         <div class="q-mt-md">Noch keine Waffen hinzugefügt</div>
-        <div class="text-caption">Klicke auf "Waffe hinzufügen" um zu beginnen</div>
+        <div class="text-caption">
+          Klicke auf "Waffe hinzufügen" um zu beginnen
+        </div>
       </div>
 
       <div v-else class="row q-col-gutter-md">
@@ -66,7 +71,7 @@
                 <div class="col">
                   <div class="text-subtitle1 text-bold">{{ weapon.name }}</div>
                   <div class="text-caption text-grey-6">
-                    {{ weapon.type || 'Waffe' }}
+                    {{ weapon.type || "Waffe" }}
                     <span v-if="weapon.subtype"> ({{ weapon.subtype }})</span>
                   </div>
                 </div>
@@ -97,49 +102,88 @@
               </div>
 
               <!-- Weapon Details - Reihenfolge wie Charakterbogen -->
-              <div class="text-body2" style="line-height: 1.8;">
+              <div class="text-body2" style="line-height: 1.8">
                 <span v-if="weapon.damage">
-                  <span class="text-grey-6">Schaden:</span> <span class="text-bold">{{ weapon.damage }}</span>
+                  <span class="text-grey-6">Schaden:</span>
+                  <span class="text-bold">{{ weapon.damage }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.damageType">
-                  <span class="text-grey-6">Art:</span> <span class="text-bold">{{ weapon.damageType }}</span>
+                  <span class="text-grey-6">Art:</span>
+                  <span class="text-bold">{{ weapon.damageType }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
-                <span v-if="weapon.penetration !== undefined && weapon.penetration !== null">
-                  <span class="text-grey-6">DS:</span> <span class="text-bold">{{ weapon.penetration }}</span>
+                <span
+                  v-if="
+                    weapon.penetration !== undefined &&
+                    weapon.penetration !== null
+                  "
+                >
+                  <span class="text-grey-6">DS:</span>
+                  <span class="text-bold">{{ weapon.penetration }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.range">
-                  <span class="text-grey-6">Reichweite:</span> <span class="text-bold">{{ weapon.range }}</span>
+                  <span class="text-grey-6">Reichweite:</span>
+                  <span class="text-bold">{{ weapon.range }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.rof">
-                  <span class="text-grey-6">SF:</span> <span class="text-bold">{{ weapon.rof }}</span>
+                  <span class="text-grey-6">SF:</span>
+                  <span class="text-bold">{{ weapon.rof }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
                 <span v-if="weapon.magazine">
-                  <span class="text-grey-6">Mag:</span> <span class="text-bold">{{ weapon.magazine }}</span>
+                  <span class="text-grey-6">Mag:</span>
+                  <span class="text-bold">{{ weapon.magazine }}</span>
                   <span class="q-mx-sm" v-if="weapon.reload">•</span>
                 </span>
                 <span v-if="weapon.reload">
-                  <span class="text-grey-6">Nachladen:</span> <span class="text-bold">{{ weapon.reload }}</span>
+                  <span class="text-grey-6">Nachladen:</span>
+                  <span class="text-bold">{{ weapon.reload }}</span>
                 </span>
               </div>
 
               <!-- Speziell / Eigenschaften (besonders wichtig!) -->
-              <div v-if="weapon.special" class="q-mt-sm q-pa-xs" style="background: rgba(255, 213, 79, 0.1); border-left: 3px solid #ffd54f; border-radius: 4px;">
-                <div class="text-body2 text-bold text-amber">Eigenschaften:</div>
+              <div
+                v-if="weapon.special"
+                class="q-mt-sm q-pa-xs"
+                style="
+                  background: rgba(255, 213, 79, 0.1);
+                  border-left: 3px solid #ffd54f;
+                  border-radius: 4px;
+                "
+              >
+                <div class="text-body2 text-bold text-amber">
+                  Eigenschaften:
+                </div>
                 <div class="text-body2">{{ weapon.special }}</div>
               </div>
 
               <!-- Quality Display -->
-              <div v-if="weapon.quality && weapon.quality !== 'Normal'" class="q-mt-sm">
+              <div
+                v-if="weapon.quality && weapon.quality !== 'Normal'"
+                class="q-mt-sm"
+              >
                 <div class="text-body2 text-grey-6">
-                  Qualität: <span class="text-bold" :class="getQualityColor(weapon.quality)">{{ weapon.quality }}</span>
+                  Qualität:
+                  <span
+                    class="text-bold"
+                    :class="getQualityColor(weapon.quality)"
+                    >{{ weapon.quality }}</span
+                  >
                 </div>
-                <div class="text-body2" :class="getQualityColor(weapon.quality)">
-                  {{ getWeaponQualityEffect(weapon.quality, weapon.type, weapon.subtype) }}
+                <div
+                  class="text-body2"
+                  :class="getQualityColor(weapon.quality)"
+                >
+                  {{
+                    getWeaponQualityEffect(
+                      weapon.quality,
+                      weapon.type,
+                      weapon.subtype
+                    )
+                  }}
                 </div>
               </div>
             </q-card-section>
@@ -176,77 +220,158 @@
     <q-separator />
 
     <q-card-section>
-      <div v-if="character.armor.length === 0" class="text-center text-grey-6 q-pa-lg">
+      <div
+        v-if="character.armor.length === 0"
+        class="text-center text-grey-6 q-pa-lg"
+      >
         <q-icon name="shield" size="4rem" color="grey-6" />
         <div class="q-mt-md">Keine Rüstung vorhanden</div>
-        <div class="text-caption">Klicke auf "Rüstung hinzufügen" um zu beginnen</div>
+        <div class="text-caption">
+          Klicke auf "Rüstung hinzufügen" um zu beginnen
+        </div>
       </div>
 
       <div v-else class="row q-col-gutter-md">
-        <div
-          v-for="(armor, index) in character.armor"
-          :key="index"
-          class="col-12 col-md-6"
-        >
-          <q-card bordered flat class="bg-grey-9">
-            <q-card-section class="q-pa-sm">
-              <div class="row items-center q-mb-xs">
-                <div class="col">
-                  <div class="text-subtitle1 text-bold">{{ armor.name }}</div>
-                  <div class="text-caption text-grey-6">
-                    <span v-if="armor.locations && armor.locations.length > 0">
-                      {{ getArmorLocationText(armor.locations) }}
-                    </span>
-                    <span v-else>Alle Körperteile</span>
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="edit"
-                    color="grey-6"
-                    @click="editArmor(index)"
-                  >
-                    <q-tooltip>Bearbeiten</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="delete"
-                    color="grey-6"
-                    @click="characterStore.removeArmor(index)"
-                  >
-                    <q-tooltip>Entfernen</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
+        <!-- Armor Visualization -->
+        <div class="col-12 col-md-2">
+          <ArmorVisualization :armor="character.armor" />
+        </div>
 
-              <!-- Armor Details -->
-              <div class="row q-col-gutter-xs text-body2">
-                <div class="col-6">
-                  <span class="text-grey-6">RP:</span>
-                  <span class="text-bold text-primary">{{ getEffectiveAP(armor) }}</span>
-                  <span v-if="armor.quality === 'Hervorragend' && armor.ap" class="text-caption text-grey-6"> (Basis: {{ armor.ap }})</span>
-                </div>
-                <div class="col-6" v-if="armor.weight">
-                  <span class="text-grey-6">Gewicht:</span>
-                  <span class="text-bold">{{ getEffectiveWeight(armor) }}kg</span>
-                  <span v-if="armor.quality === 'Hervorragend'" class="text-caption text-grey-6"> (Basis: {{ armor.weight }}kg)</span>
-                </div>
-                <div class="col-12 q-mt-xs" v-if="armor.quality && armor.quality !== 'Standard'">
-                  <div class="text-grey-6">Qualität: <span class="text-bold" :class="getQualityColor(armor.quality)">{{ armor.quality }}</span></div>
-                  <div class="text-body2" :class="getQualityColor(armor.quality)">
-                    {{ getQualityEffect(armor.quality) }}
+        <!-- Armor List -->
+        <div class="col-12 col-md-8">
+          <div class="row q-col-gutter-md">
+            <div
+              v-for="(armor, index) in character.armor"
+              :key="index"
+              class="col-12 col-md-6"
+            >
+              <q-card bordered flat class="bg-grey-9">
+                <q-card-section class="q-pa-sm">
+                  <div class="row items-center q-mb-xs">
+                    <div class="col">
+                      <div class="text-subtitle1 text-bold">
+                        {{ armor.name }}
+                      </div>
+                      <div class="text-caption text-grey-6">
+                        <span
+                          v-if="armor.locations && armor.locations.length > 0"
+                        >
+                          {{ getArmorLocationText(armor.locations) }}
+                        </span>
+                        <span v-else>Alle Körperteile</span>
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="edit"
+                        color="grey-6"
+                        @click="editArmor(index)"
+                      >
+                        <q-tooltip>Bearbeiten</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="delete"
+                        color="grey-6"
+                        @click="characterStore.removeArmor(index)"
+                      >
+                        <q-tooltip>Entfernen</q-tooltip>
+                      </q-btn>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
+
+                  <!-- Checkboxes -->
+                  <div class="row q-col-gutter-xs q-mb-xs">
+                    <div class="col-auto">
+                      <q-checkbox
+                        :model-value="armor.equipped"
+                        label="Angelegt"
+                        dense
+                        size="sm"
+                        @update:model-value="
+                          characterStore.updateArmor(index, {
+                            equipped: $event,
+                          })
+                        "
+                      />
+                    </div>
+                    <div class="col-auto">
+                      <q-checkbox
+                        :model-value="armor.additive"
+                        label="Additiv (z.B. Schild)"
+                        dense
+                        size="sm"
+                        @update:model-value="
+                          characterStore.updateArmor(index, {
+                            additive: $event,
+                          })
+                        "
+                      >
+                        <q-tooltip
+                          >Wird zu anderer Rüstung addiert statt Maximum zu
+                          nehmen</q-tooltip
+                        >
+                      </q-checkbox>
+                    </div>
+                  </div>
+
+                  <!-- Armor Details -->
+                  <div class="row q-col-gutter-xs text-body2">
+                    <div class="col-6">
+                      <span class="text-grey-6">RP:</span>
+                      <span class="text-bold text-primary">{{
+                        getEffectiveAP(armor)
+                      }}</span>
+                      <span
+                        v-if="armor.quality === 'Hervorragend' && armor.ap"
+                        class="text-caption text-grey-6"
+                      >
+                        (Basis: {{ armor.ap }})</span
+                      >
+                    </div>
+                    <div class="col-6" v-if="armor.weight">
+                      <span class="text-grey-6">Gewicht:</span>
+                      <span class="text-bold"
+                        >{{ getEffectiveWeight(armor) }}kg</span
+                      >
+                      <span
+                        v-if="armor.quality === 'Hervorragend'"
+                        class="text-caption text-grey-6"
+                      >
+                        (Basis: {{ armor.weight }}kg)</span
+                      >
+                    </div>
+                    <div
+                      class="col-12 q-mt-xs"
+                      v-if="armor.quality && armor.quality !== 'Standard'"
+                    >
+                      <div class="text-grey-6">
+                        Qualität:
+                        <span
+                          class="text-bold"
+                          :class="getQualityColor(armor.quality)"
+                          >{{ armor.quality }}</span
+                        >
+                      </div>
+                      <div
+                        class="text-body2"
+                        :class="getQualityColor(armor.quality)"
+                      >
+                        {{ getQualityEffect(armor.quality) }}
+                      </div>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </div>
       </div>
     </q-card-section>
@@ -284,7 +409,9 @@
           </q-item-section>
           <q-item-section>
             <q-item-label>{{ item.name }}</q-item-label>
-            <q-item-label caption v-if="item.description">{{ item.description }}</q-item-label>
+            <q-item-label caption v-if="item.description">{{
+              item.description
+            }}</q-item-label>
           </q-item-section>
           <q-item-section side>
             <div class="row q-gutter-xs">
@@ -339,19 +466,20 @@
     <q-dialog v-model="showAddWeaponDialog">
       <q-card style="min-width: 500px">
         <q-card-section>
-          <div class="text-h6">{{ editingWeaponIndex !== null ? 'Waffe bearbeiten' : 'Waffe hinzufügen' }}</div>
+          <div class="text-h6">
+            {{
+              editingWeaponIndex !== null
+                ? "Waffe bearbeiten"
+                : "Waffe hinzufügen"
+            }}
+          </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-section class="q-gutter-md">
           <!-- Name -->
-          <q-input
-            v-model="newWeapon.name"
-            label="Waffenname"
-            filled
-            dense
-          />
+          <q-input v-model="newWeapon.name" label="Waffenname" filled dense />
 
           <!-- Gattung -->
           <q-select
@@ -366,12 +494,24 @@
               <q-icon name="info" class="cursor-pointer" color="grey-6">
                 <q-tooltip max-width="300px">
                   <div class="text-bold">Waffengattungen:</div>
-                  <div class="q-mt-xs"><b>Nahkampfwaffen:</b> Schwerter, Äxte, Kraftwaffen</div>
-                  <div class="q-mt-xs"><b>Wurfwaffen:</b> Messer, Granaten, etc.</div>
-                  <div class="q-mt-xs"><b>Pistolen:</b> Ein-Hand-Fernkampfwaffen</div>
-                  <div class="q-mt-xs"><b>Leichte Waffen:</b> Gewehre, leichte Bolter</div>
-                  <div class="q-mt-xs"><b>Schwere Waffen:</b> Schwere Bolter, Plasma-Kanonen</div>
-                  <div class="q-mt-xs"><b>Exotisch:</b> Seltene/ungewöhnliche Waffen</div>
+                  <div class="q-mt-xs">
+                    <b>Nahkampfwaffen:</b> Schwerter, Äxte, Kraftwaffen
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Wurfwaffen:</b> Messer, Granaten, etc.
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Pistolen:</b> Ein-Hand-Fernkampfwaffen
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Leichte Waffen:</b> Gewehre, leichte Bolter
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Schwere Waffen:</b> Schwere Bolter, Plasma-Kanonen
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Exotisch:</b> Seltene/ungewöhnliche Waffen
+                  </div>
                 </q-tooltip>
               </q-icon>
             </template>
@@ -400,7 +540,12 @@
           <!-- Art (Schadensart) -->
           <q-select
             v-model="newWeapon.damageType"
-            :options="['E (Energie)', 'I (Einschlag)', 'R (Reißend)', 'X (Explosiv)']"
+            :options="[
+              'E (Energie)',
+              'I (Einschlag)',
+              'R (Reißend)',
+              'X (Explosiv)',
+            ]"
             label="Art (Schadensart)"
             filled
             dense
@@ -449,7 +594,14 @@
           <!-- Nachladen -->
           <q-select
             v-model="newWeapon.reload"
-            :options="['Halbe', 'Volle', '2 Volle', '3 Volle', '4 Volle', '5 Volle']"
+            :options="[
+              'Halbe',
+              'Volle',
+              '2 Volle',
+              '3 Volle',
+              '4 Volle',
+              '5 Volle',
+            ]"
             label="Nachladen"
             filled
             dense
@@ -479,10 +631,21 @@
               <q-icon name="info" class="cursor-pointer" color="grey-6">
                 <q-tooltip max-width="300px">
                   <div class="text-bold">Waffenqualität:</div>
-                  <div class="q-mt-xs"><b>Gering:</b> Fernkampf: Unzuverlässig. Nahkampf: -10 auf Angriffe/Paraden</div>
-                  <div class="q-mt-xs"><b>Normal:</b> Standard-Waffe ohne Modifikationen</div>
-                  <div class="q-mt-xs"><b>Gut:</b> Fernkampf: Zuverlässig. Nahkampf: +5 auf Angriffe</div>
-                  <div class="q-mt-xs"><b>Hervorragend:</b> Fernkampf: Keine Ladehemmung/Überhitzung. Nahkampf: +10 Angriffe, +1 Schaden</div>
+                  <div class="q-mt-xs">
+                    <b>Gering:</b> Fernkampf: Unzuverlässig. Nahkampf: -10 auf
+                    Angriffe/Paraden
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Normal:</b> Standard-Waffe ohne Modifikationen
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Gut:</b> Fernkampf: Zuverlässig. Nahkampf: +5 auf
+                    Angriffe
+                  </div>
+                  <div class="q-mt-xs">
+                    <b>Hervorragend:</b> Fernkampf: Keine
+                    Ladehemmung/Überhitzung. Nahkampf: +10 Angriffe, +1 Schaden
+                  </div>
                 </q-tooltip>
               </q-icon>
             </template>
@@ -523,23 +686,25 @@
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <div class="text-caption text-grey-6">Schaden</div>
-              <div class="text-body1">{{ currentWeapon?.damage || '-' }}</div>
+              <div class="text-body1">{{ currentWeapon?.damage || "-" }}</div>
             </div>
             <div class="col-6">
               <div class="text-caption text-grey-6">Penetration</div>
-              <div class="text-body1">{{ currentWeapon?.penetration || 0 }}</div>
+              <div class="text-body1">
+                {{ currentWeapon?.penetration || 0 }}
+              </div>
             </div>
             <div class="col-4">
               <div class="text-caption text-grey-6">Reichweite</div>
-              <div class="text-body1">{{ currentWeapon?.range || '-' }}</div>
+              <div class="text-body1">{{ currentWeapon?.range || "-" }}</div>
             </div>
             <div class="col-4">
               <div class="text-caption text-grey-6">RoF</div>
-              <div class="text-body1">{{ currentWeapon?.rof || '-' }}</div>
+              <div class="text-body1">{{ currentWeapon?.rof || "-" }}</div>
             </div>
             <div class="col-4">
               <div class="text-caption text-grey-6">Magazin</div>
-              <div class="text-body1">{{ currentWeapon?.magazine || '-' }}</div>
+              <div class="text-body1">{{ currentWeapon?.magazine || "-" }}</div>
             </div>
             <div class="col-12" v-if="currentWeapon?.reload">
               <div class="text-caption text-grey-6">Nachladen</div>
@@ -548,7 +713,9 @@
           </div>
           <div v-if="currentWeapon?.special" class="q-mt-md">
             <div class="text-caption text-grey-6">Besondere Eigenschaften</div>
-            <div class="text-body2" style="white-space: pre-wrap;">{{ currentWeapon.special }}</div>
+            <div class="text-body2" style="white-space: pre-wrap">
+              {{ currentWeapon.special }}
+            </div>
           </div>
         </q-card-section>
 
@@ -575,18 +742,19 @@
     <q-dialog v-model="showAddArmorDialog">
       <q-card style="min-width: 500px">
         <q-card-section>
-          <div class="text-h6">{{ editingArmorIndex !== null ? 'Rüstung bearbeiten' : 'Rüstung hinzufügen' }}</div>
+          <div class="text-h6">
+            {{
+              editingArmorIndex !== null
+                ? "Rüstung bearbeiten"
+                : "Rüstung hinzufügen"
+            }}
+          </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-section class="q-gutter-md">
-          <q-input
-            v-model="newArmor.name"
-            label="Rüstungsname"
-            filled
-            dense
-          />
+          <q-input v-model="newArmor.name" label="Rüstungsname" filled dense />
 
           <q-input
             v-model.number="newArmor.ap"
@@ -639,8 +807,10 @@
             v-model.number="newArmor.weight"
             label="Gewicht (kg)"
             type="number"
+            step="0.5"
             filled
             dense
+            hint="In 0.5 kg Schritten"
           />
 
           <q-select
@@ -651,12 +821,40 @@
             dense
           >
             <template v-slot:hint>
-              <div v-if="newArmor.quality === 'Gering'">-10 auf alle GE-Würfe</div>
-              <div v-else-if="newArmor.quality === 'Gut'">Gegen ersten Angriff pro Runde +1 RP</div>
-              <div v-else-if="newArmor.quality === 'Hervorragend'">Halbes Gewicht, +1 RP an allen Zonen</div>
+              <div v-if="newArmor.quality === 'Gering'">
+                -10 auf alle GE-Würfe
+              </div>
+              <div v-else-if="newArmor.quality === 'Gut'">
+                Gegen ersten Angriff pro Runde +1 RP
+              </div>
+              <div v-else-if="newArmor.quality === 'Hervorragend'">
+                Halbes Gewicht, +1 RP an allen Zonen
+              </div>
               <div v-else>Normale Rüstung ohne Modifikatoren</div>
             </template>
           </q-select>
+
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-checkbox v-model="newArmor.equipped" label="Angelegt" dense>
+                <q-tooltip
+                  >Wird getragen und in RP-Berechnung einbezogen</q-tooltip
+                >
+              </q-checkbox>
+            </div>
+            <div class="col-6">
+              <q-checkbox
+                v-model="newArmor.additive"
+                label="Additiv (z.B. Schild)"
+                dense
+              >
+                <q-tooltip
+                  >Wird zu anderer Rüstung addiert statt Maximum zu
+                  nehmen</q-tooltip
+                >
+              </q-checkbox>
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
@@ -683,7 +881,13 @@
     <q-dialog v-model="showAddGearDialog">
       <q-card style="min-width: 400px">
         <q-card-section>
-          <div class="text-h6">{{ editingGearIndex !== null ? 'Gegenstand bearbeiten' : 'Gegenstand hinzufügen' }}</div>
+          <div class="text-h6">
+            {{
+              editingGearIndex !== null
+                ? "Gegenstand bearbeiten"
+                : "Gegenstand hinzufügen"
+            }}
+          </div>
         </q-card-section>
 
         <q-separator />
@@ -737,307 +941,314 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useCharacterStore } from '../../stores/characterStore'
+import { ref, computed, watch, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useCharacterStore } from "../../stores/characterStore";
+import ArmorVisualization from "../ArmorVisualization.vue";
 
-const characterStore = useCharacterStore()
-const { character } = storeToRefs(characterStore)
+const characterStore = useCharacterStore();
+const { character } = storeToRefs(characterStore);
 
 // Weapon state
-const showAddWeaponDialog = ref(false)
-const showWeaponInfoDialog = ref(false)
-const editingWeaponIndex = ref(null)
-const currentWeapon = ref(null)
-const sortWeaponsAlpha = ref(false)
+const showAddWeaponDialog = ref(false);
+const showWeaponInfoDialog = ref(false);
+const editingWeaponIndex = ref(null);
+const currentWeapon = ref(null);
+const sortWeaponsAlpha = ref(false);
 
 const weaponTypeOptions = [
-  'Nahkampfwaffen',
-  'Wurfwaffen',
-  'Pistolen',
-  'Leichte Waffen',
-  'Schwere Waffen',
-  'Exotische Waffen'
-]
+  "Nahkampfwaffen",
+  "Wurfwaffen",
+  "Pistolen",
+  "Leichte Waffen",
+  "Schwere Waffen",
+  "Exotische Waffen",
+];
 
 const newWeapon = ref({
-  name: '',
-  type: '',
-  subtype: '',
-  damage: '',
-  damageType: '',
+  name: "",
+  type: "",
+  subtype: "",
+  damage: "",
+  damageType: "",
   penetration: 0,
-  range: '',
-  rof: '',
+  range: "",
+  rof: "",
   magazine: 0,
-  reload: '',
-  special: '',
-  quality: 'Normal'
-})
+  reload: "",
+  special: "",
+  quality: "Normal",
+});
 
 // Armor state
-const showAddArmorDialog = ref(false)
-const editingArmorIndex = ref(null)
+const showAddArmorDialog = ref(false);
+const editingArmorIndex = ref(null);
 
 const newArmor = ref({
-  name: '',
+  name: "",
   ap: 0,
   locations: [],
   weight: 0,
-  quality: 'Standard'
-})
+  quality: "Standard",
+  equipped: true,
+  additive: false,
+});
 
 // Gear state
-const showAddGearDialog = ref(false)
-const editingGearIndex = ref(null)
+const showAddGearDialog = ref(false);
+const editingGearIndex = ref(null);
 
 const newGear = ref({
-  name: '',
+  name: "",
   quantity: 1,
-  description: ''
-})
+  description: "",
+});
 
 // Load sort preference
 onMounted(() => {
-  const saved = localStorage.getItem('weapons-sort-alpha')
+  const saved = localStorage.getItem("weapons-sort-alpha");
   if (saved !== null) {
-    sortWeaponsAlpha.value = saved === 'true'
+    sortWeaponsAlpha.value = saved === "true";
   }
-})
+});
 
 // Save sort preference
 watch(sortWeaponsAlpha, (newValue) => {
-  localStorage.setItem('weapons-sort-alpha', newValue.toString())
-})
+  localStorage.setItem("weapons-sort-alpha", newValue.toString());
+});
 
 // Sorted weapons
 const sortedWeapons = computed(() => {
   const weaponsWithIndex = character.value.weapons.map((weapon, index) => ({
     ...weapon,
-    originalIndex: index
-  }))
+    originalIndex: index,
+  }));
 
   if (sortWeaponsAlpha.value) {
-    return weaponsWithIndex.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    return weaponsWithIndex.sort((a, b) => a.name.localeCompare(b.name, "de"));
   }
 
-  return weaponsWithIndex
-})
+  return weaponsWithIndex;
+});
 
 // Weapon functions
 const showWeaponInfo = (weapon) => {
-  currentWeapon.value = weapon
-  showWeaponInfoDialog.value = true
-}
+  currentWeapon.value = weapon;
+  showWeaponInfoDialog.value = true;
+};
 
 const editFromWeaponInfo = () => {
-  showWeaponInfoDialog.value = false
-  editWeapon(currentWeapon.value.originalIndex)
-}
+  showWeaponInfoDialog.value = false;
+  editWeapon(currentWeapon.value.originalIndex);
+};
 
 const editWeapon = (index) => {
-  editingWeaponIndex.value = index
-  const weapon = character.value.weapons[index]
+  editingWeaponIndex.value = index;
+  const weapon = character.value.weapons[index];
   newWeapon.value = {
     ...weapon,
-    quality: weapon.quality || 'Normal', // Default for old weapons
-    subtype: weapon.subtype || '', // Default for old weapons
-    damageType: weapon.damageType || '' // Default for old weapons
-  }
-  showAddWeaponDialog.value = true
-}
+    quality: weapon.quality || "Normal", // Default for old weapons
+    subtype: weapon.subtype || "", // Default for old weapons
+    damageType: weapon.damageType || "", // Default for old weapons
+  };
+  showAddWeaponDialog.value = true;
+};
 
 const saveWeapon = () => {
-  if (!newWeapon.value.name) return
+  if (!newWeapon.value.name) return;
 
   if (editingWeaponIndex.value !== null) {
-    characterStore.updateWeapon(editingWeaponIndex.value, { ...newWeapon.value })
+    characterStore.updateWeapon(editingWeaponIndex.value, {
+      ...newWeapon.value,
+    });
   } else {
-    characterStore.addWeapon({ ...newWeapon.value })
+    characterStore.addWeapon({ ...newWeapon.value });
   }
 
-  cancelWeaponDialog()
-}
+  cancelWeaponDialog();
+};
 
 const removeWeapon = (index) => {
-  characterStore.removeWeapon(index)
-}
+  characterStore.removeWeapon(index);
+};
 
 const cancelWeaponDialog = () => {
-  showAddWeaponDialog.value = false
-  editingWeaponIndex.value = null
+  showAddWeaponDialog.value = false;
+  editingWeaponIndex.value = null;
   newWeapon.value = {
-    name: '',
-    type: '',
-    subtype: '',
-    damage: '',
-    damageType: '',
+    name: "",
+    type: "",
+    subtype: "",
+    damage: "",
+    damageType: "",
     penetration: 0,
-    range: '',
-    rof: '',
+    range: "",
+    rof: "",
     magazine: 0,
-    reload: '',
-    special: '',
-    quality: 'Normal'
-  }
-}
+    reload: "",
+    special: "",
+    quality: "Normal",
+  };
+};
 
 // Armor functions
 const getArmorLocationText = (locations) => {
-  if (!locations || locations.length === 0) return 'Alle Körperteile'
-  if (locations.length === 4) return 'Alle Körperteile'
-  return locations.join(', ')
-}
+  if (!locations || locations.length === 0) return "Alle Körperteile";
+  if (locations.length === 4) return "Alle Körperteile";
+  return locations.join(", ");
+};
 
 const getEffectiveAP = (armor) => {
-  const baseAP = armor.ap || 0
-  if (armor.quality === 'Hervorragend') {
-    return baseAP + 1
+  const baseAP = armor.ap || 0;
+  if (armor.quality === "Hervorragend") {
+    return baseAP + 1;
   }
-  return baseAP
-}
+  return baseAP;
+};
 
 const getEffectiveWeight = (armor) => {
-  const baseWeight = armor.weight || 0
-  if (armor.quality === 'Hervorragend') {
-    return baseWeight / 2
+  const baseWeight = armor.weight || 0;
+  if (armor.quality === "Hervorragend") {
+    return baseWeight / 2;
   }
-  return baseWeight
-}
+  return baseWeight;
+};
 
 const getQualityColor = (quality) => {
   switch (quality) {
-    case 'Gering':
-      return 'text-negative'
-    case 'Gut':
-      return 'text-positive'
-    case 'Hervorragend':
-      return 'text-positive'
+    case "Gering":
+      return "text-negative";
+    case "Gut":
+      return "text-positive";
+    case "Hervorragend":
+      return "text-positive";
     default:
-      return 'text-grey-6'
+      return "text-grey-6";
   }
-}
+};
 
 const getQualityEffect = (quality) => {
   switch (quality) {
-    case 'Gering':
-      return '-10 auf alle GE-Würfe'
-    case 'Gut':
-      return 'Gegen ersten Angriff pro Runde +1 RP'
-    case 'Hervorragend':
-      return 'Halbes Gewicht, +1 RP an allen Zonen'
+    case "Gering":
+      return "-10 auf alle GE-Würfe";
+    case "Gut":
+      return "Gegen ersten Angriff pro Runde +1 RP";
+    case "Hervorragend":
+      return "Halbes Gewicht, +1 RP an allen Zonen";
     default:
-      return ''
+      return "";
   }
-}
+};
 
 const getWeaponQualityEffect = (quality, weaponType, weaponSubtype) => {
   // Determine if weapon is ranged based on type
-  const isRanged = weaponType && (
-    weaponType === 'Pistolen' ||
-    weaponType === 'Leichte Waffen' ||
-    weaponType === 'Schwere Waffen' ||
-    weaponType === 'Wurfwaffen' ||
-    (weaponType === 'Exotische Waffen' && weaponSubtype === 'Fernkampf') ||
-    // Fallback for old weapons with text-based types
-    weaponType.toLowerCase().includes('fern') ||
-    weaponType.toLowerCase().includes('pistole') ||
-    weaponType.toLowerCase().includes('laser') ||
-    weaponType.toLowerCase().includes('bolter') ||
-    weaponType.toLowerCase().includes('plasma') ||
-    weaponType.toLowerCase().includes('gewehr') ||
-    weaponType.toLowerCase().includes('schuss')
-  )
+  const isRanged =
+    weaponType &&
+    (weaponType === "Pistolen" ||
+      weaponType === "Leichte Waffen" ||
+      weaponType === "Schwere Waffen" ||
+      weaponType === "Wurfwaffen" ||
+      (weaponType === "Exotische Waffen" && weaponSubtype === "Fernkampf") ||
+      // Fallback for old weapons with text-based types
+      weaponType.toLowerCase().includes("fern") ||
+      weaponType.toLowerCase().includes("pistole") ||
+      weaponType.toLowerCase().includes("laser") ||
+      weaponType.toLowerCase().includes("bolter") ||
+      weaponType.toLowerCase().includes("plasma") ||
+      weaponType.toLowerCase().includes("gewehr") ||
+      weaponType.toLowerCase().includes("schuss"));
 
   switch (quality) {
-    case 'Gering':
+    case "Gering":
       return isRanged
-        ? 'Eigenschaft Unzuverlässig (oder Ladehemmung bei jedem Fehlschuss)'
-        : '-10 auf Angriffswürfe und Paraden'
-    case 'Gut':
+        ? "Eigenschaft Unzuverlässig (oder Ladehemmung bei jedem Fehlschuss)"
+        : "-10 auf Angriffswürfe und Paraden";
+    case "Gut":
+      return isRanged ? "Eigenschaft Zuverlässig" : "+5 auf Angriffswürfe";
+    case "Hervorragend":
       return isRanged
-        ? 'Eigenschaft Zuverlässig'
-        : '+5 auf Angriffswürfe'
-    case 'Hervorragend':
-      return isRanged
-        ? 'Keine Ladehemmung oder Überhitzung (werden zu Fehlschuss)'
-        : '+10 auf Angriffswürfe, +1 Schaden'
+        ? "Keine Ladehemmung oder Überhitzung (werden zu Fehlschuss)"
+        : "+10 auf Angriffswürfe, +1 Schaden";
     default:
-      return ''
+      return "";
   }
-}
+};
 
 const editArmor = (index) => {
-  editingArmorIndex.value = index
-  const armor = character.value.armor[index]
+  editingArmorIndex.value = index;
+  const armor = character.value.armor[index];
   newArmor.value = {
     name: armor.name,
     ap: armor.ap || 0,
     locations: armor.locations ? [...armor.locations] : [],
     weight: armor.weight || 0,
-    quality: armor.quality || 'Standard'
-  }
-  showAddArmorDialog.value = true
-}
+    quality: armor.quality || "Standard",
+    equipped: armor.equipped !== undefined ? armor.equipped : true,
+    additive: armor.additive || false,
+  };
+  showAddArmorDialog.value = true;
+};
 
 const saveArmor = () => {
-  if (!newArmor.value.name) return
+  if (!newArmor.value.name) return;
 
   if (editingArmorIndex.value !== null) {
-    characterStore.updateArmor(editingArmorIndex.value, { ...newArmor.value })
+    characterStore.updateArmor(editingArmorIndex.value, { ...newArmor.value });
   } else {
-    characterStore.addArmor({ ...newArmor.value })
+    characterStore.addArmor({ ...newArmor.value });
   }
 
-  cancelArmorDialog()
-}
+  cancelArmorDialog();
+};
 
 const cancelArmorDialog = () => {
-  showAddArmorDialog.value = false
-  editingArmorIndex.value = null
+  showAddArmorDialog.value = false;
+  editingArmorIndex.value = null;
   newArmor.value = {
-    name: '',
+    name: "",
     ap: 0,
     locations: [],
     weight: 0,
-    quality: 'Standard'
-  }
-}
+    quality: "Standard",
+    equipped: true,
+    additive: false,
+  };
+};
 
 // Gear functions
 const editGear = (index) => {
-  editingGearIndex.value = index
-  newGear.value = { ...character.value.gear[index] }
-  showAddGearDialog.value = true
-}
+  editingGearIndex.value = index;
+  newGear.value = { ...character.value.gear[index] };
+  showAddGearDialog.value = true;
+};
 
 const saveGear = () => {
-  if (!newGear.value.name) return
+  if (!newGear.value.name) return;
 
   if (editingGearIndex.value !== null) {
-    characterStore.updateGear(editingGearIndex.value, { ...newGear.value })
+    characterStore.updateGear(editingGearIndex.value, { ...newGear.value });
   } else {
-    characterStore.addGear({ ...newGear.value })
+    characterStore.addGear({ ...newGear.value });
   }
 
-  cancelGearDialog()
-}
+  cancelGearDialog();
+};
 
 const changeGearQuantity = (index, delta) => {
-  const item = character.value.gear[index]
-  const newQuantity = (item.quantity || 1) + delta
+  const item = character.value.gear[index];
+  const newQuantity = (item.quantity || 1) + delta;
   if (newQuantity >= 1) {
-    characterStore.updateGear(index, { quantity: newQuantity })
+    characterStore.updateGear(index, { quantity: newQuantity });
   }
-}
+};
 
 const cancelGearDialog = () => {
-  showAddGearDialog.value = false
-  editingGearIndex.value = null
+  showAddGearDialog.value = false;
+  editingGearIndex.value = null;
   newGear.value = {
-    name: '',
+    name: "",
     quantity: 1,
-    description: ''
-  }
-}
+    description: "",
+  };
+};
 </script>

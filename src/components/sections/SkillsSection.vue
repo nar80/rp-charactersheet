@@ -473,8 +473,8 @@
             label="Attribut"
             filled
             dense
-            :disable="!!newSkill.selectedSkill"
-            hint="Wird automatisch gesetzt bei Auswahl einer vordefinierten Fertigkeit"
+            :disable="!!newSkill.selectedSkill && newSkill.selectedSkill?.name !== 'Beruf'"
+            :hint="newSkill.selectedSkill?.name === 'Beruf' ? 'Wähle das Attribut für diesen Beruf' : 'Wird automatisch gesetzt bei Auswahl einer vordefinierten Fertigkeit'"
           />
 
           <q-input
@@ -529,7 +529,17 @@
 
         <q-separator />
 
-        <q-card-section>
+        <q-card-section class="q-gutter-md">
+          <q-select
+            v-if="selectedSkill?.name === 'Beruf'"
+            v-model="editAttribute"
+            :options="attributeOptions"
+            label="Attribut"
+            filled
+            dense
+            hint="Wähle das passende Attribut für diesen Beruf"
+          />
+
           <q-input
             v-model="editDescription"
             label="Beschreibung"
@@ -575,6 +585,7 @@ const showSkillInfoDialog = ref(false)
 const selectedSkill = ref(null)
 const selectedSkillType = ref(null) // 'basic' or 'learned'
 const editDescription = ref('')
+const editAttribute = ref('')
 const filterText = ref('')
 const sortAlphabetically = ref(true)
 
@@ -776,14 +787,22 @@ const showInfoDialog = (skill, type) => {
     selectedSkillType.value = skill.id !== undefined ? 'learned' : 'basic'
   }
   editDescription.value = skill.description || ''
+  editAttribute.value = skill.attribute || ''
   showSkillInfoDialog.value = true
 }
 
 const saveDescription = () => {
+  const updates = { description: editDescription.value }
+
+  // For "Beruf" skills, also update the attribute
+  if (selectedSkill.value?.name === 'Beruf') {
+    updates.attribute = editAttribute.value
+  }
+
   if (selectedSkillType.value === 'basic') {
-    updateBasicSkill(selectedSkill.value.name, { description: editDescription.value })
+    updateBasicSkill(selectedSkill.value.name, updates)
   } else {
-    updateLearnedSkill(selectedSkill.value.id, { description: editDescription.value })
+    updateLearnedSkill(selectedSkill.value.id, updates)
   }
   showSkillInfoDialog.value = false
 }
@@ -792,6 +811,7 @@ const cancelInfoDialog = () => {
   showSkillInfoDialog.value = false
   selectedSkill.value = null
   editDescription.value = ''
+  editAttribute.value = ''
 }
 </script>
 

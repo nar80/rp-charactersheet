@@ -48,7 +48,7 @@
         >
           <q-card bordered flat class="bg-grey-9">
             <q-card-section class="q-pa-sm">
-              <div class="row items-center">
+              <div class="row items-start">
                 <div class="col-auto q-pr-xs">
                   <q-btn
                     flat
@@ -59,13 +59,17 @@
                     color="grey-6"
                     @click="showInfoDialog(talent)"
                   >
-                    <q-tooltip>Beschreibung anzeigen</q-tooltip>
+                    <q-tooltip>Details anzeigen</q-tooltip>
                   </q-btn>
                 </div>
                 <div class="col">
-                  <div class="text-subtitle1 text-bold">{{ talent.name }}</div>
-                  <div v-if="talent.tier" class="text-caption text-grey-6">
-                    {{ talent.tier }}
+                  <div class="text-subtitle1 text-bold">
+                    {{ talent.name }}
+                    <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
+                    <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
+                  </div>
+                  <div v-if="talent.benefit" class="text-body2 text-grey-4 q-mt-xs">
+                    {{ talent.benefit }}
                   </div>
                 </div>
                 <div class="col-auto">
@@ -109,12 +113,44 @@
         <q-separator />
 
         <q-card-section class="q-gutter-md">
-          <q-input
-            v-model="newTalent.name"
-            label="Talent-Name"
+          <q-select
+            v-model="newTalent.selectedTalent"
+            :options="availableTalents"
+            option-label="name"
+            label="Talent auswählen"
             filled
             dense
-            hint="z.B. 'Gerechter Zorn', 'Meisterschütze', 'Eiserner Wille'"
+            use-input
+            input-debounce="0"
+            @filter="filterTalents"
+            hint="Wähle ein Talent aus dem Grundregelwerk"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Keine Ergebnisse
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.name }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.benefit }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
+          <q-input
+            v-if="newTalent.selectedTalent?.requiresSpecialization"
+            v-model="newTalent.specialization"
+            label="Spezialisierung (erforderlich)"
+            filled
+            dense
+            hint="z.B. 'Orks', 'Plasma-Waffen', 'Handelsgüter'"
+            :rules="[val => !!val || 'Spezialisierung erforderlich']"
+            lazy-rules
           />
 
           <q-input
@@ -122,16 +158,35 @@
             label="Stufe/Rang (optional)"
             filled
             dense
-            hint="z.B. 'Rang 1', 'Meister', 'Stufe 3'"
+            hint="z.B. 'Rang 1', 'Rang 2' - für mehrfach wählbare Talente"
+          />
+
+          <q-input
+            v-model="newTalent.prerequisites"
+            label="Voraussetzungen"
+            filled
+            dense
+            readonly
+            hint="Automatisch aus Grundregelwerk"
+          />
+
+          <q-input
+            v-model="newTalent.benefit"
+            label="Vorzug"
+            type="textarea"
+            filled
+            rows="3"
+            readonly
+            hint="Automatisch aus Grundregelwerk"
           />
 
           <q-input
             v-model="newTalent.description"
-            label="Beschreibung"
+            label="Zusätzliche Notizen (optional)"
             type="textarea"
             filled
-            rows="5"
-            hint="Beschreibe die Wirkung und Regeln des Talents"
+            rows="3"
+            hint="Eigene Notizen, Hausregeln oder Details zur Anwendung"
           />
         </q-card-section>
 
@@ -149,7 +204,7 @@
             label="Speichern"
             color="primary"
             @click="saveTalent"
-            :disable="!newTalent.name"
+            :disable="!newTalent.name || (newTalent.selectedTalent?.requiresSpecialization && !newTalent.specialization)"
           />
         </q-card-actions>
       </q-card>
@@ -157,9 +212,12 @@
 
     <!-- Info Dialog -->
     <q-dialog v-model="showInfo">
-      <q-card style="min-width: 400px">
+      <q-card style="min-width: 500px">
         <q-card-section>
-          <div class="text-h6">{{ currentTalent?.name }}</div>
+          <div class="text-h6">
+            {{ currentTalent?.name }}
+            <span v-if="currentTalent?.specialization" class="text-weight-regular"> ({{ currentTalent.specialization }})</span>
+          </div>
           <div v-if="currentTalent?.tier" class="text-caption text-grey-6">
             {{ currentTalent.tier }}
           </div>
@@ -167,9 +225,24 @@
 
         <q-separator />
 
-        <q-card-section>
-          <div class="text-body2" style="white-space: pre-wrap;">
-            {{ currentTalent?.description || 'Keine Beschreibung vorhanden' }}
+        <q-card-section class="q-gutter-sm">
+          <div v-if="currentTalent?.prerequisites">
+            <div class="text-caption text-grey-6">Voraussetzungen:</div>
+            <div class="text-body2">{{ currentTalent.prerequisites }}</div>
+          </div>
+
+          <div v-if="currentTalent?.benefit">
+            <div class="text-caption text-grey-6">Vorzug:</div>
+            <div class="text-body2">{{ currentTalent.benefit }}</div>
+          </div>
+
+          <div v-if="currentTalent?.description">
+            <div class="text-caption text-grey-6">Zusätzliche Notizen:</div>
+            <div class="text-body2" style="white-space: pre-wrap;">{{ currentTalent.description }}</div>
+          </div>
+
+          <div v-if="!currentTalent?.prerequisites && !currentTalent?.benefit && !currentTalent?.description" class="text-grey-6">
+            Keine Details vorhanden
           </div>
         </q-card-section>
 
@@ -198,6 +271,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
+import { talents } from '../../data/talents'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
@@ -207,6 +281,23 @@ const editingIndex = ref(null)
 const alphabetSort = ref(false)
 const showInfo = ref(false)
 const currentTalent = ref(null)
+const searchFilteredTalents = ref(talents)
+
+// Available talents (filter out already added talents without specialization)
+const availableTalents = computed(() => {
+  return searchFilteredTalents.value.filter(talent => {
+    // If talent requires specialization, always show it (can be added multiple times)
+    if (talent.requiresSpecialization) {
+      return true
+    }
+
+    // For talents without specialization, only show if not already added
+    const alreadyAdded = character.value.talents.some(t =>
+      t.name === talent.name && editingIndex.value === null
+    )
+    return !alreadyAdded
+  })
+})
 
 // Load sort preference from localStorage
 onMounted(() => {
@@ -222,9 +313,26 @@ watch(alphabetSort, (newValue) => {
 })
 
 const newTalent = ref({
+  selectedTalent: null,
   name: '',
+  specialization: '',
   tier: '',
+  prerequisites: '',
+  benefit: '',
   description: ''
+})
+
+// Watch for talent selection to auto-fill fields
+watch(() => newTalent.value.selectedTalent, (talent) => {
+  if (talent) {
+    newTalent.value.name = talent.name
+    newTalent.value.prerequisites = talent.prerequisites
+    newTalent.value.benefit = talent.benefit
+    // Clear specialization when switching talents
+    if (editingIndex.value === null) {
+      newTalent.value.specialization = ''
+    }
+  }
 })
 
 // Sorted talents
@@ -241,6 +349,20 @@ const sortedTalents = computed(() => {
   return talentsWithIndex
 })
 
+const filterTalents = (val, update) => {
+  update(() => {
+    if (val === '') {
+      searchFilteredTalents.value = talents
+    } else {
+      const needle = val.toLowerCase()
+      searchFilteredTalents.value = talents.filter(t =>
+        t.name.toLowerCase().includes(needle) ||
+        t.benefit.toLowerCase().includes(needle)
+      )
+    }
+  })
+}
+
 const showInfoDialog = (talent) => {
   currentTalent.value = talent
   showInfo.value = true
@@ -254,12 +376,22 @@ const editFromInfo = () => {
 const saveTalent = () => {
   if (!newTalent.value.name) return
 
+  // Construct the talent object to save (without selectedTalent)
+  const talentToSave = {
+    name: newTalent.value.name,
+    specialization: newTalent.value.specialization || '',
+    tier: newTalent.value.tier || '',
+    prerequisites: newTalent.value.prerequisites || '',
+    benefit: newTalent.value.benefit || '',
+    description: newTalent.value.description || ''
+  }
+
   if (editingIndex.value !== null) {
     // Update existing talent
-    character.value.talents[editingIndex.value] = { ...newTalent.value }
+    character.value.talents[editingIndex.value] = talentToSave
   } else {
     // Add new talent
-    characterStore.addTalent({ ...newTalent.value })
+    characterStore.addTalent(talentToSave)
   }
 
   cancelTalentDialog()
@@ -267,7 +399,21 @@ const saveTalent = () => {
 
 const editTalent = (index) => {
   editingIndex.value = index
-  newTalent.value = { ...character.value.talents[index] }
+  const talent = character.value.talents[index]
+
+  // Try to find the talent in the talents list to populate selectedTalent
+  const foundTalent = talents.find(t => t.name === talent.name)
+
+  newTalent.value = {
+    selectedTalent: foundTalent || null,
+    name: talent.name || '',
+    specialization: talent.specialization || '',
+    tier: talent.tier || '',
+    prerequisites: talent.prerequisites || '',
+    benefit: talent.benefit || '',
+    description: talent.description || ''
+  }
+
   showAddTalentDialog.value = true
 }
 
@@ -279,8 +425,12 @@ const cancelTalentDialog = () => {
   showAddTalentDialog.value = false
   editingIndex.value = null
   newTalent.value = {
+    selectedTalent: null,
     name: '',
+    specialization: '',
     tier: '',
+    prerequisites: '',
+    benefit: '',
     description: ''
   }
 }

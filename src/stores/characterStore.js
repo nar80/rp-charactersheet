@@ -289,6 +289,9 @@ const createDefaultCharacter = () => ({
     max: 0
   },
 
+  // Exhaustion (Erschöpfung) - based on WK bonus
+  exhaustion: 0,
+
   // Insanity (Wahnsinn)
   insanity: {
     points: 0,
@@ -379,6 +382,11 @@ export const useCharacterStore = defineStore('character', () => {
           parsed.psiPowers = []
         } else if (!Array.isArray(parsed.psiPowers)) {
           parsed.psiPowers = []
+        }
+
+        // Ensure exhaustion exists (new field)
+        if (typeof parsed.exhaustion !== 'number') {
+          parsed.exhaustion = 0
         }
 
         character.value = { ...defaultChar, ...parsed }
@@ -544,6 +552,20 @@ export const useCharacterStore = defineStore('character', () => {
     character.value.psiPowers.splice(index, 1)
   }
 
+  const addAcquisition = (acquisition) => {
+    character.value.acquisitions.push(acquisition)
+  }
+
+  const updateAcquisition = (index, updates) => {
+    if (character.value.acquisitions[index]) {
+      Object.assign(character.value.acquisitions[index], updates)
+    }
+  }
+
+  const removeAcquisition = (index) => {
+    character.value.acquisitions.splice(index, 1)
+  }
+
   const loadCharacter = (data) => {
     character.value = { ...createDefaultCharacter(), ...data }
   }
@@ -598,6 +620,9 @@ export const useCharacterStore = defineStore('character', () => {
     addPsiPower,
     updatePsiPower,
     removePsiPower,
+    addAcquisition,
+    updateAcquisition,
+    removeAcquisition,
     loadCharacter,
     resetCharacter,
     getSkillValue
