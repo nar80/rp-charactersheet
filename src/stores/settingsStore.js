@@ -10,8 +10,20 @@ export const useSettingsStore = defineStore('settings', () => {
     showPsiPowers: true,
     showEquipment: true,
     showAcquisitions: true,
-    showNotes: true
+    showNotes: true,
+    aquilaOpacity: 3 // 0-10, where 0 = off
   })
+
+  // Default values for new settings
+  const defaults = {
+    showSkills: true,
+    showTalents: true,
+    showPsiPowers: true,
+    showEquipment: true,
+    showAcquisitions: true,
+    showNotes: true,
+    aquilaOpacity: 3
+  }
 
   // Load from localStorage on init
   const loadFromStorage = () => {
@@ -19,7 +31,8 @@ export const useSettingsStore = defineStore('settings', () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        settings.value = { ...settings.value, ...parsed }
+        // Merge with defaults to ensure new settings have default values
+        settings.value = { ...defaults, ...parsed }
       } catch (error) {
         console.error('Error loading settings:', error)
       }

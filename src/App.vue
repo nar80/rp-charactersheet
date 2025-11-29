@@ -74,14 +74,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from './stores/characterStore'
+import { useSettingsStore } from './stores/settingsStore'
 
 const $q = useQuasar()
 const characterStore = useCharacterStore()
+const settingsStore = useSettingsStore()
 const { character } = storeToRefs(characterStore)
+const { settings } = storeToRefs(settingsStore)
+
+// Update CSS variable for aquila opacity
+watchEffect(() => {
+  document.documentElement.style.setProperty(
+    '--aquila-opacity',
+    settings.value.aquilaOpacity / 100
+  )
+})
 
 const fileInput = ref(null)
 

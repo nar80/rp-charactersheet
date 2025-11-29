@@ -87,7 +87,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Parchment texture overlay */
-.q-card::before {
+/* .q-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -112,7 +112,7 @@ h1, h2, h3, h4, h5, h6,
   opacity: 0.6;
   pointer-events: none;
   border-radius: inherit;
-}
+} */
 
 /* Gothic borders for main cards */
 .q-card--bordered {
@@ -218,38 +218,22 @@ h1, h2, h3, h4, h5, h6,
   border-radius: inherit;
 }
 
-/* Aquila watermark background */
-body::before {
+/* Aquila watermark overlay - above all content */
+.q-page-container::after {
   content: '';
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 40vw;
-  height: 40vh;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 20 L30 40 L35 60 L50 70 L65 60 L70 40 Z M35 45 L20 50 L35 55 Z M65 45 L80 50 L65 55 Z' fill='%23d4af37' opacity='0.03'/%3E%3C/svg%3E");
+  width: 60vw;
+  height: 60vh;
+  background-image: url('/aquila.webp');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.05;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Film grain / noise overlay for aged look */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
-  opacity: 0.15;
+  opacity: var(--aquila-opacity, 0.03);
   pointer-events: none;
   z-index: 9999;
-  mix-blend-mode: overlay;
 }
 
 /* Gothic divider lines */

@@ -60,11 +60,37 @@
           </div>
         </q-card-section>
 
+        </q-card>
+
+      <q-card class="q-mt-md">
+        <q-card-section>
+          <div class="text-h6">Darstellung</div>
+          <div class="text-subtitle2 text-grey-7">
+            Visuelle Anpassungen
+          </div>
+        </q-card-section>
+
         <q-separator />
 
         <q-card-section>
-          <div class="text-subtitle2 text-grey-7 q-mb-md">
-            Weitere Optionen kommen in späteren Versionen
+          <div class="q-gutter-md">
+            <div>
+              <div class="text-subtitle2 q-mb-sm">
+                Aquila Wasserzeichen
+                <span class="text-grey-6">
+                  ({{ settings.aquilaOpacity === 0 ? 'Aus' : settings.aquilaOpacity + '%' }})
+                </span>
+              </div>
+              <q-slider
+                v-model="settings.aquilaOpacity"
+                :min="0"
+                :max="10"
+                :step="1"
+                color="primary"
+                label
+                :label-value="settings.aquilaOpacity === 0 ? 'Aus' : settings.aquilaOpacity + '%'"
+              />
+            </div>
           </div>
         </q-card-section>
       </q-card>
