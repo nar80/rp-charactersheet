@@ -1,16 +1,16 @@
 <template>
   <div class="armor-visualization">
     <svg
-      viewBox="0 0 120 240"
+      viewBox="-5 -15 290 145"
       class="armor-figure"
       preserveAspectRatio="xMidYMid meet"
     >
       <!-- Head -->
       <ellipse
-        cx="60"
-        cy="24"
-        rx="15"
-        ry="18"
+        cx="140"
+        cy="16"
+        rx="13"
+        ry="16"
         :fill="getZoneColor('Kopf')"
         :stroke="getZoneStroke('Kopf')"
         stroke-width="1.5"
@@ -21,11 +21,11 @@
 
       <!-- Body (Torso) -->
       <rect
-        x="39"
-        y="42"
-        width="42"
-        height="48"
-        rx="6"
+        x="121"
+        y="32"
+        width="38"
+        height="42"
+        rx="5"
         :fill="getZoneColor('Körper')"
         :stroke="getZoneStroke('Körper')"
         stroke-width="1.5"
@@ -34,121 +34,154 @@
         <title>Körper: {{ getZoneAP("Körper") }} RP</title>
       </rect>
 
-      <!-- Left Arm -->
+      <!-- Left Arm (viewer's right = character's left) -->
       <rect
-        x="21"
-        y="45"
-        width="15"
-        height="42"
+        x="161"
+        y="34"
+        width="14"
+        height="38"
         rx="7"
         :fill="getZoneColor('Arme')"
         :stroke="getZoneStroke('Arme')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Arme: {{ getZoneAP("Arme") }} RP</title>
+        <title>Linker Arm: {{ getZoneAP("Arme") }} RP</title>
       </rect>
 
-      <!-- Right Arm -->
+      <!-- Right Arm (viewer's left = character's right) -->
       <rect
-        x="84"
-        y="45"
-        width="15"
-        height="42"
+        x="105"
+        y="34"
+        width="14"
+        height="38"
         rx="7"
         :fill="getZoneColor('Arme')"
         :stroke="getZoneStroke('Arme')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Arme: {{ getZoneAP("Arme") }} RP</title>
+        <title>Rechter Arm: {{ getZoneAP("Arme") }} RP</title>
       </rect>
 
-      <!-- Left Leg -->
+      <!-- Left Leg (viewer's right = character's left) -->
       <rect
-        x="42"
-        y="93"
-        width="15"
-        height="54"
+        x="146"
+        y="76"
+        width="14"
+        height="48"
         rx="6"
         :fill="getZoneColor('Beine')"
         :stroke="getZoneStroke('Beine')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Beine: {{ getZoneAP("Beine") }} RP</title>
+        <title>Linkes Bein: {{ getZoneAP("Beine") }} RP</title>
       </rect>
 
-      <!-- Right Leg -->
+      <!-- Right Leg (viewer's left = character's right) -->
       <rect
-        x="63"
-        y="93"
-        width="15"
-        height="54"
+        x="120"
+        y="76"
+        width="14"
+        height="48"
         rx="6"
         :fill="getZoneColor('Beine')"
         :stroke="getZoneStroke('Beine')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Beine: {{ getZoneAP("Beine") }} RP</title>
+        <title>Rechtes Bein: {{ getZoneAP("Beine") }} RP</title>
       </rect>
 
-      <!-- Zone Labels with AP values -->
-      <text
-        x="60"
-        y="27"
-        text-anchor="middle"
-        class="zone-label"
-        :fill="getZoneLabelColor('Kopf')"
-      >
-        {{ getZoneAPDisplay("Kopf") }}
+      <!-- AP Labels on body parts -->
+      <!-- Kopf -->
+      <text x="140" y="18" text-anchor="middle" class="zone-label-sm" :fill="getZoneLabelColor('Kopf')">
+        {{ getZoneAPWithQuality("Kopf").total }}
       </text>
-      <text
-        x="60"
-        y="69"
-        text-anchor="middle"
-        class="zone-label"
-        :fill="getZoneLabelColor('Körper')"
-      >
-        {{ getZoneAPDisplay("Körper") }}
+      <text v-if="getZoneAPWithQuality('Kopf').hasGutBonus" x="140" y="27" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Kopf')">
+        ({{ getZoneAPWithQuality("Kopf").total + 1 }})
       </text>
-      <text
-        x="28"
-        y="69"
-        text-anchor="middle"
-        class="zone-label-sm"
-        :fill="getZoneLabelColor('Arme')"
-      >
-        {{ getZoneAPDisplay("Arme") }}
+
+      <!-- Körper -->
+      <text x="140" y="50" text-anchor="middle" class="zone-label" :fill="getZoneLabelColor('Körper')">
+        {{ getZoneAPWithQuality("Körper").total }}
       </text>
-      <text
-        x="92"
-        y="69"
-        text-anchor="middle"
-        class="zone-label-sm"
-        :fill="getZoneLabelColor('Arme')"
-      >
-        {{ getZoneAPDisplay("Arme") }}
+      <text v-if="getZoneAPWithQuality('Körper').hasGutBonus" x="140" y="62" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Körper')">
+        ({{ getZoneAPWithQuality("Körper").total + 1 }})
       </text>
-      <text
-        x="49"
-        y="123"
-        text-anchor="middle"
-        class="zone-label-sm"
-        :fill="getZoneLabelColor('Beine')"
-      >
-        {{ getZoneAPDisplay("Beine") }}
+
+      <!-- Rechter Arm (links im Bild) -->
+      <text x="112" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Arme')">
+        {{ getZoneAPWithQuality("Arme").total }}
       </text>
-      <text
-        x="70"
-        y="123"
-        text-anchor="middle"
-        class="zone-label-sm"
-        :fill="getZoneLabelColor('Beine')"
-      >
-        {{ getZoneAPDisplay("Beine") }}
+      <text v-if="getZoneAPWithQuality('Arme').hasGutBonus" x="112" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Arme')">
+        ({{ getZoneAPWithQuality("Arme").total + 1 }})
       </text>
+
+      <!-- Linker Arm (rechts im Bild) -->
+      <text x="168" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Arme')">
+        {{ getZoneAPWithQuality("Arme").total }}
+      </text>
+      <text v-if="getZoneAPWithQuality('Arme').hasGutBonus" x="168" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Arme')">
+        ({{ getZoneAPWithQuality("Arme").total + 1 }})
+      </text>
+
+      <!-- Rechtes Bein (links im Bild) -->
+      <text x="127" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Beine')">
+        {{ getZoneAPWithQuality("Beine").total }}
+      </text>
+      <text v-if="getZoneAPWithQuality('Beine').hasGutBonus" x="127" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Beine')">
+        ({{ getZoneAPWithQuality("Beine").total + 1 }})
+      </text>
+
+      <!-- Linkes Bein (rechts im Bild) -->
+      <text x="153" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Beine')">
+        {{ getZoneAPWithQuality("Beine").total }}
+      </text>
+      <text v-if="getZoneAPWithQuality('Beine').hasGutBonus" x="153" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Beine')">
+        ({{ getZoneAPWithQuality("Beine").total + 1 }})
+      </text>
+
+      <!-- Hit Zone Lines and Labels (dezent) -->
+      <!-- Kopf (1-10) - top -->
+      <line x1="140" y1="0" x2="140" y2="-8" stroke="#444" stroke-width="0.5" />
+      <line x1="140" y1="-8" x2="200" y2="-8" stroke="#444" stroke-width="0.5" />
+      <text x="205" y="-5" class="hitzone-label">Kopf</text>
+      <text x="205" y="4" class="hitzone-range">1-10</text>
+
+      <!-- Rechter Arm (11-20) - left side -->
+      <line x1="105" y1="53" x2="90" y2="53" stroke="#444" stroke-width="0.5" />
+      <line x1="90" y1="53" x2="90" y2="25" stroke="#444" stroke-width="0.5" />
+      <line x1="90" y1="25" x2="5" y2="25" stroke="#444" stroke-width="0.5" />
+      <text x="3" y="22" class="hitzone-label" text-anchor="start">Rechter Arm</text>
+      <text x="3" y="31" class="hitzone-range" text-anchor="start">11-20</text>
+
+      <!-- Linker Arm (21-30) - right side -->
+      <line x1="175" y1="53" x2="190" y2="53" stroke="#444" stroke-width="0.5" />
+      <line x1="190" y1="53" x2="190" y2="25" stroke="#444" stroke-width="0.5" />
+      <line x1="190" y1="25" x2="275" y2="25" stroke="#444" stroke-width="0.5" />
+      <text x="205" y="22" class="hitzone-label">Linker Arm</text>
+      <text x="205" y="31" class="hitzone-range">21-30</text>
+
+      <!-- Körper (31-70) - right side -->
+      <line x1="159" y1="53" x2="190" y2="53" stroke="#444" stroke-width="0.5" />
+      <line x1="190" y1="53" x2="275" y2="53" stroke="#444" stroke-width="0.5" />
+      <text x="205" y="50" class="hitzone-label">Körper</text>
+      <text x="205" y="59" class="hitzone-range">31-70</text>
+
+      <!-- Rechtes Bein (71-85) - left side -->
+      <line x1="120" y1="100" x2="90" y2="100" stroke="#444" stroke-width="0.5" />
+      <line x1="90" y1="100" x2="90" y2="75" stroke="#444" stroke-width="0.5" />
+      <line x1="90" y1="75" x2="5" y2="75" stroke="#444" stroke-width="0.5" />
+      <text x="3" y="72" class="hitzone-label" text-anchor="start">Rechtes Bein</text>
+      <text x="3" y="81" class="hitzone-range" text-anchor="start">71-85</text>
+
+      <!-- Linkes Bein (86-100) - right side -->
+      <line x1="160" y1="100" x2="190" y2="100" stroke="#444" stroke-width="0.5" />
+      <line x1="190" y1="100" x2="275" y2="100" stroke="#444" stroke-width="0.5" />
+      <text x="205" y="97" class="hitzone-label">Linkes Bein</text>
+      <text x="205" y="106" class="hitzone-range">86-100</text>
     </svg>
 
     <!-- Total Weight -->
@@ -219,15 +252,6 @@ const getZoneAP = (zone) => {
   return getZoneAPWithQuality(zone).total;
 };
 
-// Get display text for zone AP (shows bonus from "Gut" quality)
-const getZoneAPDisplay = (zone) => {
-  const zoneData = getZoneAPWithQuality(zone);
-  if (zoneData.hasGutBonus && zoneData.total > 0) {
-    return `${zoneData.total}(${zoneData.total + 1})`;
-  }
-  return zoneData.total.toString();
-};
-
 // Calculate total weight of equipped armor
 const totalWeight = computed(() => {
   let total = 0;
@@ -293,9 +317,9 @@ const getZoneLabelColor = (zone) => {
 }
 
 .armor-figure {
-  width: 160px;
-  height: 320px;
-  max-width: 100%;
+  width: 100%;
+  height: auto;
+  min-height: 150px;
 }
 
 .armor-zone {
@@ -320,6 +344,40 @@ const getZoneLabelColor = (zone) => {
   font-weight: bold;
   pointer-events: none;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.zone-label-xs {
+  font-size: 8px;
+  font-weight: bold;
+  pointer-events: none;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}
+
+.zone-label-bonus {
+  font-size: 9px;
+  font-weight: normal;
+  pointer-events: none;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  opacity: 0.8;
+}
+
+.zone-label-bonus-sm {
+  font-size: 7px;
+  font-weight: normal;
+  pointer-events: none;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  opacity: 0.8;
+}
+
+.hitzone-label {
+  font-size: 8px;
+  font-weight: normal;
+  fill: #666;
+}
+
+.hitzone-range {
+  font-size: 7px;
+  fill: #555;
 }
 
 .armor-total {

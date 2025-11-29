@@ -1,9 +1,9 @@
 <template>
   <div class="sticky-stats-wrapper">
     <q-card flat bordered class="q-mb-md">
-      <q-card-section class="q-pa-md">
+      <q-card-section :class="attributesExpanded ? 'q-pa-md' : 'q-py-xs q-px-md'">
         <!-- Attributes Header with Toggle -->
-        <div class="row items-center q-mb-sm">
+        <div class="row items-center" :class="attributesExpanded ? 'q-mb-sm' : 'q-mb-xs'">
           <div class="col">
             <div class="text-caption text-grey-5">Attribute</div>
           </div>
@@ -22,7 +22,7 @@
         </div>
 
         <!-- Collapsed View: Compact single row -->
-        <div v-if="!attributesExpanded" class="row items-center q-gutter-sm q-mb-md">
+        <div v-if="!attributesExpanded" class="row items-center q-gutter-xs">
           <!-- Left side: HP and Exhaustion -->
           <div class="row items-center q-gutter-sm">
             <div class="column q-gutter-xs">
@@ -86,31 +86,67 @@
             </div>
           </div>
 
-          <!-- Right side: Ship Points -->
-          <div class="stat-compact">
-            <q-icon name="rocket_launch" size="xs" color="blue" class="q-mr-xs" />
-            <span class="text-caption text-grey-6">{{ character.shipPoints.current }}/{{ character.shipPoints.max }}</span>
-            <NumberInput
-              :model-value="character.shipPoints.current"
-              :min="0"
-              :max="character.shipPoints.max"
-              button-color="blue"
-              text-color="#42a5f5"
-              @update:model-value="updateShipPoints('current', $event)"
-            />
-            <q-btn
-              flat
-              dense
-              round
-              size="xs"
-              icon="refresh"
-              color="blue"
-              @click="resetShipPoints"
-              class="q-ml-xs"
-              style="width: 20px; height: 20px;"
-            >
-              <q-tooltip>Ship-Points auffüllen</q-tooltip>
-            </q-btn>
+          <!-- Right side: Ship Points & Initiative -->
+          <div class="column q-gutter-xs">
+            <!-- Ship Points -->
+            <div class="stat-compact">
+              <q-icon name="rocket_launch" size="xs" color="blue" class="q-mr-xs" />
+              <span class="text-caption text-grey-6 stat-label">{{ character.shipPoints.current }}/{{ character.shipPoints.max }}</span>
+              <NumberInput
+                :model-value="character.shipPoints.current"
+                :min="0"
+                :max="character.shipPoints.max"
+                button-color="blue"
+                text-color="#42a5f5"
+                @update:model-value="updateShipPoints('current', $event)"
+              />
+              <q-btn
+                flat
+                dense
+                round
+                size="xs"
+                icon="refresh"
+                color="blue"
+                @click="resetShipPoints"
+                class="q-ml-xs"
+                style="width: 20px; height: 20px;"
+              >
+                <q-tooltip>Ship-Points auffüllen</q-tooltip>
+              </q-btn>
+            </div>
+            <!-- Initiative -->
+            <div class="stat-compact">
+              <q-icon name="bolt" size="xs" color="amber" class="q-mr-xs" />
+              <span class="text-caption text-grey-6">Mod:</span>
+              <q-input
+                :model-value="character.initiativeModifier ?? 0"
+                @update:model-value="character.initiativeModifier = parseInt($event) || 0"
+                type="number"
+                dense
+                borderless
+                class="initiative-mod-input"
+                input-class="text-center"
+              >
+                <q-tooltip>Modifikator (Talente etc.)</q-tooltip>
+              </q-input>
+              <span class="text-grey-6 q-mx-xs">|</span>
+              <span class="text-caption text-grey-6">INI:</span>
+              <span class="text-bold text-amber q-ml-xs" style="min-width: 24px;">
+                {{ lastInitiativeRoll !== null ? lastInitiativeRoll : '-' }}
+              </span>
+              <q-btn
+                flat
+                dense
+                round
+                size="sm"
+                icon="casino"
+                color="amber"
+                @click="rollInitiative"
+                class="q-ml-xs"
+              >
+                <q-tooltip>Initiative würfeln (1W10 + {{ agilityBonus }} GEb + {{ character.initiativeModifier || 0 }} Mod)</q-tooltip>
+              </q-btn>
+            </div>
           </div>
         </div>
 
@@ -525,6 +561,9 @@ const { character } = storeToRefs(characterStore);
 // Attributes expand/collapse state
 const attributesExpanded = ref(false);
 
+// Initiative roll
+const lastInitiativeRoll = ref(null);
+
 // Load state from localStorage
 onMounted(() => {
   const saved = localStorage.getItem('attributes-expanded');
@@ -609,6 +648,13 @@ const updateCarrying = (field, value) => {
 
 const resetShipPoints = () => {
   character.value.shipPoints.current = character.value.shipPoints.max;
+};
+
+// Initiative roll function
+const rollInitiative = () => {
+  const d10 = Math.floor(Math.random() * 10) + 1;
+  const modifier = character.value.initiativeModifier || 0;
+  lastInitiativeRoll.value = d10 + agilityBonus.value + modifier;
 };
 
 // Number formatting functions
@@ -702,8 +748,9 @@ const calculatedRank = computed(() => {
   if (spent >= 21000 && spent <= 24999) return 6;
   if (spent >= 25000 && spent <= 29999) return 7;
   if (spent >= 30000 && spent <= 34999) return 8;
+  if (spent >= 35000 && spent <= 44999) return 9;
 
-  return 8; // Max rank
+  return 10; // Max rank
 });
 </script>
 
@@ -851,6 +898,17 @@ const calculatedRank = computed(() => {
   display: inline-block;
   min-width: 36px;
   text-align: right;
+}
+
+.initiative-mod-input {
+  width: 45px;
+}
+
+.initiative-mod-input :deep(input) {
+  text-align: center;
+  font-weight: bold;
+  color: #ffd54f;
+  padding: 0 4px;
 }
 
 .unconscious-card {

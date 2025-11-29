@@ -292,6 +292,9 @@ const createDefaultCharacter = () => ({
   // Exhaustion (Erschöpfung) - based on WK bonus
   exhaustion: 0,
 
+  // Initiative modifier (for bonuses from talents, etc.)
+  initiativeModifier: 0,
+
   // Insanity (Wahnsinn)
   insanity: {
     points: 0,
@@ -387,6 +390,11 @@ export const useCharacterStore = defineStore('character', () => {
         // Ensure exhaustion exists (new field)
         if (typeof parsed.exhaustion !== 'number') {
           parsed.exhaustion = 0
+        }
+
+        // Ensure initiativeModifier exists (new field)
+        if (typeof parsed.initiativeModifier !== 'number') {
+          parsed.initiativeModifier = 0
         }
 
         character.value = { ...defaultChar, ...parsed }

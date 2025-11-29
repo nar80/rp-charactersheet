@@ -17,11 +17,15 @@ export const advancedSkills = [
     description: 'Wissen über verschiedene Themengebiete. Erfordert Spezialisierung (z.B. Geschichte, Geographie).'
   },
   {
-    name: 'Anführung',
-    attribute: 'CH',
+    name: 'Anrufung',
+    attribute: 'WK',
     category: null,
     requiresSpecialization: false,
-    description: 'Große Gruppen führen und inspirieren.'
+    description: `Ein Anrufungs-Wurf stellt eine volle Aktion dar. Dabei befreit der Entdecker seinen Verstand von allen äußeren Ablenkungen und konzentriert sich so stark wie möglich. Er erreicht dies beispielsweise durch die Rezitation von Mantras, durch den Einsatz eines Psi-Fokus oder durch Meditation.
+
+Ein erfolgreicher Wurf bedeutet, der Entdecker ist durch seinen klaren und unbeeinflussten Geist dazu in der Lage, den Warp stärker zu kanalisieren, kann sich aber dennoch vor seinem Einfluss so gut wie möglich schützen. In der nächsten Runde kann der Entdecker 1 zu seinem endgültigen Psi-Wert addieren, wenn er einen gezügelten Kraft-Wurf macht.
+
+Bei einem Fehlschlag haben die Versuche des Entdeckers, sich zu konzentrieren und seinen Geist zu leeren, genau das Gegenteil erreicht, und er erleidet -1 auf seinen endgültigen Psi-Wert, wenn er einen gezügelten Kraft-Wurf macht. Wenn sein Psi-Wert dadurch auf 0 fällt, scheitert der Einsatz der Kraft automatisch.`
   },
   {
     name: 'Beruf',

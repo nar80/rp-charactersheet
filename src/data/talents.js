@@ -63,7 +63,7 @@ export const talents = [
     name: 'Berühmter Kaperbrief',
     requiresSpecialization: false,
     prerequisites: '--',
-    benefit: 'Bonus auf Interaktionswürfe'
+    benefit: '+10 Bonus auf Interaktionswürfe'
   },
   {
     name: 'Binharvasenbeton',

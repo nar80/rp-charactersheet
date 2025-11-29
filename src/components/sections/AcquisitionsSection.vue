@@ -31,112 +31,229 @@
         <div class="text-caption">Klicke auf "Neue Beschaffung" um zu beginnen</div>
       </div>
 
-      <q-timeline v-else color="primary">
-        <q-timeline-entry
-          v-for="acq in sortedAcquisitions"
-          :key="acq.originalIndex"
-          :title="acq.item"
-          :subtitle="formatDate(acq.date)"
-          icon="inventory_2"
+      <template v-else>
+        <!-- Offene Beschaffungen -->
+        <div v-if="openAcquisitions.length > 0" class="q-mb-lg">
+          <div class="text-subtitle1 text-bold q-mb-sm">
+            <q-icon name="pending" color="warning" class="q-mr-xs" />
+            Offene Beschaffungen ({{ openAcquisitions.length }})
+          </div>
+          <q-timeline color="warning">
+            <q-timeline-entry
+              v-for="acq in openAcquisitions"
+              :key="acq.originalIndex"
+              :title="acq.item"
+              :subtitle="formatDate(acq.date)"
+              icon="inventory_2"
+            >
+              <template #default>
+                <div class="q-mb-sm">
+                  <div class="text-body2">
+                    <span class="text-grey-6">Gegenstand:</span> <span class="text-bold">{{ acq.item }}</span>
+                  </div>
+                  <div class="text-body2" v-if="acq.quantity">
+                    <span class="text-grey-6">Menge:</span> <span class="text-bold">{{ acq.quantity }}</span>
+                  </div>
+                </div>
+
+                <!-- Calculated Min Roll -->
+                <div class="q-mb-sm q-pa-sm rounded-borders" style="background-color: black; border: 2px solid #d4af37;">
+                  <div class="text-body2 text-bold" style="color: #d4af37;">
+                    Mindestwurf: {{ acq.calculatedMinRoll }}
+                  </div>
+                  <div class="text-caption text-grey-4">
+                    Profit Factor ({{ character.profitFactor.current }})
+                    <span v-if="acq.availabilityMod !== 0"> {{ acq.availabilityMod > 0 ? '+' : '' }}{{ acq.availabilityMod }} ({{ acq.availability }})</span>
+                    <span v-if="acq.amountMod !== 0"> {{ acq.amountMod > 0 ? '+' : '' }}{{ acq.amountMod }} ({{ acq.amount }})</span>
+                    <span v-if="acq.qualityMod !== 0"> {{ acq.qualityMod > 0 ? '+' : '' }}{{ acq.qualityMod }} ({{ acq.quality }})</span>
+                    <span v-if="acq.additionalMod !== 0"> {{ acq.additionalMod > 0 ? '+' : '' }}{{ acq.additionalMod }} (Zusätzlich)</span>
+                  </div>
+                </div>
+
+                <!-- Attempts -->
+                <div class="q-mb-sm">
+                  <div class="text-caption text-grey-6 q-mb-xs">
+                    Versuche: {{ getAttemptCount(acq) }} von 5
+                  </div>
+
+                  <!-- Attempt History -->
+                  <div v-if="getAttemptCount(acq) > 0" class="q-mb-sm">
+                    <q-list dense bordered class="rounded-borders">
+                      <q-item
+                        v-for="(attempt, attemptIdx) in getAttempts(acq)"
+                        :key="attemptIdx"
+                        class="q-pa-sm"
+                      >
+                        <q-item-section>
+                          <q-item-label>
+                            <span class="text-bold">Versuch {{ attemptIdx + 1 }}:</span>
+                            <span :class="attempt.success ? 'text-positive' : 'text-negative'">
+                              {{ attempt.rollResult }} {{ attempt.success ? '✓' : '✗' }}
+                            </span>
+                            <span class="text-grey-6 q-ml-sm">(Mindestwurf: {{ attempt.calculatedMinRoll }})</span>
+                          </q-item-label>
+                          <q-item-label caption v-if="attempt.date">
+                            {{ formatDateTime(attempt.date) }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </div>
+
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    icon="refresh"
+                    color="primary"
+                    label="Wurf wiederholen"
+                    @click="repeatRoll(acq.originalIndex)"
+                    :disable="getAttemptCount(acq) >= 5"
+                  >
+                    <q-tooltip v-if="getAttemptCount(acq) >= 5">Maximale Anzahl an Versuchen erreicht</q-tooltip>
+                  </q-btn>
+                </div>
+
+                <!-- Notes -->
+                <div v-if="acq.notes" class="text-body2 q-mt-sm">
+                  <div class="text-grey-6">Notizen:</div>
+                  <div class="q-pl-sm" style="white-space: pre-wrap;">{{ acq.notes }}</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="q-mt-sm">
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    icon="edit"
+                    color="grey-6"
+                    @click="editAcquisition(acq.originalIndex)"
+                  >
+                    <q-tooltip>Bearbeiten</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    icon="delete"
+                    color="grey-6"
+                    @click="removeAcquisition(acq.originalIndex)"
+                  >
+                    <q-tooltip>Löschen</q-tooltip>
+                  </q-btn>
+                </div>
+              </template>
+            </q-timeline-entry>
+          </q-timeline>
+        </div>
+
+        <!-- Abgeschlossene Beschaffungen (einklappbar) -->
+        <q-expansion-item
+          v-if="completedAcquisitions.length > 0"
+          v-model="showCompleted"
+          icon="check_circle"
+          header-class="text-positive"
+          :label="`Abgeschlossene Beschaffungen (${completedAcquisitions.length})`"
         >
-          <div class="q-mb-sm">
-            <div class="text-body2">
-              <span class="text-grey-6">Gegenstand:</span> <span class="text-bold">{{ acq.item }}</span>
-            </div>
-            <div class="text-body2" v-if="acq.quantity">
-              <span class="text-grey-6">Menge:</span> <span class="text-bold">{{ acq.quantity }}</span>
-            </div>
-          </div>
-
-          <!-- Calculated Min Roll -->
-          <div class="q-mb-sm q-pa-sm rounded-borders" style="background-color: black; border: 2px solid #d4af37;">
-            <div class="text-body2 text-bold" style="color: #d4af37;">
-              Mindestwurf: {{ acq.calculatedMinRoll }}
-            </div>
-            <div class="text-caption text-grey-4">
-              Profit Factor ({{ character.profitFactor.current }})
-              <span v-if="acq.availabilityMod !== 0"> {{ acq.availabilityMod > 0 ? '+' : '' }}{{ acq.availabilityMod }} ({{ acq.availability }})</span>
-              <span v-if="acq.amountMod !== 0"> {{ acq.amountMod > 0 ? '+' : '' }}{{ acq.amountMod }} ({{ acq.amount }})</span>
-              <span v-if="acq.qualityMod !== 0"> {{ acq.qualityMod > 0 ? '+' : '' }}{{ acq.qualityMod }} ({{ acq.quality }})</span>
-              <span v-if="acq.additionalMod !== 0"> {{ acq.additionalMod > 0 ? '+' : '' }}{{ acq.additionalMod }} (Zusätzlich)</span>
-            </div>
-          </div>
-
-          <!-- Attempts -->
-          <div class="q-mb-sm">
-            <div class="text-caption text-grey-6 q-mb-xs">
-              Versuche: {{ getAttemptCount(acq) }} von 5
-            </div>
-
-            <!-- Attempt History -->
-            <div v-if="getAttemptCount(acq) > 0" class="q-mb-sm">
-              <q-list dense bordered class="rounded-borders">
-                <q-item
-                  v-for="(attempt, attemptIdx) in getAttempts(acq)"
-                  :key="attemptIdx"
-                  class="q-pa-sm"
-                >
-                  <q-item-section>
-                    <q-item-label>
-                      <span class="text-bold">Versuch {{ attemptIdx + 1 }}:</span>
-                      <span :class="attempt.success ? 'text-positive' : 'text-negative'">
-                        {{ attempt.rollResult }} {{ attempt.success ? '✓' : '✗' }}
-                      </span>
-                      <span class="text-grey-6 q-ml-sm">(Mindestwurf: {{ attempt.calculatedMinRoll }})</span>
-                    </q-item-label>
-                    <q-item-label caption v-if="attempt.date">
-                      {{ formatDateTime(attempt.date) }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </div>
-
-            <q-btn
-              flat
-              dense
-              size="sm"
-              icon="refresh"
-              color="primary"
-              label="Wurf wiederholen"
-              @click="repeatRoll(acq.originalIndex)"
-              :disable="getAttemptCount(acq) >= 5"
+          <q-timeline color="positive" class="q-mt-sm">
+            <q-timeline-entry
+              v-for="acq in completedAcquisitions"
+              :key="acq.originalIndex"
+              :title="acq.item"
+              :subtitle="formatDate(acq.date)"
+              icon="check_circle"
+              color="positive"
             >
-              <q-tooltip v-if="getAttemptCount(acq) >= 5">Maximale Anzahl an Versuchen erreicht</q-tooltip>
-            </q-btn>
-          </div>
+              <template #default>
+                <div class="q-mb-sm">
+                  <div class="text-body2">
+                    <span class="text-grey-6">Gegenstand:</span> <span class="text-bold">{{ acq.item }}</span>
+                  </div>
+                  <div class="text-body2" v-if="acq.quantity">
+                    <span class="text-grey-6">Menge:</span> <span class="text-bold">{{ acq.quantity }}</span>
+                  </div>
+                </div>
 
-          <!-- Notes -->
-          <div v-if="acq.notes" class="text-body2 q-mt-sm">
-            <div class="text-grey-6">Notizen:</div>
-            <div class="q-pl-sm" style="white-space: pre-wrap;">{{ acq.notes }}</div>
-          </div>
+                <!-- Calculated Min Roll -->
+                <div class="q-mb-sm q-pa-sm rounded-borders" style="background-color: black; border: 2px solid #4caf50;">
+                  <div class="text-body2 text-bold text-positive">
+                    Mindestwurf: {{ acq.calculatedMinRoll }} - Erfolgreich!
+                  </div>
+                  <div class="text-caption text-grey-4">
+                    Profit Factor ({{ character.profitFactor.current }})
+                    <span v-if="acq.availabilityMod !== 0"> {{ acq.availabilityMod > 0 ? '+' : '' }}{{ acq.availabilityMod }} ({{ acq.availability }})</span>
+                    <span v-if="acq.amountMod !== 0"> {{ acq.amountMod > 0 ? '+' : '' }}{{ acq.amountMod }} ({{ acq.amount }})</span>
+                    <span v-if="acq.qualityMod !== 0"> {{ acq.qualityMod > 0 ? '+' : '' }}{{ acq.qualityMod }} ({{ acq.quality }})</span>
+                    <span v-if="acq.additionalMod !== 0"> {{ acq.additionalMod > 0 ? '+' : '' }}{{ acq.additionalMod }} (Zusätzlich)</span>
+                  </div>
+                </div>
 
-          <!-- Actions -->
-          <div class="q-mt-sm">
-            <q-btn
-              flat
-              dense
-              size="sm"
-              icon="edit"
-              color="grey-6"
-              @click="editAcquisition(acq.originalIndex)"
-            >
-              <q-tooltip>Bearbeiten</q-tooltip>
-            </q-btn>
-            <q-btn
-              flat
-              dense
-              size="sm"
-              icon="delete"
-              color="grey-6"
-              @click="removeAcquisition(acq.originalIndex)"
-            >
-              <q-tooltip>Löschen</q-tooltip>
-            </q-btn>
-          </div>
-        </q-timeline-entry>
-      </q-timeline>
+                <!-- Attempts -->
+                <div class="q-mb-sm">
+                  <div class="text-caption text-grey-6 q-mb-xs">
+                    Versuche: {{ getAttemptCount(acq) }} von 5
+                  </div>
+
+                  <!-- Attempt History -->
+                  <div v-if="getAttemptCount(acq) > 0" class="q-mb-sm">
+                    <q-list dense bordered class="rounded-borders">
+                      <q-item
+                        v-for="(attempt, attemptIdx) in getAttempts(acq)"
+                        :key="attemptIdx"
+                        class="q-pa-sm"
+                      >
+                        <q-item-section>
+                          <q-item-label>
+                            <span class="text-bold">Versuch {{ attemptIdx + 1 }}:</span>
+                            <span :class="attempt.success ? 'text-positive' : 'text-negative'">
+                              {{ attempt.rollResult }} {{ attempt.success ? '✓' : '✗' }}
+                            </span>
+                            <span class="text-grey-6 q-ml-sm">(Mindestwurf: {{ attempt.calculatedMinRoll }})</span>
+                          </q-item-label>
+                          <q-item-label caption v-if="attempt.date">
+                            {{ formatDateTime(attempt.date) }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </div>
+                </div>
+
+                <!-- Notes -->
+                <div v-if="acq.notes" class="text-body2 q-mt-sm">
+                  <div class="text-grey-6">Notizen:</div>
+                  <div class="q-pl-sm" style="white-space: pre-wrap;">{{ acq.notes }}</div>
+                </div>
+
+                <!-- Actions -->
+                <div class="q-mt-sm">
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    icon="edit"
+                    color="grey-6"
+                    @click="editAcquisition(acq.originalIndex)"
+                  >
+                    <q-tooltip>Bearbeiten</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    dense
+                    size="sm"
+                    icon="delete"
+                    color="grey-6"
+                    @click="removeAcquisition(acq.originalIndex)"
+                  >
+                    <q-tooltip>Löschen</q-tooltip>
+                  </q-btn>
+                </div>
+              </template>
+            </q-timeline-entry>
+          </q-timeline>
+        </q-expansion-item>
+      </template>
     </q-card-section>
 
     <!-- Add/Edit Dialog -->
@@ -368,6 +485,7 @@ const { character } = storeToRefs(characterStore)
 
 const showAddDialog = ref(false)
 const showRepeatDialog = ref(false)
+const showCompleted = ref(false)
 const editingIndex = ref(null)
 const repeatIndex = ref(null)
 const rollResult = ref(null)
@@ -389,13 +507,13 @@ const availabilityOptions = [
 
 // Amount options with modifiers
 const amountOptions = [
-  { label: 'Vernachlässigbar (+30)', value: 'Vernachlässigbar', mod: 30 },
-  { label: 'Sehr gering (+20)', value: 'Sehr gering', mod: 20 },
-  { label: 'Gering (+10)', value: 'Gering', mod: 10 },
-  { label: 'Durchschnittlich (+0)', value: 'Durchschnittlich', mod: 0 },
-  { label: 'Groß (-10)', value: 'Groß', mod: -10 },
-  { label: 'Sehr groß (-20)', value: 'Sehr groß', mod: -20 },
-  { label: 'Unüberschaubar (-30)', value: 'Unüberschaubar', mod: -30 }
+  { label: 'Ein Mann (+30)', value: 'Ein Mann', mod: 30 },
+  { label: 'Trupp (3-5) (+20)', value: 'Trupp', mod: 20 },
+  { label: 'Zug (10-30) (+10)', value: 'Zug', mod: 10 },
+  { label: 'Kompanie (50-100) (+0)', value: 'Kompanie', mod: 0 },
+  { label: 'Regiment (500-1.000) (-10)', value: 'Regiment', mod: -10 },
+  { label: 'Division (2.000-5.000) (-20)', value: 'Division', mod: -20 },
+  { label: 'Armee (10.000+) (-30)', value: 'Armee', mod: -30 }
 ]
 
 // Quality options with modifiers
@@ -411,8 +529,8 @@ const newAcquisition = ref({
   quantity: '',
   availability: 'Knapp',
   availabilityMod: 0,
-  amount: 'Durchschnittlich',
-  amountMod: 0,
+  amount: 'Ein Mann',
+  amountMod: 30,
   quality: 'Normal',
   qualityMod: 0,
   additionalMod: 0,
@@ -438,6 +556,16 @@ const sortedAcquisitions = computed(() => {
 
     return dateB - dateA
   })
+})
+
+// Open acquisitions (no successful attempt yet)
+const openAcquisitions = computed(() => {
+  return sortedAcquisitions.value.filter(acq => !isAcquisitionSuccessful(acq))
+})
+
+// Completed acquisitions (at least one successful attempt)
+const completedAcquisitions = computed(() => {
+  return sortedAcquisitions.value.filter(acq => isAcquisitionSuccessful(acq))
 })
 
 const calculatedMinRoll = computed(() => {
@@ -501,6 +629,15 @@ const getAttempts = (acq) => {
     return acq.attempts
   }
   return []
+}
+
+// Check if an acquisition has been successfully completed
+// Either by a successful roll OR by completing all 5 attempts
+const isAcquisitionSuccessful = (acq) => {
+  const attempts = getAttempts(acq)
+  const hasSuccessfulAttempt = attempts.some(attempt => attempt.success)
+  const allAttemptsUsed = attempts.length >= 5
+  return hasSuccessfulAttempt || allAttemptsUsed
 }
 
 const updateAvailabilityMod = (value) => {
@@ -624,8 +761,8 @@ const cancelDialog = () => {
     quantity: '',
     availability: 'Knapp',
     availabilityMod: 0,
-    amount: 'Durchschnittlich',
-    amountMod: 0,
+    amount: 'Ein Mann',
+    amountMod: 30,
     quality: 'Normal',
     qualityMod: 0,
     additionalMod: 0,

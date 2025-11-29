@@ -31,7 +31,7 @@
         </div>
 
         <!-- Career Path -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <q-input
             v-model="character.careerPath"
             label="Karrierepfad"
@@ -41,19 +41,8 @@
           />
         </div>
 
-        <!-- Rank -->
-        <div class="col-12 col-md-4">
-          <q-input
-            v-model="character.rank"
-            label="Rang"
-            filled
-            dense
-            @update:model-value="updateField('rank', $event)"
-          />
-        </div>
-
         <!-- Homeworld -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6">
           <q-input
             v-model="character.homeworld"
             label="Heimatwelt"

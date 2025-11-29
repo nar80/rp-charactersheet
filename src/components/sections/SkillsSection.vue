@@ -73,12 +73,10 @@
                   </div>
 
                   <!-- Skill Name -->
-                  <div class="col-5 text-body2">
+                  <div class="col-5 skill-name">
                     {{ skill.name }}
-                    <span v-if="skill.specialization" class="text-caption text-grey-6">
-                      ({{ skill.specialization }})
-                    </span>
-                    <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
+                    <span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                    <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                   </div>
 
                   <!-- E Checkbox only -->
@@ -109,18 +107,18 @@
 
                   <!-- Value and Delete (for custom basic skills) -->
                   <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                    <div class="text-body1 text-primary">
+                    <div class="skill-value text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
-                    <!-- Delete button only for custom-added basic skills (have an id) -->
+                    <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
-                      v-if="skill.id !== undefined"
                       flat
                       dense
                       round
                       size="xs"
                       icon="delete"
                       color="grey-6"
+                      :style="skill.id === undefined ? 'visibility: hidden' : ''"
                       @click="removeSkill(skill)"
                     >
                       <q-tooltip>Fertigkeit löschen</q-tooltip>
@@ -159,12 +157,10 @@
                   </div>
 
                   <!-- Skill Name -->
-                  <div class="col-5 text-body2">
+                  <div class="col-5 skill-name">
                     {{ skill.name }}
-                    <span v-if="skill.specialization" class="text-caption text-grey-6">
-                      ({{ skill.specialization }})
-                    </span>
-                    <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
+                    <span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                    <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                   </div>
 
                   <!-- E Checkbox only -->
@@ -195,18 +191,18 @@
 
                   <!-- Value and Delete (for custom basic skills) -->
                   <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                    <div class="text-body1 text-primary">
+                    <div class="skill-value text-primary">
                       {{ getSkillValue(skill) }}
                     </div>
-                    <!-- Delete button only for custom-added basic skills (have an id) -->
+                    <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
-                      v-if="skill.id !== undefined"
                       flat
                       dense
                       round
                       size="xs"
                       icon="delete"
                       color="grey-6"
+                      :style="skill.id === undefined ? 'visibility: hidden' : ''"
                       @click="removeSkill(skill)"
                     >
                       <q-tooltip>Fertigkeit löschen</q-tooltip>
@@ -251,12 +247,9 @@
                     </div>
 
                     <!-- Skill Name with specialization -->
-                    <div class="col-4 text-body2">
-                      {{ skill.name }}
-                      <span v-if="skill.specialization" class="text-caption text-grey-6">
-                        ({{ skill.specialization }})
-                      </span>
-                      <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
+                    <div class="col-4 skill-name">
+                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                     </div>
 
                     <!-- Checkboxes -->
@@ -297,7 +290,7 @@
 
                     <!-- Value and Delete -->
                     <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                      <div class="text-body1 text-primary">
+                      <div class="skill-value text-primary">
                         {{ getSkillValue(skill) }}
                       </div>
                       <q-btn
@@ -345,12 +338,9 @@
                     </div>
 
                     <!-- Skill Name with specialization -->
-                    <div class="col-4 text-body2">
-                      {{ skill.name }}
-                      <span v-if="skill.specialization" class="text-caption text-grey-6">
-                        ({{ skill.specialization }})
-                      </span>
-                      <span class="text-caption text-grey-6">({{ skill.attribute }})</span>
+                    <div class="col-4 skill-name">
+                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                     </div>
 
                     <!-- Checkboxes -->
@@ -391,7 +381,7 @@
 
                     <!-- Value and Delete -->
                     <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                      <div class="text-body1 text-primary">
+                      <div class="skill-value text-primary">
                         {{ getSkillValue(skill) }}
                       </div>
                       <q-btn
@@ -427,7 +417,7 @@
         <q-card-section class="q-gutter-md">
           <q-select
             v-model="newSkill.selectedSkill"
-            :options="advancedSkills"
+            :options="skillOptions"
             option-label="name"
             label="Fertigkeit auswählen"
             filled
@@ -515,6 +505,40 @@
       </q-card>
     </q-dialog>
 
+    <!-- Delete Confirmation Dialog -->
+    <q-dialog v-model="showDeleteDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Fertigkeit löschen?</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            Möchtest du die Fertigkeit <strong>{{ skillToDelete?.name }}</strong>
+            <span v-if="skillToDelete?.specialization">({{ skillToDelete.specialization }})</span>
+            wirklich löschen?
+          </p>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Abbrechen"
+            color="grey"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            label="Löschen"
+            color="negative"
+            @click="confirmDeleteSkill"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Info/Description Dialog -->
     <q-dialog v-model="showSkillInfoDialog">
       <q-card style="min-width: 500px">
@@ -530,6 +554,15 @@
         <q-separator />
 
         <q-card-section class="q-gutter-md">
+          <q-input
+            v-if="selectedSkill?.id !== undefined"
+            v-model="editSpecialization"
+            label="Spezialisierung"
+            filled
+            dense
+            hint="z.B. 'Freihändler' bei Geheimsprache"
+          />
+
           <q-select
             v-if="canChangeAttribute(selectedSkill?.name)"
             v-model="editAttribute"
@@ -582,10 +615,13 @@ const { character } = storeToRefs(characterStore)
 
 const showAddSkillDialog = ref(false)
 const showSkillInfoDialog = ref(false)
+const showDeleteDialog = ref(false)
+const skillToDelete = ref(null)
 const selectedSkill = ref(null)
 const selectedSkillType = ref(null) // 'basic' or 'learned'
 const editDescription = ref('')
 const editAttribute = ref('')
+const editSpecialization = ref('')
 const filterText = ref('')
 const sortAlphabetically = ref(true)
 
@@ -670,8 +706,12 @@ const filteredBasicSkills = computed(() => {
     )
   }
 
-  // Always sort alphabetically
-  skills.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  // Always sort alphabetically (name, then specialization)
+  skills.sort((a, b) => {
+    const nameCompare = a.name.localeCompare(b.name, 'de')
+    if (nameCompare !== 0) return nameCompare
+    return (a.specialization || '').localeCompare(b.specialization || '', 'de')
+  })
 
   return skills
 })
@@ -697,7 +737,11 @@ const sortedFilteredLearnedSkills = computed(() => {
   const skills = [...filteredLearnedSkills.value]
 
   if (sortAlphabetically.value) {
-    skills.sort((a, b) => a.name.localeCompare(b.name))
+    skills.sort((a, b) => {
+      const nameCompare = a.name.localeCompare(b.name, 'de')
+      if (nameCompare !== 0) return nameCompare
+      return (a.specialization || '').localeCompare(b.specialization || '', 'de')
+    })
   }
 
   return skills
@@ -772,6 +816,14 @@ const addNewSkill = () => {
 }
 
 const removeSkill = (skill) => {
+  skillToDelete.value = skill
+  showDeleteDialog.value = true
+}
+
+const confirmDeleteSkill = () => {
+  const skill = skillToDelete.value
+  if (!skill) return
+
   // Wenn es eine benutzerdefinierte Fertigkeit mit ID ist, wirklich löschen
   if (skill.id !== undefined) {
     characterStore.removeLearnedSkill(skill.id)
@@ -781,6 +833,9 @@ const removeSkill = (skill) => {
   else if (skill.isBasic) {
     updateSkill(skill, { trained: false, plus10: false, plus20: false })
   }
+
+  showDeleteDialog.value = false
+  skillToDelete.value = null
 }
 
 const showInfoDialog = (skill, type) => {
@@ -793,6 +848,7 @@ const showInfoDialog = (skill, type) => {
   }
   editDescription.value = skill.description || ''
   editAttribute.value = skill.attribute || ''
+  editSpecialization.value = skill.specialization || ''
   showSkillInfoDialog.value = true
 }
 
@@ -802,6 +858,11 @@ const saveDescription = () => {
   // For skills that can change their attribute (Beruf, Einschüchtern), also update the attribute
   if (canChangeAttribute(selectedSkill.value?.name)) {
     updates.attribute = editAttribute.value
+  }
+
+  // For learned skills (with id), also update specialization
+  if (selectedSkill.value?.id !== undefined) {
+    updates.specialization = editSpecialization.value
   }
 
   if (selectedSkillType.value === 'basic') {
@@ -817,11 +878,22 @@ const cancelInfoDialog = () => {
   selectedSkill.value = null
   editDescription.value = ''
   editAttribute.value = ''
+  editSpecialization.value = ''
 }
 </script>
 
 <style scoped>
 .q-item {
   min-height: 50px;
+}
+
+.skill-name {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.skill-value {
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 </style>

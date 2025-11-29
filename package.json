@@ -8,14 +8,20 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": ["rpg", "charactersheet", "warhammer40k", "rogue-trader"],
+  "keywords": [
+    "rpg",
+    "charactersheet",
+    "warhammer40k",
+    "rogue-trader"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@quasar/extras": "^1.17.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.24",
-    "vue-router": "^4.6.3"
+    "vue-router": "^4.6.3",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@quasar/vite-plugin": "^1.10.0",

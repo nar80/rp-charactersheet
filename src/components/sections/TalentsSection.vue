@@ -41,12 +41,15 @@
       </div>
 
       <div v-else class="row q-col-gutter-md">
-        <div
-          v-for="(talent, index) in sortedTalents"
-          :key="talent.originalIndex"
-          class="col-12 col-md-6"
-        >
-          <q-card bordered flat class="bg-grey-9">
+        <!-- Left Column -->
+        <div class="col-12 col-md-6">
+          <q-card
+            v-for="talent in leftColumnTalents"
+            :key="talent.originalIndex"
+            bordered
+            flat
+            class="bg-grey-9 q-mb-sm"
+          >
             <q-card-section class="q-pa-sm">
               <div class="row items-start">
                 <div class="col-auto q-pr-xs">
@@ -63,7 +66,7 @@
                   </q-btn>
                 </div>
                 <div class="col">
-                  <div class="text-subtitle1 text-bold">
+                  <div class="text-subtitle1 text-bold" :class="{ 'important-talent': talent.important }">
                     {{ talent.name }}
                     <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
                     <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
@@ -90,8 +93,71 @@
                     round
                     size="sm"
                     icon="delete"
-                    color="negative"
-                    @click="removeTalent(talent.originalIndex)"
+                    color="grey-6"
+                    @click="removeTalent(talent)"
+                  >
+                    <q-tooltip>Entfernen</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-12 col-md-6">
+          <q-card
+            v-for="talent in rightColumnTalents"
+            :key="talent.originalIndex"
+            bordered
+            flat
+            class="bg-grey-9 q-mb-sm"
+          >
+            <q-card-section class="q-pa-sm">
+              <div class="row items-start">
+                <div class="col-auto q-pr-xs">
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="info"
+                    color="grey-6"
+                    @click="showInfoDialog(talent)"
+                  >
+                    <q-tooltip>Details anzeigen</q-tooltip>
+                  </q-btn>
+                </div>
+                <div class="col">
+                  <div class="text-subtitle1 text-bold" :class="{ 'important-talent': talent.important }">
+                    {{ talent.name }}
+                    <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
+                    <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
+                  </div>
+                  <div v-if="talent.benefit" class="text-body2 text-grey-4 q-mt-xs">
+                    {{ talent.benefit }}
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="edit"
+                    color="grey-6"
+                    @click="editTalent(talent.originalIndex)"
+                  >
+                    <q-tooltip>Bearbeiten</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="delete"
+                    color="grey-6"
+                    @click="removeTalent(talent)"
                   >
                     <q-tooltip>Entfernen</q-tooltip>
                   </q-btn>
@@ -102,6 +168,40 @@
         </div>
       </div>
     </q-card-section>
+
+    <!-- Delete Confirmation Dialog -->
+    <q-dialog v-model="showDeleteDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Talent löschen?</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            Möchtest du das Talent <strong>{{ talentToDelete?.name }}</strong>
+            <span v-if="talentToDelete?.specialization">({{ talentToDelete.specialization }})</span>
+            wirklich löschen?
+          </p>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Abbrechen"
+            color="grey"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            label="Löschen"
+            color="negative"
+            @click="confirmDeleteTalent"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- Add/Edit Talent Dialog -->
     <q-dialog v-model="showAddTalentDialog">
@@ -197,8 +297,7 @@
             label="Voraussetzungen"
             filled
             dense
-            :readonly="!isCustomTalent"
-            :hint="isCustomTalent ? 'z.B. \'WK 40, ST 35\' oder \'--\' für keine' : 'Automatisch aus Grundregelwerk'"
+            hint="z.B. 'WK 40, ST 35' oder '--' für keine"
           />
 
           <q-input
@@ -207,8 +306,7 @@
             type="textarea"
             filled
             rows="3"
-            :readonly="!isCustomTalent"
-            :hint="isCustomTalent ? 'Beschreibe den Vorteil, den das Talent bietet' : 'Automatisch aus Grundregelwerk'"
+            hint="Beschreibe den Vorteil, den das Talent bietet"
           />
 
           <q-input
@@ -219,6 +317,14 @@
             rows="3"
             hint="Eigene Notizen, Hausregeln oder Details zur Anwendung"
           />
+
+          <q-checkbox
+            v-model="newTalent.important"
+            label="Wichtiges Talent hervorheben"
+            color="amber"
+          >
+            <q-tooltip>Hebt das Talent optisch hervor (z.B. für häufig genutzte Talente)</q-tooltip>
+          </q-checkbox>
         </q-card-section>
 
         <q-separator />
@@ -314,6 +420,8 @@ const showInfo = ref(false)
 const currentTalent = ref(null)
 const searchFilteredTalents = ref(talents)
 const isCustomTalent = ref(false)
+const showDeleteDialog = ref(false)
+const talentToDelete = ref(null)
 
 // Available talents (filter out already added talents without specialization)
 const availableTalents = computed(() => {
@@ -351,7 +459,8 @@ const newTalent = ref({
   tier: '',
   prerequisites: '',
   benefit: '',
-  description: ''
+  description: '',
+  important: false
 })
 
 // Watch for talent selection to auto-fill fields
@@ -379,6 +488,17 @@ const sortedTalents = computed(() => {
   }
 
   return talentsWithIndex
+})
+
+// Split talents into two columns (left column first, then right)
+const leftColumnTalents = computed(() => {
+  const half = Math.ceil(sortedTalents.value.length / 2)
+  return sortedTalents.value.slice(0, half)
+})
+
+const rightColumnTalents = computed(() => {
+  const half = Math.ceil(sortedTalents.value.length / 2)
+  return sortedTalents.value.slice(half)
 })
 
 const filterTalents = (val, update) => {
@@ -438,7 +558,8 @@ const saveTalent = () => {
     tier: newTalent.value.tier || '',
     prerequisites: newTalent.value.prerequisites || '',
     benefit: newTalent.value.benefit || '',
-    description: newTalent.value.description || ''
+    description: newTalent.value.description || '',
+    important: newTalent.value.important || false
   }
 
   if (editingIndex.value !== null) {
@@ -469,14 +590,24 @@ const editTalent = (index) => {
     tier: talent.tier || '',
     prerequisites: talent.prerequisites || '',
     benefit: talent.benefit || '',
-    description: talent.description || ''
+    description: talent.description || '',
+    important: talent.important || false
   }
 
   showAddTalentDialog.value = true
 }
 
-const removeTalent = (index) => {
-  characterStore.removeTalent(index)
+const removeTalent = (talent) => {
+  talentToDelete.value = talent
+  showDeleteDialog.value = true
+}
+
+const confirmDeleteTalent = () => {
+  if (talentToDelete.value !== null) {
+    characterStore.removeTalent(talentToDelete.value.originalIndex)
+  }
+  showDeleteDialog.value = false
+  talentToDelete.value = null
 }
 
 const cancelTalentDialog = () => {
@@ -490,7 +621,15 @@ const cancelTalentDialog = () => {
     tier: '',
     prerequisites: '',
     benefit: '',
-    description: ''
+    description: '',
+    important: false
   }
 }
 </script>
+
+<style scoped>
+.important-talent {
+  color: #ffd54f;
+  text-shadow: 0 0 8px rgba(255, 213, 79, 0.6), 0 0 16px rgba(255, 213, 79, 0.3);
+}
+</style>

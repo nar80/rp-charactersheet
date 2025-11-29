@@ -14,15 +14,6 @@
         </div>
         <div class="col-auto">
           <q-btn
-            flat
-            dense
-            icon="sort_by_alpha"
-            :color="sortWeaponsAlpha ? 'primary' : 'grey'"
-            @click="sortWeaponsAlpha = !sortWeaponsAlpha"
-          >
-            <q-tooltip>Alphabetisch sortieren</q-tooltip>
-          </q-btn>
-          <q-btn
             color="primary"
             icon="add"
             label="Waffe hinzufügen"
@@ -46,60 +37,72 @@
         </div>
       </div>
 
-      <div v-else class="row q-col-gutter-md">
-        <div
-          v-for="(weapon, index) in sortedWeapons"
-          :key="weapon.originalIndex"
-          class="col-12 col-md-6"
-        >
-          <q-card bordered flat class="bg-grey-9">
-            <q-card-section class="q-pa-sm">
-              <div class="row items-center q-mb-xs">
-                <div class="col-auto q-pr-xs">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="info"
-                    color="grey-6"
-                    @click="showWeaponInfo(weapon)"
-                  >
-                    <q-tooltip>Details anzeigen</q-tooltip>
-                  </q-btn>
-                </div>
-                <div class="col">
-                  <div class="text-subtitle1 text-bold">{{ weapon.name }}</div>
-                  <div class="text-caption text-grey-6">
-                    {{ weapon.type || "Waffe" }}
-                    <span v-if="weapon.subtype"> ({{ weapon.subtype }})</span>
+      <draggable
+        v-else
+        v-model="character.weapons"
+        item-key="name"
+        class="row q-col-gutter-md"
+        handle=".drag-handle"
+      >
+        <template #item="{ element: weapon, index }">
+          <div class="col-12 col-md-6">
+            <q-card bordered flat class="bg-grey-9">
+              <q-card-section class="q-pa-sm">
+                <div class="row items-center q-mb-xs">
+                  <div class="col-auto q-pr-xs">
+                    <q-icon
+                      name="drag_indicator"
+                      class="drag-handle cursor-grab text-grey-6"
+                      size="sm"
+                    >
+                      <q-tooltip>Ziehen zum Sortieren</q-tooltip>
+                    </q-icon>
+                  </div>
+                  <div class="col-auto q-pr-xs">
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="info"
+                      color="grey-6"
+                      @click="showWeaponInfo(weapon)"
+                    >
+                      <q-tooltip>Details anzeigen</q-tooltip>
+                    </q-btn>
+                  </div>
+                  <div class="col">
+                    <div class="text-subtitle1 text-bold">{{ weapon.name }}</div>
+                    <div class="text-caption text-grey-6">
+                      {{ weapon.type || "Waffe" }}
+                      <span v-if="weapon.subtype"> ({{ weapon.subtype }})</span>
+                    </div>
+                  </div>
+                  <div class="col-auto">
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="edit"
+                      color="grey-6"
+                      @click="editWeapon(index)"
+                    >
+                      <q-tooltip>Bearbeiten</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="delete"
+                      color="grey-6"
+                      @click="removeWeapon(weapon, index)"
+                    >
+                      <q-tooltip>Entfernen</q-tooltip>
+                    </q-btn>
                   </div>
                 </div>
-                <div class="col-auto">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="edit"
-                    color="grey-6"
-                    @click="editWeapon(weapon.originalIndex)"
-                  >
-                    <q-tooltip>Bearbeiten</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="delete"
-                    color="grey-6"
-                    @click="removeWeapon(weapon.originalIndex)"
-                  >
-                    <q-tooltip>Entfernen</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
 
               <!-- Weapon Details - Reihenfolge wie Charakterbogen -->
               <div class="text-body2" style="line-height: 1.8">
@@ -161,35 +164,22 @@
               </div>
 
               <!-- Quality Display -->
-              <div
-                v-if="weapon.quality && weapon.quality !== 'Normal'"
-                class="q-mt-sm"
-              >
-                <div class="text-body2 text-grey-6">
-                  Qualität:
-                  <span
-                    class="text-bold"
-                    :class="getQualityColor(weapon.quality)"
-                    >{{ weapon.quality }}</span
-                  >
-                </div>
-                <div
-                  class="text-body2"
-                  :class="getQualityColor(weapon.quality)"
-                >
-                  {{
-                    getWeaponQualityEffect(
-                      weapon.quality,
-                      weapon.type,
-                      weapon.subtype
-                    )
-                  }}
-                </div>
+              <div class="q-mt-sm text-body2">
+                <span class="text-grey-6">Qualität:</span>
+                <span
+                  class="text-bold q-ml-xs"
+                  :class="getQualityColor(weapon.quality || 'Normal')"
+                >{{ weapon.quality || 'Normal' }}</span>
+                <span class="text-grey-6 q-mx-xs">—</span>
+                <span :class="getQualityColor(weapon.quality || 'Normal')">
+                  {{ getWeaponQualityEffect(weapon.quality || 'Normal', weapon.type, weapon.subtype) }}
+                </span>
               </div>
             </q-card-section>
           </q-card>
         </div>
-      </div>
+      </template>
+    </draggable>
     </q-card-section>
 
     <q-separator />
@@ -233,25 +223,36 @@
 
       <div v-else class="row q-col-gutter-md">
         <!-- Armor Visualization -->
-        <div class="col-12 col-md-2">
+        <div class="col-12 col-md-4">
           <ArmorVisualization :armor="character.armor" />
         </div>
 
         <!-- Armor List -->
         <div class="col-12 col-md-8">
-          <div class="row q-col-gutter-md">
-            <div
-              v-for="(armor, index) in character.armor"
-              :key="index"
-              class="col-12 col-md-6"
-            >
-              <q-card bordered flat class="bg-grey-9">
-                <q-card-section class="q-pa-sm">
-                  <div class="row items-center q-mb-xs">
-                    <div class="col">
-                      <div class="text-subtitle1 text-bold">
-                        {{ armor.name }}
+          <draggable
+            v-model="character.armor"
+            item-key="name"
+            class="row q-col-gutter-md"
+            handle=".drag-handle"
+          >
+            <template #item="{ element: armor, index }">
+              <div class="col-12 col-md-6">
+                <q-card bordered flat class="bg-grey-9">
+                  <q-card-section class="q-pa-sm">
+                    <div class="row items-center q-mb-xs">
+                      <div class="col-auto q-pr-xs">
+                        <q-icon
+                          name="drag_indicator"
+                          class="drag-handle cursor-grab text-grey-6"
+                          size="sm"
+                        >
+                          <q-tooltip>Ziehen zum Sortieren</q-tooltip>
+                        </q-icon>
                       </div>
+                      <div class="col">
+                        <div class="text-subtitle1 text-bold">
+                          {{ armor.name }}
+                        </div>
                       <div class="text-caption text-grey-6">
                         <span
                           v-if="armor.locations && armor.locations.length > 0"
@@ -280,7 +281,7 @@
                         size="sm"
                         icon="delete"
                         color="grey-6"
-                        @click="characterStore.removeArmor(index)"
+                        @click="removeArmor(armor, index)"
                       >
                         <q-tooltip>Entfernen</q-tooltip>
                       </q-btn>
@@ -348,30 +349,23 @@
                         (Basis: {{ armor.weight }}kg)</span
                       >
                     </div>
-                    <div
-                      class="col-12 q-mt-xs"
-                      v-if="armor.quality && armor.quality !== 'Standard'"
-                    >
-                      <div class="text-grey-6">
-                        Qualität:
-                        <span
-                          class="text-bold"
-                          :class="getQualityColor(armor.quality)"
-                          >{{ armor.quality }}</span
-                        >
-                      </div>
-                      <div
-                        class="text-body2"
-                        :class="getQualityColor(armor.quality)"
-                      >
-                        {{ getQualityEffect(armor.quality) }}
-                      </div>
+                    <div class="col-12 q-mt-xs">
+                      <span class="text-grey-6">Qualität:</span>
+                      <span
+                        class="text-bold q-ml-xs"
+                        :class="getQualityColor(armor.quality || 'Standard')"
+                      >{{ armor.quality || 'Standard' }}</span>
+                      <span class="text-grey-6 q-mx-xs">—</span>
+                      <span :class="getQualityColor(armor.quality || 'Standard')">
+                        {{ getQualityEffect(armor.quality || 'Standard') }}
+                      </span>
                     </div>
                   </div>
                 </q-card-section>
               </q-card>
             </div>
-          </div>
+          </template>
+        </draggable>
         </div>
       </div>
     </q-card-section>
@@ -401,66 +395,178 @@
       </div>
 
       <q-list v-if="character.gear.length > 0" bordered separator>
-        <q-item v-for="(item, index) in character.gear" :key="index" dense>
-          <q-item-section avatar>
-            <q-avatar color="grey-8" text-color="white" size="sm">
-              {{ item.quantity || 1 }}
-            </q-avatar>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>{{ item.name }}</q-item-label>
-            <q-item-label caption v-if="item.description">{{
-              item.description
-            }}</q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <div class="row q-gutter-xs">
-              <q-btn
-                flat
-                dense
-                round
-                size="sm"
-                icon="remove"
-                color="grey-6"
-                @click="changeGearQuantity(index, -1)"
-                :disable="item.quantity <= 1"
-              />
-              <q-btn
-                flat
-                dense
-                round
-                size="sm"
-                icon="add"
-                color="grey-6"
-                @click="changeGearQuantity(index, 1)"
-              />
-              <q-btn
-                flat
-                dense
-                round
-                size="sm"
-                icon="edit"
-                color="grey-6"
-                @click="editGear(index)"
-              />
-              <q-btn
-                flat
-                dense
-                round
-                size="sm"
-                icon="delete"
-                color="negative"
-                @click="characterStore.removeGear(index)"
-              />
-            </div>
-          </q-item-section>
-        </q-item>
+        <draggable
+          v-model="character.gear"
+          item-key="name"
+          tag="div"
+        >
+          <template #item="{ element: item, index }">
+            <q-item dense :class="{ 'artifact-item': item.isArtifact, 'trophy-item': item.isTrophy }" class="cursor-grab">
+            <q-item-section avatar>
+              <q-avatar color="grey-8" text-color="white" size="sm">
+                {{ item.quantity || 1 }}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label :class="{ 'text-amber text-bold': item.isArtifact, 'text-purple text-bold': item.isTrophy }">
+                <q-icon v-if="item.isArtifact" name="auto_awesome" size="xs" color="amber" class="q-mr-xs" />
+                <q-icon v-if="item.isTrophy" name="emoji_events" size="xs" color="purple" class="q-mr-xs" />
+                {{ item.name }}
+              </q-item-label>
+              <q-item-label caption v-if="item.description">{{ item.description }}</q-item-label>
+              <q-item-label caption v-if="item.quality" :class="getGearQualityColor(item.quality)">
+                Qualität: {{ item.quality }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <div class="row q-gutter-xs">
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="remove"
+                  color="grey-6"
+                  @click="changeGearQuantity(index, -1)"
+                  :disable="item.quantity <= 1"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="add"
+                  color="grey-6"
+                  @click="changeGearQuantity(index, 1)"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="edit"
+                  color="grey-6"
+                  @click="editGear(index)"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="delete"
+                  color="grey-6"
+                  @click="removeGear(item, index)"
+                />
+              </div>
+            </q-item-section>
+          </q-item>
+        </template>
+        </draggable>
       </q-list>
       <div v-else class="text-center text-grey-6 q-pa-md">
         <q-icon name="inventory_2" size="3rem" color="grey-6" />
         <div class="q-mt-sm">Keine Ausrüstung vorhanden</div>
       </div>
     </q-card-section>
+
+    <!-- Delete Weapon Confirmation Dialog -->
+    <q-dialog v-model="showDeleteWeaponDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Waffe löschen?</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            Möchtest du die Waffe <strong>{{ weaponToDelete?.weapon?.name }}</strong>
+            wirklich löschen?
+          </p>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Abbrechen"
+            color="grey"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            label="Löschen"
+            color="negative"
+            @click="confirmDeleteWeapon"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Delete Gear Confirmation Dialog -->
+    <q-dialog v-model="showDeleteGearDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Gegenstand löschen?</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            Möchtest du <strong>{{ gearToDelete?.item?.name }}</strong>
+            wirklich löschen?
+          </p>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Abbrechen"
+            color="grey"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            label="Löschen"
+            color="negative"
+            @click="confirmDeleteGear"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Delete Armor Confirmation Dialog -->
+    <q-dialog v-model="showDeleteArmorDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Rüstung löschen?</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p>
+            Möchtest du die Rüstung <strong>{{ armorToDelete?.armor?.name }}</strong>
+            wirklich löschen?
+          </p>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Abbrechen"
+            color="grey"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            label="Löschen"
+            color="negative"
+            @click="confirmDeleteArmor"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- Add/Edit Weapon Dialog -->
     <q-dialog v-model="showAddWeaponDialog">
@@ -655,6 +761,16 @@
         <q-separator />
 
         <q-card-actions align="right">
+          <q-btn
+            v-if="editingWeaponIndex !== null"
+            flat
+            label="Duplizieren"
+            color="secondary"
+            icon="content_copy"
+            @click="duplicateWeapon"
+          >
+            <q-tooltip>Erstellt eine Kopie dieser Waffe</q-tooltip>
+          </q-btn>
           <q-btn
             flat
             label="Abbrechen"
@@ -909,6 +1025,15 @@
             min="1"
           />
 
+          <q-select
+            v-model="newGear.quality"
+            :options="['Gering', 'Standard', 'Gut', 'Hervorragend']"
+            label="Qualität"
+            filled
+            dense
+            clearable
+          />
+
           <q-input
             v-model="newGear.description"
             label="Beschreibung (optional)"
@@ -916,6 +1041,27 @@
             filled
             rows="3"
           />
+
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-checkbox
+                v-model="newGear.isArtifact"
+                label="Artefakt"
+                color="amber"
+              >
+                <q-tooltip>Hebt den Gegenstand als Artefakt hervor</q-tooltip>
+              </q-checkbox>
+            </div>
+            <div class="col-6">
+              <q-checkbox
+                v-model="newGear.isTrophy"
+                label="Trophäe"
+                color="purple"
+              >
+                <q-tooltip>Hebt den Gegenstand als Trophäe hervor</q-tooltip>
+              </q-checkbox>
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
@@ -941,10 +1087,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useCharacterStore } from "../../stores/characterStore";
 import ArmorVisualization from "../ArmorVisualization.vue";
+import draggable from "vuedraggable";
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
@@ -952,9 +1099,10 @@ const { character } = storeToRefs(characterStore);
 // Weapon state
 const showAddWeaponDialog = ref(false);
 const showWeaponInfoDialog = ref(false);
+const showDeleteWeaponDialog = ref(false);
+const weaponToDelete = ref(null);
 const editingWeaponIndex = ref(null);
 const currentWeapon = ref(null);
-const sortWeaponsAlpha = ref(false);
 
 const weaponTypeOptions = [
   "Nahkampfwaffen",
@@ -982,6 +1130,8 @@ const newWeapon = ref({
 
 // Armor state
 const showAddArmorDialog = ref(false);
+const showDeleteArmorDialog = ref(false);
+const armorToDelete = ref(null);
 const editingArmorIndex = ref(null);
 
 const newArmor = ref({
@@ -996,39 +1146,17 @@ const newArmor = ref({
 
 // Gear state
 const showAddGearDialog = ref(false);
+const showDeleteGearDialog = ref(false);
+const gearToDelete = ref(null);
 const editingGearIndex = ref(null);
 
 const newGear = ref({
   name: "",
   quantity: 1,
+  quality: "",
   description: "",
-});
-
-// Load sort preference
-onMounted(() => {
-  const saved = localStorage.getItem("weapons-sort-alpha");
-  if (saved !== null) {
-    sortWeaponsAlpha.value = saved === "true";
-  }
-});
-
-// Save sort preference
-watch(sortWeaponsAlpha, (newValue) => {
-  localStorage.setItem("weapons-sort-alpha", newValue.toString());
-});
-
-// Sorted weapons
-const sortedWeapons = computed(() => {
-  const weaponsWithIndex = character.value.weapons.map((weapon, index) => ({
-    ...weapon,
-    originalIndex: index,
-  }));
-
-  if (sortWeaponsAlpha.value) {
-    return weaponsWithIndex.sort((a, b) => a.name.localeCompare(b.name, "de"));
-  }
-
-  return weaponsWithIndex;
+  isArtifact: false,
+  isTrophy: false,
 });
 
 // Weapon functions
@@ -1039,7 +1167,10 @@ const showWeaponInfo = (weapon) => {
 
 const editFromWeaponInfo = () => {
   showWeaponInfoDialog.value = false;
-  editWeapon(currentWeapon.value.originalIndex);
+  const index = character.value.weapons.indexOf(currentWeapon.value);
+  if (index !== -1) {
+    editWeapon(index);
+  }
 };
 
 const editWeapon = (index) => {
@@ -1068,8 +1199,27 @@ const saveWeapon = () => {
   cancelWeaponDialog();
 };
 
-const removeWeapon = (index) => {
-  characterStore.removeWeapon(index);
+const removeWeapon = (weapon, index) => {
+  weaponToDelete.value = { weapon, index };
+  showDeleteWeaponDialog.value = true;
+};
+
+const confirmDeleteWeapon = () => {
+  if (weaponToDelete.value !== null) {
+    characterStore.removeWeapon(weaponToDelete.value.index);
+  }
+  showDeleteWeaponDialog.value = false;
+  weaponToDelete.value = null;
+};
+
+const duplicateWeapon = () => {
+  // Create a copy with "(Kopie)" suffix
+  const copy = {
+    ...newWeapon.value,
+    name: newWeapon.value.name + " (Kopie)",
+  };
+  characterStore.addWeapon(copy);
+  cancelWeaponDialog();
 };
 
 const cancelWeaponDialog = () => {
@@ -1135,8 +1285,9 @@ const getQualityEffect = (quality) => {
       return "Gegen ersten Angriff pro Runde +1 RP";
     case "Hervorragend":
       return "Halbes Gewicht, +1 RP an allen Zonen";
+    case "Standard":
     default:
-      return "";
+      return "Keine Modifikatoren";
   }
 };
 
@@ -1169,9 +1320,23 @@ const getWeaponQualityEffect = (quality, weaponType, weaponSubtype) => {
       return isRanged
         ? "Keine Ladehemmung oder Überhitzung (werden zu Fehlschuss)"
         : "+10 auf Angriffswürfe, +1 Schaden";
+    case "Normal":
     default:
-      return "";
+      return "Keine Modifikatoren";
   }
+};
+
+const removeArmor = (armor, index) => {
+  armorToDelete.value = { armor, index };
+  showDeleteArmorDialog.value = true;
+};
+
+const confirmDeleteArmor = () => {
+  if (armorToDelete.value !== null) {
+    characterStore.removeArmor(armorToDelete.value.index);
+  }
+  showDeleteArmorDialog.value = false;
+  armorToDelete.value = null;
 };
 
 const editArmor = (index) => {
@@ -1218,8 +1383,41 @@ const cancelArmorDialog = () => {
 // Gear functions
 const editGear = (index) => {
   editingGearIndex.value = index;
-  newGear.value = { ...character.value.gear[index] };
+  const gear = character.value.gear[index];
+  newGear.value = {
+    name: gear.name || "",
+    quantity: gear.quantity || 1,
+    quality: gear.quality || "",
+    description: gear.description || "",
+    isArtifact: gear.isArtifact || false,
+    isTrophy: gear.isTrophy || false,
+  };
   showAddGearDialog.value = true;
+};
+
+const removeGear = (item, index) => {
+  gearToDelete.value = { item, index };
+  showDeleteGearDialog.value = true;
+};
+
+const confirmDeleteGear = () => {
+  if (gearToDelete.value !== null) {
+    characterStore.removeGear(gearToDelete.value.index);
+  }
+  showDeleteGearDialog.value = false;
+  gearToDelete.value = null;
+};
+
+const getGearQualityColor = (quality) => {
+  switch (quality) {
+    case "Gering":
+      return "text-negative";
+    case "Gut":
+    case "Hervorragend":
+      return "text-positive";
+    default:
+      return "text-grey-6";
+  }
 };
 
 const saveGear = () => {
@@ -1248,7 +1446,40 @@ const cancelGearDialog = () => {
   newGear.value = {
     name: "",
     quantity: 1,
+    quality: "",
     description: "",
+    isArtifact: false,
+    isTrophy: false,
   };
 };
 </script>
+
+<style scoped>
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+.drag-handle:hover {
+  color: #ffd54f !important;
+}
+
+.artifact-item {
+  background: rgba(255, 213, 79, 0.1) !important;
+  border-left: 3px solid #ffd54f;
+}
+
+.trophy-item {
+  background: rgba(156, 39, 176, 0.1) !important;
+  border-left: 3px solid #9c27b0;
+}
+
+.artifact-item.trophy-item {
+  background: linear-gradient(90deg, rgba(255, 213, 79, 0.1), rgba(156, 39, 176, 0.1)) !important;
+  border-left: 3px solid #ffd54f;
+  border-right: 3px solid #9c27b0;
+}
+</style>
