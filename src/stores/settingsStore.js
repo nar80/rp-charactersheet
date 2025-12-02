@@ -11,7 +11,9 @@ export const useSettingsStore = defineStore('settings', () => {
     showEquipment: true,
     showAcquisitions: true,
     showNotes: true,
-    aquilaOpacity: 3 // 0-10, where 0 = off
+    aquilaOpacity: 3, // 0-10, where 0 = off
+    enableWeaponStacks: false, // Special feature for pistol damage stacks
+    exportWithTimestamp: false // Add timestamp to exported filename
   })
 
   // Default values for new settings
@@ -22,7 +24,9 @@ export const useSettingsStore = defineStore('settings', () => {
     showEquipment: true,
     showAcquisitions: true,
     showNotes: true,
-    aquilaOpacity: 3
+    aquilaOpacity: 3,
+    enableWeaponStacks: false,
+    exportWithTimestamp: false
   }
 
   // Load from localStorage on init

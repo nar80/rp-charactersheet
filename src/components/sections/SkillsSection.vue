@@ -10,6 +10,7 @@
         </div>
         <div class="col">
           <q-input
+            ref="filterInput"
             v-model="filterText"
             label="Filter"
             filled
@@ -623,14 +624,17 @@ const editDescription = ref('')
 const editAttribute = ref('')
 const editSpecialization = ref('')
 const filterText = ref('')
+const filterInput = ref(null)
 const sortAlphabetically = ref(true)
 
-// Load sort preference from localStorage
+// Load sort preference from localStorage and focus filter input
 onMounted(() => {
   const saved = localStorage.getItem('skills-sort-alpha')
   if (saved !== null) {
     sortAlphabetically.value = saved === 'true'
   }
+  // Focus filter input
+  filterInput.value?.focus()
 })
 
 // Save sort preference to localStorage

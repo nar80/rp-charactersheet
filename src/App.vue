@@ -118,9 +118,20 @@ const handleExport = () => {
   const dataStr = JSON.stringify(character, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
+  // Build filename with optional timestamp
+  let filename = character.name || 'character'
+  if (settings.value.exportWithTimestamp) {
+    const now = new Date()
+    const timestamp = now.toISOString()
+      .replace('T', '_')
+      .replace(/:/g, '-')
+      .slice(0, 16) // 2025-12-02_14-30
+    filename = `${timestamp}_${filename}`
+  }
+
   const link = document.createElement('a')
   link.href = URL.createObjectURL(dataBlob)
-  link.download = `${character.name || 'character'}.json`
+  link.download = `${filename}.json`
   link.click()
 
   $q.notify({

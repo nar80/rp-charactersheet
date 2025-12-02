@@ -81,7 +81,7 @@ export const talents = [
     name: 'Blitzschnelle Reflexe',
     requiresSpecialization: false,
     prerequisites: '--',
-    benefit: 'GEB zweimal zu Initiativewürfen addieren'
+    benefit: 'GEb zweimal zu Initiativewürfen addieren'
   },
   {
     name: 'Blitzschneller Angriff',
@@ -285,13 +285,13 @@ export const talents = [
     name: 'Kampfformation',
     requiresSpecialization: false,
     prerequisites: 'IN 40',
-    benefit: 'INB für die Initiative verwenden'
+    benefit: 'INb für die Initiative verwenden'
   },
   {
     name: 'Kampfgespür',
     requiresSpecialization: false,
     prerequisites: 'WA 40',
-    benefit: 'WaB statt GeB für die Initiative verwenden'
+    benefit: 'WAb statt GEb für die Initiative verwenden'
   },
   {
     name: 'Kampfinformation',
@@ -411,7 +411,7 @@ export const talents = [
     name: 'Meister im waffenlosen Kampf',
     requiresSpecialization: false,
     prerequisites: 'KG 45, GE 40, Waffenloser Krieger',
-    benefit: 'Angriffe verursachen 1W10+StB Schaden und zählen nicht als primitiv'
+    benefit: 'Angriffe verursachen 1W10+STb Schaden und zählen nicht als primitiv'
   },
   {
     name: 'Meisterchirurg',
@@ -801,7 +801,7 @@ export const talents = [
     name: 'Vorausschau',
     requiresSpecialization: false,
     prerequisites: 'IN 30',
-    benefit: 'Nachdenken bringt +10 zum nächsten Wurf'
+    benefit: 'Nachdenken bringt +10 zum nächsten  IN-Wurf'
   },
   {
     name: 'Waffenloser Krieger',
@@ -819,7 +819,7 @@ export const talents = [
     name: 'Waffensegen',
     requiresSpecialization: false,
     prerequisites: 'Mechanicus-Implantate',
-    benefit: 'Ladehemmung bei einer Anzahl von Waffen beheben, die Ihrem INB-Bonus entspricht (Radius 10 m)'
+    benefit: 'Ladehemmung bei einer Anzahl von Waffen beheben, die Ihrem INb-Bonus entspricht (Radius 10 m)'
   },
   {
     name: 'Wahrer Glaube',

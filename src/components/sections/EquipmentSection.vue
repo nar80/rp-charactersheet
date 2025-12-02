@@ -23,6 +23,52 @@
       </div>
     </q-card-section>
 
+    <!-- Weapon Stacks Counter (only if enabled in settings) -->
+    <q-card-section v-if="settings.enableWeaponStacks" class="q-pt-none">
+      <div class="row items-center justify-center q-gutter-md">
+        <div class="text-subtitle2 text-grey-6">
+          <q-icon name="auto_awesome" class="q-mr-xs" />
+          Pistolen-Stacks:
+        </div>
+        <q-btn
+          round
+          dense
+          flat
+          icon="remove"
+          color="grey-6"
+          :disable="weaponStacks <= 0"
+          @click="weaponStacks--"
+        />
+        <q-chip
+          :color="weaponStacks > 0 ? 'amber' : 'grey-8'"
+          text-color="white"
+          size="lg"
+          class="text-bold"
+        >
+          {{ weaponStacks }}
+        </q-chip>
+        <q-btn
+          round
+          dense
+          flat
+          icon="add"
+          color="grey-6"
+          @click="weaponStacks++"
+        />
+        <q-btn
+          v-if="weaponStacks > 0"
+          flat
+          dense
+          label="Reset"
+          color="grey-6"
+          @click="weaponStacks = 0"
+        />
+        <div v-if="weaponStacks > 0" class="text-caption text-amber">
+          +{{ weaponStacks }} Schaden auf alle Pistolen
+        </div>
+      </div>
+    </q-card-section>
+
     <q-separator />
 
     <q-card-section>
@@ -72,13 +118,55 @@
                     </q-btn>
                   </div>
                   <div class="col">
-                    <div class="text-subtitle1 text-bold">{{ weapon.name }}</div>
+                    <div class="text-subtitle1 text-bold">
+                      {{ weapon.name }}
+                      <q-chip
+                        clickable
+                        dense
+                        size="sm"
+                        :color="weapon.damageMod ? 'primary' : 'grey-8'"
+                        text-color="white"
+                        class="q-ml-sm"
+                      >
+                        {{ weapon.damageMod > 0 ? '+' : '' }}{{ weapon.damageMod || 0 }}
+                        <q-popup-edit
+                          v-model.number="weapon.damageMod"
+                          auto-save
+                          anchor="center middle"
+                          self="center middle"
+                          @save="(val) => characterStore.updateWeapon(index, { damageMod: val || 0 })"
+                        >
+                          <q-input
+                            v-model.number="weapon.damageMod"
+                            type="number"
+                            dense
+                            autofocus
+                            label="Mod"
+                            hint="z.B. Stärkebonus"
+                            style="width: 120px"
+                          />
+                        </q-popup-edit>
+                        <q-tooltip>Klicken zum Bearbeiten</q-tooltip>
+                      </q-chip>
+                    </div>
                     <div class="text-caption text-grey-6">
                       {{ weapon.type || "Waffe" }}
                       <span v-if="weapon.subtype"> ({{ weapon.subtype }})</span>
                     </div>
                   </div>
                   <div class="col-auto">
+                    <q-btn
+                      v-if="weapon.damage"
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="casino"
+                      color="grey-6"
+                      @click="copyDamageRoll(weapon)"
+                    >
+                      <q-tooltip>Würfelbefehl kopieren</q-tooltip>
+                    </q-btn>
                     <q-btn
                       flat
                       dense
@@ -131,17 +219,17 @@
                   <span class="text-bold">{{ weapon.range }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
-                <span v-if="weapon.rof">
+                <span v-if="weapon.rof && !isWeaponMelee(weapon)">
                   <span class="text-grey-6">SF:</span>
                   <span class="text-bold">{{ weapon.rof }}</span>
                   <span class="q-mx-sm">•</span>
                 </span>
-                <span v-if="weapon.magazine">
+                <span v-if="weapon.magazine && !isWeaponMelee(weapon)">
                   <span class="text-grey-6">Mag:</span>
                   <span class="text-bold">{{ weapon.magazine }}</span>
                   <span class="q-mx-sm" v-if="weapon.reload">•</span>
                 </span>
-                <span v-if="weapon.reload">
+                <span v-if="weapon.reload && !isWeaponMelee(weapon)">
                   <span class="text-grey-6">Nachladen:</span>
                   <span class="text-bold">{{ weapon.reload }}</span>
                 </span>
@@ -394,75 +482,81 @@
         </div>
       </div>
 
-      <q-list v-if="character.gear.length > 0" bordered separator>
-        <draggable
-          v-model="character.gear"
-          item-key="name"
-          tag="div"
-        >
-          <template #item="{ element: item, index }">
-            <q-item dense :class="{ 'artifact-item': item.isArtifact, 'trophy-item': item.isTrophy }" class="cursor-grab">
-            <q-item-section avatar>
-              <q-avatar color="grey-8" text-color="white" size="sm">
-                {{ item.quantity || 1 }}
-              </q-avatar>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label :class="{ 'text-amber text-bold': item.isArtifact, 'text-purple text-bold': item.isTrophy }">
-                <q-icon v-if="item.isArtifact" name="auto_awesome" size="xs" color="amber" class="q-mr-xs" />
-                <q-icon v-if="item.isTrophy" name="emoji_events" size="xs" color="purple" class="q-mr-xs" />
-                {{ item.name }}
-              </q-item-label>
-              <q-item-label caption v-if="item.description">{{ item.description }}</q-item-label>
-              <q-item-label caption v-if="item.quality" :class="getGearQualityColor(item.quality)">
-                Qualität: {{ item.quality }}
-              </q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <div class="row q-gutter-xs">
-                <q-btn
-                  flat
-                  dense
-                  round
-                  size="sm"
-                  icon="remove"
-                  color="grey-6"
-                  @click="changeGearQuantity(index, -1)"
-                  :disable="item.quantity <= 1"
-                />
-                <q-btn
-                  flat
-                  dense
-                  round
-                  size="sm"
-                  icon="add"
-                  color="grey-6"
-                  @click="changeGearQuantity(index, 1)"
-                />
-                <q-btn
-                  flat
-                  dense
-                  round
-                  size="sm"
-                  icon="edit"
-                  color="grey-6"
-                  @click="editGear(index)"
-                />
-                <q-btn
-                  flat
-                  dense
-                  round
-                  size="sm"
-                  icon="delete"
-                  color="grey-6"
-                  @click="removeGear(item, index)"
-                />
-              </div>
-            </q-item-section>
-          </q-item>
+      <draggable
+        v-if="character.gear.length > 0"
+        v-model="character.gear"
+        item-key="name"
+        class="row q-col-gutter-sm"
+      >
+        <template #item="{ element: item, index }">
+          <div class="col-12 col-md-6">
+            <q-item
+              dense
+              bordered
+              class="rounded-borders cursor-grab"
+              :class="{ 'artifact-item': item.isArtifact, 'trophy-item': item.isTrophy }"
+            >
+              <q-item-section avatar>
+                <q-avatar color="grey-8" text-color="white" size="sm">
+                  {{ item.quantity || 1 }}
+                </q-avatar>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label :class="{ 'text-amber text-bold': item.isArtifact, 'text-purple text-bold': item.isTrophy }">
+                  <q-icon v-if="item.isArtifact" name="auto_awesome" size="xs" color="amber" class="q-mr-xs" />
+                  <q-icon v-if="item.isTrophy" name="emoji_events" size="xs" color="purple" class="q-mr-xs" />
+                  {{ item.name }}
+                </q-item-label>
+                <q-item-label caption v-if="item.description">{{ item.description }}</q-item-label>
+                <q-item-label caption v-if="item.quality" :class="getGearQualityColor(item.quality)">
+                  Qualität: {{ item.quality }}
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <div class="row q-gutter-xs">
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="remove"
+                    color="grey-6"
+                    @click="changeGearQuantity(index, -1)"
+                    :disable="item.quantity <= 1"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="add"
+                    color="grey-6"
+                    @click="changeGearQuantity(index, 1)"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="edit"
+                    color="grey-6"
+                    @click="editGear(index)"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="delete"
+                    color="grey-6"
+                    @click="removeGear(item, index)"
+                  />
+                </div>
+              </q-item-section>
+            </q-item>
+          </div>
         </template>
-        </draggable>
-      </q-list>
+      </draggable>
       <div v-else class="text-center text-grey-6 q-pa-md">
         <q-icon name="inventory_2" size="3rem" color="grey-6" />
         <div class="q-mt-sm">Keine Ausrüstung vorhanden</div>
@@ -585,7 +679,7 @@
 
         <q-card-section class="q-gutter-md">
           <!-- Name -->
-          <q-input v-model="newWeapon.name" label="Waffenname" filled dense />
+          <q-input v-model="newWeapon.name" label="Name" filled dense />
 
           <!-- Gattung -->
           <q-select
@@ -594,34 +688,7 @@
             label="Gattung"
             filled
             dense
-            hint="Kategorie nach Regelwerk"
-          >
-            <template v-slot:append>
-              <q-icon name="info" class="cursor-pointer" color="grey-6">
-                <q-tooltip max-width="300px">
-                  <div class="text-bold">Waffengattungen:</div>
-                  <div class="q-mt-xs">
-                    <b>Nahkampfwaffen:</b> Schwerter, Äxte, Kraftwaffen
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Wurfwaffen:</b> Messer, Granaten, etc.
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Pistolen:</b> Ein-Hand-Fernkampfwaffen
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Leichte Waffen:</b> Gewehre, leichte Bolter
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Schwere Waffen:</b> Schwere Bolter, Plasma-Kanonen
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Exotisch:</b> Seltene/ungewöhnliche Waffen
-                  </div>
-                </q-tooltip>
-              </q-icon>
-            </template>
-          </q-select>
+          />
 
           <!-- Subtype for Exotic weapons -->
           <q-select
@@ -634,14 +701,37 @@
             hint="Ist diese exotische Waffe für Nah- oder Fernkampf?"
           />
 
-          <!-- Schaden -->
+          <!-- RW (Reichweite) -->
           <q-input
-            v-model="newWeapon.damage"
-            label="Schaden"
+            v-model="newWeapon.range"
+            label="RW (Reichweite)"
             filled
             dense
-            hint="z.B. '1d10+3' oder '2d10'"
+            hint="z.B. '—' oder '3m'"
           />
+
+          <!-- Sch (Schaden) -->
+          <div class="row q-col-gutter-sm">
+            <div class="col">
+              <q-input
+                v-model="newWeapon.damage"
+                label="Sch (Schaden)"
+                filled
+                dense
+                hint="z.B. '1W10+4'"
+              />
+            </div>
+            <div class="col-4">
+              <q-input
+                v-model.number="newWeapon.damageMod"
+                label="Mod"
+                type="number"
+                filled
+                dense
+                hint="z.B. SB"
+              />
+            </div>
+          </div>
 
           <!-- Art (Schadensart) -->
           <q-select
@@ -656,49 +746,40 @@
             filled
             dense
             clearable
-            hint="E, I, R oder X"
           />
 
-          <!-- DS (Durchschlag/Penetration) -->
+          <!-- DS (Durchschlag) -->
           <q-input
             v-model.number="newWeapon.penetration"
             label="DS (Durchschlag)"
             type="number"
             filled
             dense
-            hint="Panzerungsdurchschlag"
           />
 
-          <!-- Reichweite -->
+          <!-- SF (Schussfolge) - nur für Fernkampf -->
           <q-input
-            v-model="newWeapon.range"
-            label="Reichweite"
-            filled
-            dense
-            hint="z.B. '30m' oder '-' für Nahkampf"
-          />
-
-          <!-- SF (Schussfolge/RoF) -->
-          <q-input
+            v-if="!isMeleeWeapon"
             v-model="newWeapon.rof"
             label="SF (Schussfolge)"
             filled
             dense
-            hint="z.B. 'S/3/-' oder '-' für Nahkampf"
+            hint="z.B. 'S/3/-'"
           />
 
-          <!-- Mag (Magazin) -->
+          <!-- Mag (Magazin) - nur für Fernkampf -->
           <q-input
+            v-if="!isMeleeWeapon"
             v-model.number="newWeapon.magazine"
             label="Mag (Magazin)"
             type="number"
             filled
             dense
-            hint="Magazingröße"
           />
 
-          <!-- Nachladen -->
+          <!-- Nachladen - nur für Fernkampf -->
           <q-select
+            v-if="!isMeleeWeapon"
             v-model="newWeapon.reload"
             :options="[
               'Halbe',
@@ -712,17 +793,16 @@
             filled
             dense
             clearable
-            hint="Wie viele Runden dauert das Nachladen"
           />
 
           <!-- Speziell (Eigenschaften) -->
           <q-input
             v-model="newWeapon.special"
-            label="Speziell (Eigenschaften)"
+            label="Speziell"
             type="textarea"
             filled
-            rows="3"
-            hint="z.B. 'Reißend, Unwuchtig, Primitiv'"
+            rows="2"
+            hint="z.B. 'Ausgewogen, Reißend'"
           />
 
           <!-- Qualität -->
@@ -733,27 +813,17 @@
             filled
             dense
           >
-            <template v-slot:append>
-              <q-icon name="info" class="cursor-pointer" color="grey-6">
-                <q-tooltip max-width="300px">
-                  <div class="text-bold">Waffenqualität:</div>
-                  <div class="q-mt-xs">
-                    <b>Gering:</b> Fernkampf: Unzuverlässig. Nahkampf: -10 auf
-                    Angriffe/Paraden
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Normal:</b> Standard-Waffe ohne Modifikationen
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Gut:</b> Fernkampf: Zuverlässig. Nahkampf: +5 auf
-                    Angriffe
-                  </div>
-                  <div class="q-mt-xs">
-                    <b>Hervorragend:</b> Fernkampf: Keine
-                    Ladehemmung/Überhitzung. Nahkampf: +10 Angriffe, +1 Schaden
-                  </div>
-                </q-tooltip>
-              </q-icon>
+            <template v-slot:hint>
+              <span v-if="isMeleeWeapon">
+                <span v-if="newWeapon.quality === 'Gering'">-10 auf Angriffe/Paraden</span>
+                <span v-else-if="newWeapon.quality === 'Gut'">+5 auf Angriffe</span>
+                <span v-else-if="newWeapon.quality === 'Hervorragend'">+10 Angriffe, +1 Schaden</span>
+              </span>
+              <span v-else>
+                <span v-if="newWeapon.quality === 'Gering'">Eigenschaft Unzuverlässig</span>
+                <span v-else-if="newWeapon.quality === 'Gut'">Eigenschaft Zuverlässig</span>
+                <span v-else-if="newWeapon.quality === 'Hervorragend'">Keine Ladehemmung/Überhitzung</span>
+              </span>
             </template>
           </q-select>
         </q-card-section>
@@ -1087,14 +1157,24 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
 import { useCharacterStore } from "../../stores/characterStore";
+import { useSettingsStore } from "../../stores/settingsStore";
 import ArmorVisualization from "../ArmorVisualization.vue";
 import draggable from "vuedraggable";
 
+const $q = useQuasar();
+
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
+
+const settingsStore = useSettingsStore();
+const { settings } = storeToRefs(settingsStore);
+
+// Weapon stacks for pistol damage bonus (session only)
+const weaponStacks = ref(0);
 
 // Weapon state
 const showAddWeaponDialog = ref(false);
@@ -1118,6 +1198,7 @@ const newWeapon = ref({
   type: "",
   subtype: "",
   damage: "",
+  damageMod: 0,
   damageType: "",
   penetration: 0,
   range: "",
@@ -1127,6 +1208,90 @@ const newWeapon = ref({
   special: "",
   quality: "Normal",
 });
+
+// Check if current weapon is melee
+const isMeleeWeapon = computed(() => {
+  return isWeaponMelee(newWeapon.value);
+});
+
+// Helper to check if any weapon is melee
+const isWeaponMelee = (weapon) => {
+  return weapon.type === "Nahkampfwaffen" ||
+    (weapon.type === "Exotische Waffen" && weapon.subtype === "Nahkampf");
+};
+
+// Copy damage roll command to clipboard for Discord
+const copyDamageRoll = async (weapon) => {
+  if (!weapon.damage) return;
+
+  // Convert damage format: "1W10+4 R" -> "1d10+4"
+  let diceCode = weapon.damage
+    .replace(/W/gi, "d")           // W -> d
+    .replace(/\s*[EIRX]\s*$/i, "") // Remove damage type suffix
+    .trim();
+
+  // Add extra d10 for "Reißend" damage type
+  if (weapon.damageType && weapon.damageType.includes("R")) {
+    const diceMatch = diceCode.match(/^(\d+)(d\d+)/);
+    if (diceMatch) {
+      const diceCount = parseInt(diceMatch[1]) + 1;
+      diceCode = diceCode.replace(/^\d+(d\d+)/, `${diceCount}$1`);
+    }
+  }
+
+  // Calculate total modifier: damageMod + weapon stacks (for pistols)
+  let extraMod = weapon.damageMod || 0;
+
+  // Add weapon stacks bonus for pistols
+  if (weapon.type === "Pistolen" && weaponStacks.value > 0) {
+    extraMod += weaponStacks.value;
+  }
+
+  // Combine modifiers: "1d10+4" with extraMod 5 -> "1d10+9"
+  if (extraMod) {
+    // Check if there's already a modifier in the dice code
+    const match = diceCode.match(/^(.+?)([+-]\d+)$/);
+    if (match) {
+      // Has existing modifier, combine them
+      const baseDice = match[1];
+      const existingMod = parseInt(match[2]);
+      const totalMod = existingMod + extraMod;
+      if (totalMod === 0) {
+        diceCode = baseDice;
+      } else if (totalMod > 0) {
+        diceCode = `${baseDice}+${totalMod}`;
+      } else {
+        diceCode = `${baseDice}${totalMod}`;
+      }
+    } else {
+      // No existing modifier, just add
+      if (extraMod > 0) {
+        diceCode += `+${extraMod}`;
+      } else {
+        diceCode += `${extraMod}`;
+      }
+    }
+  }
+
+  const command = `/würfle generic eingabe: ${diceCode}`;
+
+  try {
+    await navigator.clipboard.writeText(command);
+    $q.notify({
+      message: `Kopiert: ${command}`,
+      color: "positive",
+      icon: "content_copy",
+      timeout: 2000,
+    });
+  } catch (err) {
+    $q.notify({
+      message: "Kopieren fehlgeschlagen",
+      color: "negative",
+      icon: "error",
+      timeout: 2000,
+    });
+  }
+};
 
 // Armor state
 const showAddArmorDialog = ref(false);
@@ -1178,9 +1343,10 @@ const editWeapon = (index) => {
   const weapon = character.value.weapons[index];
   newWeapon.value = {
     ...weapon,
-    quality: weapon.quality || "Normal", // Default for old weapons
-    subtype: weapon.subtype || "", // Default for old weapons
-    damageType: weapon.damageType || "", // Default for old weapons
+    quality: weapon.quality || "Normal",
+    subtype: weapon.subtype || "",
+    damageType: weapon.damageType || "",
+    damageMod: weapon.damageMod || 0,
   };
   showAddWeaponDialog.value = true;
 };
@@ -1230,6 +1396,7 @@ const cancelWeaponDialog = () => {
     type: "",
     subtype: "",
     damage: "",
+    damageMod: 0,
     damageType: "",
     penetration: 0,
     range: "",
