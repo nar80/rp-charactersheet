@@ -41,12 +41,12 @@
         width="14"
         height="38"
         rx="7"
-        :fill="getZoneColor('Arme')"
-        :stroke="getZoneStroke('Arme')"
+        :fill="getZoneColor('Linker Arm')"
+        :stroke="getZoneStroke('Linker Arm')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Linker Arm: {{ getZoneAP("Arme") }} RP</title>
+        <title>Linker Arm: {{ getZoneAP("Linker Arm") }} RP</title>
       </rect>
 
       <!-- Right Arm (viewer's left = character's right) -->
@@ -56,12 +56,12 @@
         width="14"
         height="38"
         rx="7"
-        :fill="getZoneColor('Arme')"
-        :stroke="getZoneStroke('Arme')"
+        :fill="getZoneColor('Rechter Arm')"
+        :stroke="getZoneStroke('Rechter Arm')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Rechter Arm: {{ getZoneAP("Arme") }} RP</title>
+        <title>Rechter Arm: {{ getZoneAP("Rechter Arm") }} RP</title>
       </rect>
 
       <!-- Left Leg (viewer's right = character's left) -->
@@ -71,12 +71,12 @@
         width="14"
         height="48"
         rx="6"
-        :fill="getZoneColor('Beine')"
-        :stroke="getZoneStroke('Beine')"
+        :fill="getZoneColor('Linkes Bein')"
+        :stroke="getZoneStroke('Linkes Bein')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Linkes Bein: {{ getZoneAP("Beine") }} RP</title>
+        <title>Linkes Bein: {{ getZoneAP("Linkes Bein") }} RP</title>
       </rect>
 
       <!-- Right Leg (viewer's left = character's right) -->
@@ -86,12 +86,12 @@
         width="14"
         height="48"
         rx="6"
-        :fill="getZoneColor('Beine')"
-        :stroke="getZoneStroke('Beine')"
+        :fill="getZoneColor('Rechtes Bein')"
+        :stroke="getZoneStroke('Rechtes Bein')"
         stroke-width="1.5"
         class="armor-zone"
       >
-        <title>Rechtes Bein: {{ getZoneAP("Beine") }} RP</title>
+        <title>Rechtes Bein: {{ getZoneAP("Rechtes Bein") }} RP</title>
       </rect>
 
       <!-- AP Labels on body parts -->
@@ -99,48 +99,48 @@
       <text x="140" y="18" text-anchor="middle" class="zone-label-sm" :fill="getZoneLabelColor('Kopf')">
         {{ getZoneAPWithQuality("Kopf").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Kopf').hasGutBonus" x="140" y="27" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Kopf')">
-        ({{ getZoneAPWithQuality("Kopf").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Kopf').gutBonus" x="140" y="27" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Kopf')">
+        ({{ getZoneAPWithQuality("Kopf").total + getZoneAPWithQuality("Kopf").gutBonus }})
       </text>
 
       <!-- Körper -->
       <text x="140" y="50" text-anchor="middle" class="zone-label" :fill="getZoneLabelColor('Körper')">
         {{ getZoneAPWithQuality("Körper").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Körper').hasGutBonus" x="140" y="62" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Körper')">
-        ({{ getZoneAPWithQuality("Körper").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Körper').gutBonus" x="140" y="62" text-anchor="middle" class="zone-label-bonus" :fill="getZoneLabelColor('Körper')">
+        ({{ getZoneAPWithQuality("Körper").total + getZoneAPWithQuality("Körper").gutBonus }})
       </text>
 
       <!-- Rechter Arm (links im Bild) -->
-      <text x="112" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Arme')">
-        {{ getZoneAPWithQuality("Arme").total }}
+      <text x="112" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Rechter Arm')">
+        {{ getZoneAPWithQuality("Rechter Arm").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Arme').hasGutBonus" x="112" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Arme')">
-        ({{ getZoneAPWithQuality("Arme").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Rechter Arm').gutBonus" x="112" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Rechter Arm')">
+        ({{ getZoneAPWithQuality("Rechter Arm").total + getZoneAPWithQuality("Rechter Arm").gutBonus }})
       </text>
 
       <!-- Linker Arm (rechts im Bild) -->
-      <text x="168" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Arme')">
-        {{ getZoneAPWithQuality("Arme").total }}
+      <text x="168" y="50" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Linker Arm')">
+        {{ getZoneAPWithQuality("Linker Arm").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Arme').hasGutBonus" x="168" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Arme')">
-        ({{ getZoneAPWithQuality("Arme").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Linker Arm').gutBonus" x="168" y="60" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Linker Arm')">
+        ({{ getZoneAPWithQuality("Linker Arm").total + getZoneAPWithQuality("Linker Arm").gutBonus }})
       </text>
 
       <!-- Rechtes Bein (links im Bild) -->
-      <text x="127" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Beine')">
-        {{ getZoneAPWithQuality("Beine").total }}
+      <text x="127" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Rechtes Bein')">
+        {{ getZoneAPWithQuality("Rechtes Bein").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Beine').hasGutBonus" x="127" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Beine')">
-        ({{ getZoneAPWithQuality("Beine").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Rechtes Bein').gutBonus" x="127" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Rechtes Bein')">
+        ({{ getZoneAPWithQuality("Rechtes Bein").total + getZoneAPWithQuality("Rechtes Bein").gutBonus }})
       </text>
 
       <!-- Linkes Bein (rechts im Bild) -->
-      <text x="153" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Beine')">
-        {{ getZoneAPWithQuality("Beine").total }}
+      <text x="153" y="98" text-anchor="middle" class="zone-label-xs" :fill="getZoneLabelColor('Linkes Bein')">
+        {{ getZoneAPWithQuality("Linkes Bein").total }}
       </text>
-      <text v-if="getZoneAPWithQuality('Beine').hasGutBonus" x="153" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Beine')">
-        ({{ getZoneAPWithQuality("Beine").total + 1 }})
+      <text v-if="getZoneAPWithQuality('Linkes Bein').gutBonus" x="153" y="108" text-anchor="middle" class="zone-label-bonus-sm" :fill="getZoneLabelColor('Linkes Bein')">
+        ({{ getZoneAPWithQuality("Linkes Bein").total + getZoneAPWithQuality("Linkes Bein").gutBonus }})
       </text>
 
       <!-- Hit Zone Lines and Labels (dezent) -->
@@ -204,23 +204,59 @@ const props = defineProps({
 
 defineEmits(["zone-click"]);
 
-const zones = ["Kopf", "Körper", "Arme", "Beine"];
+// Helper function to check if armor covers a specific zone
+// Handles both standard locations (Arme, Beine) and specific locations (Linker Arm, etc.)
+const armorCoversZone = (armorPiece, zone) => {
+  const locations = armorPiece.locations;
 
-// Calculate effective AP for each zone and track which armor provides the max
+  // No locations means all zones are covered
+  if (!locations || locations.length === 0) return true;
+
+  // Direct match
+  if (locations.includes(zone)) return true;
+
+  // Check for specific arm/leg locations
+  if (zone === "Linker Arm") {
+    return locations.includes("Arme") || locations.includes("Linker Arm");
+  }
+  if (zone === "Rechter Arm") {
+    return locations.includes("Arme") || locations.includes("Rechter Arm");
+  }
+  if (zone === "Linkes Bein") {
+    return locations.includes("Beine") || locations.includes("Linkes Bein");
+  }
+  if (zone === "Rechtes Bein") {
+    return locations.includes("Beine") || locations.includes("Rechtes Bein");
+  }
+
+  // For generic zones (Arme, Beine), also check specific locations
+  if (zone === "Arme") {
+    return locations.includes("Arme") ||
+           locations.includes("Linker Arm") ||
+           locations.includes("Rechter Arm");
+  }
+  if (zone === "Beine") {
+    return locations.includes("Beine") ||
+           locations.includes("Linkes Bein") ||
+           locations.includes("Rechtes Bein");
+  }
+
+  return false;
+};
+
+// Calculate effective AP for each zone and track quality bonuses
 const getZoneAPWithQuality = (zone) => {
   let maxArmor = null;
   let maxAP = 0;
   let additiveAP = 0;
+  let additiveGutBonus = 0; // Track "Gut" bonus from additive armor only
 
   props.armor.forEach((armorPiece) => {
     // Only consider equipped armor
     if (!armorPiece.equipped) return;
 
-    // Check if this armor covers this zone or all zones
-    if (
-      armorPiece.locations.includes(zone) ||
-      armorPiece.locations.length === 0
-    ) {
+    // Check if this armor covers this zone
+    if (armorCoversZone(armorPiece, zone)) {
       let ap = armorPiece.ap || 0;
 
       // Apply quality modifiers
@@ -231,9 +267,14 @@ const getZoneAPWithQuality = (zone) => {
       // Additive armor (shields, etc.) adds to base
       if (armorPiece.additive) {
         additiveAP += ap;
+        // Track "Gut" bonus for additive armor
+        if (armorPiece.quality === "Gut") {
+          additiveGutBonus += 1;
+        }
       } else {
         // Normal armor takes maximum - track which one
-        if (ap > maxAP) {
+        // At equal AP, prefer "Gut" quality armor for the bonus
+        if (ap > maxAP || (ap === maxAP && armorPiece.quality === "Gut" && maxArmor?.quality !== "Gut")) {
           maxAP = ap;
           maxArmor = armorPiece;
         }
@@ -241,9 +282,14 @@ const getZoneAPWithQuality = (zone) => {
     }
   });
 
+  // "Gut" bonus comes from: the winning base armor (if "Gut") + all additive "Gut" armors
+  const baseGutBonus = maxArmor?.quality === "Gut" ? 1 : 0;
+  const totalGutBonus = baseGutBonus + additiveGutBonus;
+
   return {
     total: maxAP + additiveAP,
-    hasGutBonus: maxArmor?.quality === "Gut",
+    gutBonus: totalGutBonus, // Can be 0, 1, 2, etc.
+    hasGutBonus: totalGutBonus > 0, // For backward compatibility
   };
 };
 
@@ -271,10 +317,6 @@ const totalWeight = computed(() => {
 
   return total.toFixed(1);
 });
-
-const hasArmor = (zone) => {
-  return getZoneAP(zone) > 0;
-};
 
 // Color based on armor level
 const getZoneColor = (zone) => {

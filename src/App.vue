@@ -114,18 +114,23 @@ const calculatedRank = computed(() => {
 })
 
 const handleExport = () => {
-  const character = characterStore.character
-  const dataStr = JSON.stringify(character, null, 2)
+  const exportData = {
+    character: characterStore.character,
+    settings: settingsStore.settings
+  }
+  const dataStr = JSON.stringify(exportData, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
   // Build filename with optional timestamp
-  let filename = character.name || 'character'
+  let filename = exportData.character.name || 'character'
   if (settings.value.exportWithTimestamp) {
     const now = new Date()
-    const timestamp = now.toISOString()
-      .replace('T', '_')
-      .replace(/:/g, '-')
-      .slice(0, 16) // 2025-12-02_14-30
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}`
     filename = `${timestamp}_${filename}`
   }
 
@@ -152,8 +157,19 @@ const onFileSelected = (event) => {
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
-      const character = JSON.parse(e.target.result)
-      characterStore.loadCharacter(character)
+      const data = JSON.parse(e.target.result)
+
+      // Support both old format (just character) and new format (character + settings)
+      if (data.character) {
+        // New format with character and settings
+        characterStore.loadCharacter(data.character)
+        if (data.settings) {
+          Object.assign(settingsStore.settings, data.settings)
+        }
+      } else {
+        // Old format - data is the character itself
+        characterStore.loadCharacter(data)
+      }
 
       $q.notify({
         type: 'positive',

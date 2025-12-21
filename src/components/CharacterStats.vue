@@ -32,7 +32,7 @@
                 <span class="text-caption text-grey-6 stat-label">{{ character.hitPoints.current }}/{{ character.hitPoints.max }}</span>
                 <NumberInput
                   :model-value="character.hitPoints.current"
-                  :min="0"
+                  :min="-10"
                   :max="character.hitPoints.max"
                   button-color="red"
                   text-color="#ef5350"
@@ -131,20 +131,20 @@
               </q-input>
               <span class="text-grey-6 q-mx-xs">|</span>
               <span class="text-caption text-grey-6">INI:</span>
-              <span class="text-bold text-amber q-ml-xs" style="min-width: 24px;">
-                {{ lastInitiativeRoll !== null ? lastInitiativeRoll : '-' }}
+              <span class="text-bold text-amber q-ml-xs" style="min-width: 40px;">
+                1W10{{ (agilityBonus + (character.initiativeModifier || 0)) >= 0 ? '+' : '' }}{{ agilityBonus + (character.initiativeModifier || 0) }}
               </span>
               <q-btn
                 flat
                 dense
                 round
                 size="sm"
-                icon="casino"
+                icon="content_copy"
                 color="amber"
                 @click="rollInitiative"
                 class="q-ml-xs"
               >
-                <q-tooltip>Initiative würfeln (1W10 + {{ agilityBonus }} GEb + {{ character.initiativeModifier || 0 }} Mod)</q-tooltip>
+                <q-tooltip>Würfelbefehl kopieren (1W10 + {{ agilityBonus }} GEb + {{ character.initiativeModifier || 0 }} Mod)</q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -216,7 +216,7 @@
                 >
                   <NumberInput
                     :model-value="character.hitPoints.current"
-                    :min="0"
+                    :min="-10"
                     :max="character.hitPoints.max"
                     button-color="red"
                     text-color="#ef5350"
@@ -552,17 +552,17 @@
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
 import { useCharacterStore } from "../stores/characterStore";
 import NumberInput from "./NumberInput.vue";
+
+const $q = useQuasar();
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
 
 // Attributes expand/collapse state
 const attributesExpanded = ref(false);
-
-// Initiative roll
-const lastInitiativeRoll = ref(null);
 
 // Load state from localStorage
 onMounted(() => {
@@ -650,11 +650,37 @@ const resetShipPoints = () => {
   character.value.shipPoints.current = character.value.shipPoints.max;
 };
 
-// Initiative roll function
-const rollInitiative = () => {
-  const d10 = Math.floor(Math.random() * 10) + 1;
+// Copy initiative roll command to clipboard
+const rollInitiative = async () => {
   const modifier = character.value.initiativeModifier || 0;
-  lastInitiativeRoll.value = d10 + agilityBonus.value + modifier;
+  const totalMod = agilityBonus.value + modifier;
+
+  let diceCode = "1d10";
+  if (totalMod > 0) {
+    diceCode = `1d10+${totalMod}`;
+  } else if (totalMod < 0) {
+    diceCode = `1d10${totalMod}`;
+  }
+
+  const command = `/würfle generic eingabe: ${diceCode}`;
+
+  try {
+    await navigator.clipboard.writeText(command);
+    $q.notify({
+      message: `Kopiert: ${command}`,
+      color: "positive",
+      icon: "content_copy",
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error("Failed to copy:", error);
+    $q.notify({
+      message: "Kopieren fehlgeschlagen",
+      color: "negative",
+      icon: "error",
+      timeout: 2000,
+    });
+  }
 };
 
 // Number formatting functions
