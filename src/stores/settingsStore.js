@@ -13,7 +13,8 @@ export const useSettingsStore = defineStore('settings', () => {
     showNotes: true,
     aquilaOpacity: 3, // 0-10, where 0 = off
     enableWeaponStacks: false, // Special feature for pistol damage stacks
-    exportWithTimestamp: false // Add timestamp to exported filename
+    exportWithTimestamp: false, // Add timestamp to exported filename
+    enableAttributeSwap: false // Allow swapping KG/BF base attribute (e.g. use Wahrnehmung instead)
   })
 
   // Default values for new settings
@@ -26,7 +27,8 @@ export const useSettingsStore = defineStore('settings', () => {
     showNotes: true,
     aquilaOpacity: 3,
     enableWeaponStacks: false,
-    exportWithTimestamp: false
+    exportWithTimestamp: false,
+    enableAttributeSwap: false
   }
 
   // Load from localStorage on init

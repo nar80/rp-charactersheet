@@ -143,6 +143,58 @@
             <div v-if="settings.enableWeaponStacks" class="text-caption text-grey-6 q-ml-lg">
               Zeigt einen Stack-Counter bei Waffen an. Jeder Stack erhöht den Schaden aller Pistolen um +1.
             </div>
+
+            <q-toggle
+              v-model="settings.enableAttributeSwap"
+              label="Attribut-Tausch (KG/BF)"
+              color="primary"
+            >
+              <q-icon name="swap_horiz" class="q-ml-sm" size="sm" />
+            </q-toggle>
+            <div v-if="settings.enableAttributeSwap" class="text-caption text-grey-6 q-ml-lg">
+              Erlaubt im KG/BF-Dialog das Basis-Attribut zu ändern (z.B. Wahrnehmung statt KG/BF).
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Character-specific Special Abilities -->
+      <q-card class="q-mt-md">
+        <q-card-section>
+          <div class="text-h6">Charakter-Spezialfähigkeiten</div>
+          <div class="text-subtitle2 text-grey-7">
+            Klassenspezifische Fähigkeiten für diesen Charakter
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <div class="q-gutter-md">
+            <q-toggle
+              :model-value="character.specialAbilities?.waffenmeister?.enabled || false"
+              @update:model-value="ensureSpecialAbilities(); character.specialAbilities.waffenmeister.enabled = $event"
+              label="Waffenmeister (Magister Militaris)"
+              color="primary"
+            >
+              <q-icon name="military_tech" class="q-ml-sm" size="sm" />
+            </q-toggle>
+            <div v-if="character.specialAbilities?.waffenmeister?.enabled" class="q-ml-lg">
+              <div class="text-caption text-grey-6 q-mb-sm">
+                +10 BF/KG Bonus für die gewählte Waffengattung
+              </div>
+              <q-select
+                :model-value="character.specialAbilities?.waffenmeister?.weaponType"
+                @update:model-value="ensureSpecialAbilities(); character.specialAbilities.waffenmeister.weaponType = $event"
+                :options="weaponTypeOptions"
+                label="Waffengattung"
+                filled
+                dense
+                emit-value
+                map-options
+                style="max-width: 250px"
+              />
+            </div>
           </div>
         </q-card-section>
       </q-card>
@@ -177,6 +229,29 @@ const characterStore = useCharacterStore()
 const settingsStore = useSettingsStore()
 
 const { settings } = storeToRefs(settingsStore)
+const { character } = storeToRefs(characterStore)
+
+// Weapon types for Waffenmeister selection
+const weaponTypeOptions = [
+  { label: 'Nahkampfwaffen', value: 'Nahkampfwaffen' },
+  { label: 'Wurfwaffen', value: 'Wurfwaffen' },
+  { label: 'Pistolen', value: 'Pistolen' },
+  { label: 'Leichte Waffen', value: 'Leichte Waffen' },
+  { label: 'Schwere Waffen', value: 'Schwere Waffen' },
+  { label: 'Exotische Waffen', value: 'Exotische Waffen' }
+]
+
+// Ensure specialAbilities exists
+const ensureSpecialAbilities = () => {
+  if (!character.value.specialAbilities) {
+    character.value.specialAbilities = {
+      waffenmeister: { enabled: false, weaponType: null }
+    }
+  }
+  if (!character.value.specialAbilities.waffenmeister) {
+    character.value.specialAbilities.waffenmeister = { enabled: false, weaponType: null }
+  }
+}
 
 const confirmReset = () => {
   $q.dialog({

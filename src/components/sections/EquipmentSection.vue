@@ -29,33 +29,63 @@
         <!-- Combat Stats (BF/KG with modifiers) -->
         <div class="row items-center q-gutter-md">
           <!-- KG (Kampfgeschick) -->
-          <div
-            class="combat-stat-chip"
-            @click="openModifierDialog('KG')"
-          >
-            <span class="text-caption text-grey-6">KG:</span>
-            <span class="text-bold" :class="kgTotal >= character.attributes.KG ? 'text-positive' : 'text-negative'">
+          <div class="combat-stat-chip" @click="openModifierDialog('KG')">
+            <span class="text-caption text-grey-6"
+              >KG<span
+                v-if="
+                  character.combatAttributes?.kg &&
+                  character.combatAttributes.kg !== 'KG'
+                "
+                >({{ character.combatAttributes.kg }})</span
+              >:</span
+            >
+            <span
+              class="text-bold"
+              :class="
+                kgTotal >= kgBaseAttribute ? 'text-positive' : 'text-negative'
+              "
+            >
               {{ kgTotal }}
             </span>
-            <span v-if="kgModifier !== 0" class="text-caption" :class="kgModifier > 0 ? 'text-positive' : 'text-negative'">
-              ({{ kgModifier > 0 ? '+' : '' }}{{ kgModifier }})
+            <span
+              v-if="kgModifier !== 0"
+              class="text-caption"
+              :class="kgModifier > 0 ? 'text-positive' : 'text-negative'"
+            >
+              ({{ kgModifier > 0 ? "+" : "" }}{{ kgModifier }})
             </span>
             <q-tooltip>Kampfgeschick - Klicken für Modifikatoren</q-tooltip>
           </div>
 
           <!-- BF (Ballistische Fertigkeit) -->
-          <div
-            class="combat-stat-chip"
-            @click="openModifierDialog('BF')"
-          >
-            <span class="text-caption text-grey-6">BF:</span>
-            <span class="text-bold" :class="bfTotal >= character.attributes.BF ? 'text-positive' : 'text-negative'">
+          <div class="combat-stat-chip" @click="openModifierDialog('BF')">
+            <span class="text-caption text-grey-6"
+              >BF<span
+                v-if="
+                  character.combatAttributes?.bf &&
+                  character.combatAttributes.bf !== 'BF'
+                "
+                >({{ character.combatAttributes.bf }})</span
+              >:</span
+            >
+            <span
+              class="text-bold"
+              :class="
+                bfTotal >= bfBaseAttribute ? 'text-positive' : 'text-negative'
+              "
+            >
               {{ bfTotal }}
             </span>
-            <span v-if="bfModifier !== 0" class="text-caption" :class="bfModifier > 0 ? 'text-positive' : 'text-negative'">
-              ({{ bfModifier > 0 ? '+' : '' }}{{ bfModifier }})
+            <span
+              v-if="bfModifier !== 0"
+              class="text-caption"
+              :class="bfModifier > 0 ? 'text-positive' : 'text-negative'"
+            >
+              ({{ bfModifier > 0 ? "+" : "" }}{{ bfModifier }})
             </span>
-            <q-tooltip>Ballistische Fertigkeit - Klicken für Modifikatoren</q-tooltip>
+            <q-tooltip
+              >Ballistische Fertigkeit - Klicken für Modifikatoren</q-tooltip
+            >
           </div>
 
           <!-- Reset Button -->
@@ -65,16 +95,28 @@
             round
             size="sm"
             icon="refresh"
-            :color="(kgModifier !== 0 || bfModifier !== 0) ? 'primary' : 'grey-7'"
+            :color="kgModifier !== 0 || bfModifier !== 0 ? 'primary' : 'grey-7'"
             :disable="kgModifier === 0 && bfModifier === 0"
-            @click="activeKgModifiers = []; activeBfModifiers = []; selectedKgManeuver = null; selectedBfManeuver = null; selectedKgWeaponIndex = null; selectedBfWeaponIndex = null; kgModifier = 0; bfModifier = 0"
+            @click="
+              activeKgModifiers = [];
+              activeBfModifiers = [];
+              selectedKgManeuver = null;
+              selectedBfManeuver = null;
+              selectedKgWeaponIndex = null;
+              selectedBfWeaponIndex = null;
+              kgModifier = 0;
+              bfModifier = 0;
+            "
           >
             <q-tooltip>Modifikatoren zurücksetzen</q-tooltip>
           </q-btn>
         </div>
 
         <!-- Weapon Stacks (only if enabled) -->
-        <div v-if="settings.enableWeaponStacks" class="row items-center q-gutter-sm">
+        <div
+          v-if="settings.enableWeaponStacks"
+          class="row items-center q-gutter-sm"
+        >
           <q-icon name="auto_awesome" size="xs" style="color: #d4af37" />
           <span class="text-caption text-grey-6">Stacks:</span>
           <NumberInput
@@ -153,9 +195,11 @@
                     <div class="text-subtitle1 text-bold">
                       {{ weapon.name }}
                       <!-- Mod/Trait Icons -->
-                      <template v-if="weapon.mods?.length || weapon.traits?.length">
+                      <template
+                        v-if="weapon.mods?.length || weapon.traits?.length"
+                      >
                         <q-icon
-                          v-for="mod in (weapon.mods || [])"
+                          v-for="mod in weapon.mods || []"
                           :key="mod"
                           :name="getModIcon(mod)"
                           size="xs"
@@ -165,7 +209,7 @@
                           <q-tooltip>{{ getModLabel(mod) }}</q-tooltip>
                         </q-icon>
                         <q-icon
-                          v-for="trait in (weapon.traits || [])"
+                          v-for="trait in weapon.traits || []"
                           :key="trait"
                           :name="getTraitIcon(trait)"
                           size="xs"
@@ -257,7 +301,9 @@
                 <div class="text-body2" style="line-height: 1.8">
                   <span v-if="weapon.damage">
                     <span class="text-grey-6">Schaden:</span>
-                    <span class="text-bold">{{ weapon.damage }}</span>
+                    <span class="text-bold">{{
+                      formatDamageDisplay(weapon)
+                    }}</span>
                     <span class="q-mx-sm">•</span>
                   </span>
                   <span v-if="weapon.damageType">
@@ -296,9 +342,9 @@
                   </span>
                 </div>
 
-                <!-- Speziell / Eigenschaften (besonders wichtig!) -->
+                <!-- Eigenschaften - Nahkampf (Chips mit Tooltips) -->
                 <div
-                  v-if="weapon.special"
+                  v-if="weapon.traits?.length && isWeaponMelee(weapon)"
                   class="q-mt-sm q-pa-xs"
                   style="
                     background: rgba(255, 213, 79, 0.1);
@@ -306,30 +352,183 @@
                     border-radius: 4px;
                   "
                 >
-                  <div class="text-body2 text-bold text-amber">
+                  <div class="text-body2 text-bold text-amber q-mb-xs">
                     Eigenschaften:
                   </div>
-                  <div class="text-body2">{{ weapon.special }}</div>
+                  <div class="row q-gutter-xs">
+                    <q-chip
+                      v-for="trait in weapon.traits"
+                      :key="trait"
+                      dense
+                      size="sm"
+                      color="amber-9"
+                      text-color="white"
+                    >
+                      {{ getMeleeTraitLabel(trait) }}
+                      <q-tooltip max-width="300px">{{
+                        getMeleeTraitDescription(trait)
+                      }}</q-tooltip>
+                    </q-chip>
+                  </div>
                 </div>
 
-                <!-- Quality Display -->
-                <div class="q-mt-sm text-body2">
-                  <span class="text-grey-6">Qualität:</span>
-                  <span
-                    class="text-bold q-ml-xs"
-                    :class="getQualityColor(weapon.quality || 'Normal')"
-                    >{{ weapon.quality || "Normal" }}</span
-                  >
-                  <span class="text-grey-6 q-mx-xs">—</span>
-                  <span :class="getQualityColor(weapon.quality || 'Normal')">
-                    {{
-                      getWeaponQualityEffect(
-                        weapon.quality || "Normal",
-                        weapon.type,
-                        weapon.subtype
-                      )
-                    }}
-                  </span>
+                <!-- Eigenschaften - Fernkampf (Chips mit Tooltips) -->
+                <div
+                  v-if="weapon.rangedTraits?.length && !isWeaponMelee(weapon)"
+                  class="q-mt-sm q-pa-xs"
+                  style="
+                    background: rgba(255, 213, 79, 0.1);
+                    border-left: 3px solid #ffd54f;
+                    border-radius: 4px;
+                  "
+                >
+                  <div class="text-body2 text-bold text-amber q-mb-xs">
+                    Eigenschaften:
+                  </div>
+                  <div class="row q-gutter-xs">
+                    <q-chip
+                      v-for="trait in weapon.rangedTraits"
+                      :key="trait"
+                      dense
+                      size="sm"
+                      color="amber-9"
+                      text-color="white"
+                    >
+                      {{ getRangedTraitLabel(trait) }}
+                      <q-tooltip max-width="300px">{{
+                        getRangedTraitDescription(trait)
+                      }}</q-tooltip>
+                    </q-chip>
+                  </div>
+                </div>
+
+                <!-- Quality Display + Ammo Tracker -->
+                <div class="q-mt-sm text-body2 row items-center">
+                  <!-- Quality (left) -->
+                  <div class="col">
+                    <span class="text-grey-6">Qualität:</span>
+                    <span
+                      class="text-bold q-ml-xs"
+                      :class="getQualityColor(weapon.quality || 'Normal')"
+                      >{{ weapon.quality || "Normal" }}</span
+                    >
+                    <span class="text-grey-6 q-mx-xs">—</span>
+                    <span :class="getQualityColor(weapon.quality || 'Normal')">
+                      {{
+                        getWeaponQualityEffect(
+                          weapon.quality || "Normal",
+                          weapon.type,
+                          weapon.subtype,
+                        )
+                      }}
+                    </span>
+                  </div>
+
+                  <!-- Spacer for melee weapons (same height as ammo tracker) -->
+                  <div v-if="!hasAmmoTracking(weapon)" class="col-auto">
+                    <div style="height: 24px"></div>
+                  </div>
+
+                  <!-- Ammo Tracker (right, for ranged weapons with magazine) -->
+                  <div v-if="hasAmmoTracking(weapon)" class="col-auto">
+                    <div class="row items-center q-gutter-xs">
+                      <q-btn-group flat dense>
+                        <q-btn
+                          v-if="parseRof(weapon.rof).single > 0"
+                          flat
+                          dense
+                          size="sm"
+                          label="E"
+                          :disable="
+                            getWeaponAmmo(weapon) <
+                            getAmmoUsed(weapon, 'single')
+                          "
+                          @click="fireWeapon(weapon, index, 'single')"
+                        >
+                          <q-tooltip
+                            >Einzelschuss ({{ getAmmoUsed(weapon, "single")
+                            }}{{
+                              weapon.rangedTraits?.includes("sturm")
+                                ? " - Sturm"
+                                : ""
+                            }})</q-tooltip
+                          >
+                        </q-btn>
+                        <q-btn
+                          v-if="parseRof(weapon.rof).salvo > 0"
+                          flat
+                          dense
+                          size="sm"
+                          :label="parseRof(weapon.rof).salvo.toString()"
+                          :disable="
+                            getWeaponAmmo(weapon) < getAmmoUsed(weapon, 'salvo')
+                          "
+                          @click="fireWeapon(weapon, index, 'salvo')"
+                        >
+                          <q-tooltip
+                            >Salve ({{ getAmmoUsed(weapon, "salvo")
+                            }}{{
+                              weapon.rangedTraits?.includes("sturm")
+                                ? " - Sturm"
+                                : ""
+                            }})</q-tooltip
+                          >
+                        </q-btn>
+                        <q-btn
+                          v-if="parseRof(weapon.rof).auto > 0"
+                          flat
+                          dense
+                          size="sm"
+                          :label="parseRof(weapon.rof).auto.toString()"
+                          :disable="
+                            getWeaponAmmo(weapon) < getAmmoUsed(weapon, 'auto')
+                          "
+                          @click="fireWeapon(weapon, index, 'auto')"
+                        >
+                          <q-tooltip
+                            >Vollautomatisch ({{ getAmmoUsed(weapon, "auto")
+                            }}{{
+                              weapon.rangedTraits?.includes("sturm")
+                                ? " - Sturm"
+                                : ""
+                            }})</q-tooltip
+                          >
+                        </q-btn>
+                      </q-btn-group>
+                      <q-chip
+                        dense
+                        size="sm"
+                        :color="
+                          getWeaponAmmo(weapon) === 0
+                            ? 'negative'
+                            : getWeaponAmmo(weapon) <=
+                                Math.floor(parseInt(weapon.magazine) / 4)
+                              ? 'warning'
+                              : 'grey-8'
+                        "
+                        text-color="white"
+                        class="text-bold"
+                      >
+                        {{ getWeaponAmmo(weapon) }}/{{ weapon.magazine }}
+                      </q-chip>
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="refresh"
+                        color="primary"
+                        :disable="
+                          getWeaponAmmo(weapon) >= parseInt(weapon.magazine)
+                        "
+                        @click="reloadWeapon(weapon, index)"
+                      >
+                        <q-tooltip
+                          >Nachladen ({{ weapon.reload || "Voll" }})</q-tooltip
+                        >
+                      </q-btn>
+                    </div>
+                  </div>
                 </div>
               </q-card-section>
             </q-card>
@@ -416,7 +615,7 @@
                             {{
                               getArmorLocationText(
                                 armor.locations,
-                                armor.additive
+                                armor.additive,
                               )
                             }}
                           </span>
@@ -558,107 +757,215 @@
         </div>
       </div>
 
-      <draggable
-        v-if="character.gear.length > 0"
-        v-model="character.gear"
-        item-key="name"
-        class="row q-col-gutter-sm"
-      >
-        <template #item="{ element: item, index }">
-          <div class="col-12 col-md-6">
-            <q-item
-              dense
-              bordered
-              class="rounded-borders cursor-grab"
-              :class="{
-                'artifact-item': item.isArtifact,
-                'trophy-item': item.isTrophy,
-              }"
-            >
-              <q-item-section avatar>
-                <q-avatar color="grey-8" text-color="white" size="sm">
-                  {{ item.quantity || 1 }}
-                </q-avatar>
-              </q-item-section>
-              <q-item-section>
-                <q-item-label
-                  :class="{
-                    'text-amber text-bold': item.isArtifact,
-                    'text-purple text-bold': item.isTrophy,
-                  }"
-                >
-                  <q-icon
-                    v-if="item.isArtifact"
-                    name="auto_awesome"
-                    size="xs"
-                    color="amber"
-                    class="q-mr-xs"
-                  />
-                  <q-icon
-                    v-if="item.isTrophy"
-                    name="emoji_events"
-                    size="xs"
-                    color="purple"
-                    class="q-mr-xs"
-                  />
-                  {{ item.name }}
-                </q-item-label>
-                <q-item-label caption v-if="item.description">{{
-                  item.description
-                }}</q-item-label>
-                <q-item-label
-                  caption
-                  v-if="item.quality"
-                  :class="getGearQualityColor(item.quality)"
-                >
-                  Qualität: {{ item.quality }}
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <div class="row q-gutter-xs">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="remove"
-                    color="grey-6"
-                    @click="changeGearQuantity(index, -1)"
-                    :disable="item.quantity <= 1"
-                  />
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="add"
-                    color="grey-6"
-                    @click="changeGearQuantity(index, 1)"
-                  />
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="edit"
-                    color="grey-6"
-                    @click="editGear(index)"
-                  />
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="delete"
-                    color="grey-6"
-                    @click="removeGear(item, index)"
-                  />
-                </div>
-              </q-item-section>
-            </q-item>
-          </div>
-        </template>
-      </draggable>
+      <div v-if="character.gear.length > 0" class="row q-col-gutter-sm">
+        <!-- Left Column -->
+        <div class="col-12 col-md-6">
+          <draggable
+            v-model="leftColumnGear"
+            item-key="name"
+            group="gear"
+            class="gear-column"
+            :animation="150"
+          >
+            <template #item="{ element: item }">
+              <q-item
+                dense
+                bordered
+                class="rounded-borders cursor-grab q-mb-xs gear-item"
+                :class="{
+                  'artifact-item': item.isArtifact,
+                  'trophy-item': item.isTrophy,
+                }"
+              >
+                <q-item-section avatar>
+                  <q-avatar color="grey-8" text-color="white" size="sm">
+                    {{ item.quantity || 1 }}
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label
+                    :class="{
+                      'text-amber text-bold': item.isArtifact,
+                      'text-purple text-bold': item.isTrophy,
+                    }"
+                  >
+                    <q-icon
+                      v-if="item.isArtifact"
+                      name="auto_awesome"
+                      size="xs"
+                      color="amber"
+                      class="q-mr-xs"
+                    />
+                    <q-icon
+                      v-if="item.isTrophy"
+                      name="emoji_events"
+                      size="xs"
+                      color="purple"
+                      class="q-mr-xs"
+                    />
+                    {{ item.name }}
+                  </q-item-label>
+                  <q-item-label caption v-if="item.description">{{
+                    item.description
+                  }}</q-item-label>
+                  <q-item-label
+                    caption
+                    v-if="item.quality"
+                    :class="getGearQualityColor(item.quality)"
+                  >
+                    Qualität: {{ item.quality }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <div class="row q-gutter-xs">
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="remove"
+                      color="grey-6"
+                      @click="changeGearQuantityByItem(item, -1)"
+                      :disable="item.quantity <= 1"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="add"
+                      color="grey-6"
+                      @click="changeGearQuantityByItem(item, 1)"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="edit"
+                      color="grey-6"
+                      @click="editGearByItem(item)"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="delete"
+                      color="grey-6"
+                      @click="removeGearByItem(item)"
+                    />
+                  </div>
+                </q-item-section>
+              </q-item>
+            </template>
+          </draggable>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-12 col-md-6">
+          <draggable
+            v-model="rightColumnGear"
+            item-key="name"
+            group="gear"
+            class="gear-column"
+            :animation="150"
+          >
+            <template #item="{ element: item }">
+              <q-item
+                dense
+                bordered
+                class="rounded-borders cursor-grab q-mb-xs gear-item"
+                :class="{
+                  'artifact-item': item.isArtifact,
+                  'trophy-item': item.isTrophy,
+                }"
+              >
+                <q-item-section avatar>
+                  <q-avatar color="grey-8" text-color="white" size="sm">
+                    {{ item.quantity || 1 }}
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label
+                    :class="{
+                      'text-amber text-bold': item.isArtifact,
+                      'text-purple text-bold': item.isTrophy,
+                    }"
+                  >
+                    <q-icon
+                      v-if="item.isArtifact"
+                      name="auto_awesome"
+                      size="xs"
+                      color="amber"
+                      class="q-mr-xs"
+                    />
+                    <q-icon
+                      v-if="item.isTrophy"
+                      name="emoji_events"
+                      size="xs"
+                      color="purple"
+                      class="q-mr-xs"
+                    />
+                    {{ item.name }}
+                  </q-item-label>
+                  <q-item-label caption v-if="item.description">{{
+                    item.description
+                  }}</q-item-label>
+                  <q-item-label
+                    caption
+                    v-if="item.quality"
+                    :class="getGearQualityColor(item.quality)"
+                  >
+                    Qualität: {{ item.quality }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <div class="row q-gutter-xs">
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="remove"
+                      color="grey-6"
+                      @click="changeGearQuantityByItem(item, -1)"
+                      :disable="item.quantity <= 1"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="add"
+                      color="grey-6"
+                      @click="changeGearQuantityByItem(item, 1)"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="edit"
+                      color="grey-6"
+                      @click="editGearByItem(item)"
+                    />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="delete"
+                      color="grey-6"
+                      @click="removeGearByItem(item)"
+                    />
+                  </div>
+                </q-item-section>
+              </q-item>
+            </template>
+          </draggable>
+        </div>
+      </div>
       <div v-else class="text-center text-grey-6 q-pa-md">
         <q-icon name="inventory_2" size="3rem" color="grey-6" />
         <div class="q-mt-sm">Keine Ausrüstung vorhanden</div>
@@ -724,33 +1031,80 @@
 
     <!-- Combat Modifier Dialog -->
     <q-dialog v-model="showModifierDialog">
-      <q-card style="min-width: 450px; max-width: 550px;">
+      <q-card style="min-width: 450px; max-width: 550px">
         <q-card-section class="row items-center q-pb-sm">
           <div class="text-h6">
-            {{ currentModifierStat === 'KG' ? 'Kampfgeschick (KG)' : 'Ballistische Fertigkeit (BF)' }}
+            {{
+              currentModifierStat === "KG"
+                ? "Kampfgeschick (KG)"
+                : "Ballistische Fertigkeit (BF)"
+            }}
           </div>
           <q-space />
           <q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+
+        <!-- Attribute Swap (if enabled) -->
+        <q-card-section
+          v-if="settings.enableAttributeSwap"
+          class="q-pt-none q-pb-sm"
+        >
+          <q-select
+            :model-value="
+              currentModifierStat === 'KG'
+                ? character.combatAttributes?.kg || 'KG'
+                : character.combatAttributes?.bf || 'BF'
+            "
+            :options="availableAttributes"
+            label="Basis-Attribut"
+            filled
+            dense
+            emit-value
+            map-options
+            @update:model-value="updateCombatAttribute($event)"
+          >
+            <template v-slot:prepend>
+              <q-icon name="swap_horiz" />
+            </template>
+          </q-select>
         </q-card-section>
 
         <!-- Current Total Display -->
         <q-card-section class="q-pt-none q-pb-sm">
           <div class="row items-center justify-center q-gutter-sm">
             <div class="text-h4 text-bold text-primary">
-              {{ currentModifierStat === 'KG' ? character.attributes.KG : character.attributes.BF }}
+              {{
+                currentModifierStat === "KG" ? kgBaseAttribute : bfBaseAttribute
+              }}
             </div>
-            <div v-if="currentModifierValue !== 0" class="text-h5" :class="currentModifierValue > 0 ? 'text-positive' : 'text-negative'">
-              {{ currentModifierValue > 0 ? '+' : '' }}{{ currentModifierValue }}
+            <div
+              v-if="currentModifierValue !== 0"
+              class="text-h5"
+              :class="
+                currentModifierValue > 0 ? 'text-positive' : 'text-negative'
+              "
+            >
+              {{ currentModifierValue > 0 ? "+" : ""
+              }}{{ currentModifierValue }}
             </div>
             <div class="text-h4">=</div>
             <div
               class="text-h4 text-bold"
-              :class="currentModifierValue > 0 ? 'text-positive' : currentModifierValue < 0 ? 'text-negative' : 'text-white'"
+              :class="
+                currentModifierValue > 0
+                  ? 'text-positive'
+                  : currentModifierValue < 0
+                    ? 'text-negative'
+                    : 'text-white'
+              "
             >
               {{ currentTotal }}
             </div>
           </div>
-          <div v-if="currentModifierValue >= 60 || currentModifierValue <= -60" class="text-caption text-center text-warning q-mt-xs">
+          <div
+            v-if="currentModifierValue >= 60 || currentModifierValue <= -60"
+            class="text-caption text-center text-warning q-mt-xs"
+          >
             Maximum erreicht (±60)
           </div>
         </q-card-section>
@@ -759,7 +1113,13 @@
         <q-card-section class="q-py-sm">
           <q-select
             :model-value="currentSelectedWeaponIndex"
-            :options="currentWeaponsList.map(w => ({ label: w.name, value: w.originalIndex, weapon: w }))"
+            :options="
+              currentWeaponsList.map((w) => ({
+                label: w.name,
+                value: w.originalIndex,
+                weapon: w,
+              }))
+            "
             label="Aktive Waffe"
             filled
             dense
@@ -773,21 +1133,43 @@
                 <q-item-section>
                   <q-item-label>{{ opt.label }}</q-item-label>
                   <q-item-label caption>
-                    {{ opt.weapon.quality || 'Normal' }}
-                    <span v-if="opt.weapon.traits?.length"> • {{ opt.weapon.traits.join(', ') }}</span>
-                    <span v-if="opt.weapon.mods?.length"> • {{ opt.weapon.mods.join(', ') }}</span>
+                    {{ opt.weapon.quality || "Normal" }}
+                    <span v-if="opt.weapon.traits?.length">
+                      • {{ opt.weapon.traits.join(", ") }}</span
+                    >
+                    <span v-if="opt.weapon.mods?.length">
+                      • {{ opt.weapon.mods.join(", ") }}</span
+                    >
                   </q-item-label>
                 </q-item-section>
               </q-item>
             </template>
             <template v-slot:selected-item="{ opt }">
               {{ opt.label }}
-              <q-badge v-if="currentSelectedWeapon?.quality === 'Gut'" color="positive" class="q-ml-sm">+5</q-badge>
-              <q-badge v-if="currentSelectedWeapon?.quality === 'Hervorragend'" color="positive" class="q-ml-sm">+10</q-badge>
-              <q-badge v-if="currentSelectedWeapon?.quality === 'Gering'" color="negative" class="q-ml-sm">-10</q-badge>
+              <q-badge
+                v-if="currentSelectedWeapon?.quality === 'Gut'"
+                color="positive"
+                class="q-ml-sm"
+                >+5</q-badge
+              >
+              <q-badge
+                v-if="currentSelectedWeapon?.quality === 'Hervorragend'"
+                color="positive"
+                class="q-ml-sm"
+                >+10</q-badge
+              >
+              <q-badge
+                v-if="currentSelectedWeapon?.quality === 'Gering'"
+                color="negative"
+                class="q-ml-sm"
+                >-10</q-badge
+              >
             </template>
           </q-select>
-          <div v-if="currentSelectedWeapon && getWeaponBonusDescription()" class="text-caption text-grey-5 q-mt-xs">
+          <div
+            v-if="currentSelectedWeapon && getWeaponBonusDescription()"
+            class="text-caption text-grey-5 q-mt-xs"
+          >
             {{ getWeaponBonusDescription() }}
           </div>
         </q-card-section>
@@ -812,9 +1194,15 @@
         <q-tab-panels v-model="modifierDialogTab" animated>
           <!-- Modifiers Tab -->
           <q-tab-panel name="modifiers" class="q-pa-sm">
-            <div style="max-height: 300px; overflow-y: auto;">
-              <div v-for="(category, catKey) in currentCategories" :key="catKey" class="q-mb-md">
-                <div class="text-subtitle2 text-grey-6 q-mb-xs">{{ category.name }}</div>
+            <div style="max-height: 300px; overflow-y: auto">
+              <div
+                v-for="(category, catKey) in currentCategories"
+                :key="catKey"
+                class="q-mb-md"
+              >
+                <div class="text-subtitle2 text-grey-6 q-mb-xs">
+                  {{ category.name }}
+                </div>
                 <div class="row q-col-gutter-xs">
                   <div
                     v-for="mod in category.modifiers"
@@ -822,17 +1210,31 @@
                     class="col-6"
                   >
                     <q-btn
-                      :color="isModifierActive(mod.id) ? (mod.value > 0 ? 'positive' : mod.value < 0 ? 'negative' : 'grey') : 'grey-8'"
+                      :color="
+                        isModifierActive(mod.id)
+                          ? mod.value > 0
+                            ? 'positive'
+                            : mod.value < 0
+                              ? 'negative'
+                              : 'grey'
+                          : 'grey-8'
+                      "
                       :outline="!isModifierActive(mod.id)"
-                      :text-color="isModifierActive(mod.id) ? 'white' : 'grey-4'"
+                      :text-color="
+                        isModifierActive(mod.id) ? 'white' : 'grey-4'
+                      "
                       dense
                       no-caps
                       class="full-width modifier-btn"
                       @click="toggleModifier(mod.id)"
                     >
                       <div class="row items-center full-width justify-between">
-                        <span class="text-left ellipsis" style="flex: 1;">{{ mod.name }}</span>
-                        <span class="text-bold q-ml-sm">{{ mod.value > 0 ? '+' : '' }}{{ mod.value }}</span>
+                        <span class="text-left ellipsis" style="flex: 1">{{
+                          mod.name
+                        }}</span>
+                        <span class="text-bold q-ml-sm"
+                          >{{ mod.value > 0 ? "+" : "" }}{{ mod.value }}</span
+                        >
                       </div>
                     </q-btn>
                   </div>
@@ -843,8 +1245,10 @@
 
           <!-- Maneuvers Tab -->
           <q-tab-panel name="maneuvers" class="q-pa-sm">
-            <div style="max-height: 300px; overflow-y: auto;">
-              <div class="text-caption text-grey-6 q-mb-sm">Wähle ein Manöver (exklusiv):</div>
+            <div style="max-height: 300px; overflow-y: auto">
+              <div class="text-caption text-grey-6 q-mb-sm">
+                Wähle ein Manöver (exklusiv):
+              </div>
               <div class="row q-col-gutter-xs">
                 <div
                   v-for="maneuver in currentManeuvers"
@@ -852,9 +1256,19 @@
                   class="col-6"
                 >
                   <q-btn
-                    :color="isManeuverActive(maneuver.id) ? (maneuver.value > 0 ? 'positive' : maneuver.value < 0 ? 'negative' : 'grey') : 'grey-8'"
+                    :color="
+                      isManeuverActive(maneuver.id)
+                        ? maneuver.value > 0
+                          ? 'positive'
+                          : maneuver.value < 0
+                            ? 'negative'
+                            : 'grey'
+                        : 'grey-8'
+                    "
                     :outline="!isManeuverActive(maneuver.id)"
-                    :text-color="isManeuverActive(maneuver.id) ? 'white' : 'grey-4'"
+                    :text-color="
+                      isManeuverActive(maneuver.id) ? 'white' : 'grey-4'
+                    "
                     dense
                     no-caps
                     class="full-width modifier-btn"
@@ -862,19 +1276,38 @@
                   >
                     <div class="column full-width">
                       <div class="row items-center full-width justify-between">
-                        <span class="text-left ellipsis" style="flex: 1;">{{ maneuver.name }}</span>
-                        <span class="text-bold q-ml-sm">{{ maneuver.value > 0 ? '+' : '' }}{{ maneuver.value }}</span>
+                        <span class="text-left ellipsis" style="flex: 1">{{
+                          maneuver.name
+                        }}</span>
+                        <span class="text-bold q-ml-sm"
+                          >{{ maneuver.value > 0 ? "+" : ""
+                          }}{{ maneuver.value }}</span
+                        >
                       </div>
-                      <div class="text-caption text-left text-grey-5" style="font-size: 10px;">{{ maneuver.type }}</div>
+                      <div
+                        class="text-caption text-left text-grey-5"
+                        style="font-size: 10px"
+                      >
+                        {{ maneuver.type }}
+                      </div>
                     </div>
-                    <q-tooltip class="text-body2" :delay="300">{{ maneuver.description }}</q-tooltip>
+                    <q-tooltip class="text-body2" :delay="300">{{
+                      maneuver.description
+                    }}</q-tooltip>
                   </q-btn>
                 </div>
               </div>
               <!-- Maneuver description -->
-              <div v-if="currentSelectedManeuver" class="q-mt-md q-pa-sm bg-grey-9 rounded-borders">
-                <div class="text-subtitle2">{{ getManeuverById(currentSelectedManeuver)?.name }}</div>
-                <div class="text-caption text-grey-5">{{ getManeuverById(currentSelectedManeuver)?.description }}</div>
+              <div
+                v-if="currentSelectedManeuver"
+                class="q-mt-md q-pa-sm bg-grey-9 rounded-borders"
+              >
+                <div class="text-subtitle2">
+                  {{ getManeuverById(currentSelectedManeuver)?.name }}
+                </div>
+                <div class="text-caption text-grey-5">
+                  {{ getManeuverById(currentSelectedManeuver)?.description }}
+                </div>
               </div>
             </div>
           </q-tab-panel>
@@ -884,26 +1317,51 @@
 
         <!-- Automatic Modifiers (from character state) -->
         <q-card-section v-if="isExhausted" class="q-py-sm">
-          <div class="text-caption text-grey-6 q-mb-xs">Automatische Modifikatoren:</div>
+          <div class="text-caption text-grey-6 q-mb-xs">
+            Automatische Modifikatoren:
+          </div>
           <div class="row q-gutter-xs">
             <q-chip
               clickable
               dense
               size="sm"
-              :color="isAutoModifierIgnored('auto_erschoepft') ? 'grey-7' : 'negative'"
-              :text-color="isAutoModifierIgnored('auto_erschoepft') ? 'grey-5' : 'white'"
-              :style="isAutoModifierIgnored('auto_erschoepft') ? 'text-decoration: line-through' : ''"
+              :color="
+                isAutoModifierIgnored('auto_erschoepft') ? 'grey-7' : 'negative'
+              "
+              :text-color="
+                isAutoModifierIgnored('auto_erschoepft') ? 'grey-5' : 'white'
+              "
+              :style="
+                isAutoModifierIgnored('auto_erschoepft')
+                  ? 'text-decoration: line-through'
+                  : ''
+              "
               @click="toggleIgnoreAutoModifier('auto_erschoepft')"
             >
               <q-icon name="local_fire_department" size="xs" class="q-mr-xs" />
               Erschöpft (-10)
-              <q-tooltip>Klicken um zu {{ isAutoModifierIgnored('auto_erschoepft') ? 'aktivieren' : 'ignorieren' }}</q-tooltip>
+              <q-tooltip
+                >Klicken um zu
+                {{
+                  isAutoModifierIgnored("auto_erschoepft")
+                    ? "aktivieren"
+                    : "ignorieren"
+                }}</q-tooltip
+              >
             </q-chip>
           </div>
         </q-card-section>
 
         <!-- Active Modifiers/Maneuver/Weapon Summary -->
-        <q-card-section v-if="currentActiveModifiers.length > 0 || currentSelectedManeuver || currentSelectedWeapon" class="q-py-sm">
+        <q-card-section
+          v-if="
+            currentActiveModifiers.length > 0 ||
+            currentSelectedManeuver ||
+            currentSelectedWeapon ||
+            isWaffenmeisterActive
+          "
+          class="q-py-sm"
+        >
           <div class="text-caption text-grey-6 q-mb-xs">Aktive Boni/Mali:</div>
           <div class="row q-gutter-xs">
             <!-- Selected Weapon -->
@@ -917,7 +1375,20 @@
               @remove="selectWeapon(null)"
             >
               {{ currentSelectedWeapon.name }}
-              <span v-if="getWeaponBonusDescription()"> ({{ getWeaponBonusDescription() }})</span>
+              <span v-if="getWeaponBonusDescription()">
+                ({{ getWeaponBonusDescription() }})</span
+              >
+            </q-chip>
+            <!-- Waffenmeister Bonus -->
+            <q-chip
+              v-if="isWaffenmeisterActive"
+              dense
+              size="sm"
+              color="purple"
+              text-color="white"
+            >
+              <q-icon name="military_tech" size="xs" class="q-mr-xs" />
+              Waffenmeister (+10)
             </q-chip>
             <!-- Selected Maneuver -->
             <q-chip
@@ -929,7 +1400,9 @@
               text-color="white"
               @remove="selectManeuver(null)"
             >
-              {{ getManeuverById(currentSelectedManeuver)?.name }} ({{ getManeuverById(currentSelectedManeuver)?.value > 0 ? '+' : '' }}{{ getManeuverById(currentSelectedManeuver)?.value }})
+              {{ getManeuverById(currentSelectedManeuver)?.name }} ({{
+                getManeuverById(currentSelectedManeuver)?.value > 0 ? "+" : ""
+              }}{{ getManeuverById(currentSelectedManeuver)?.value }})
             </q-chip>
             <!-- Active Modifiers -->
             <q-chip
@@ -938,11 +1411,15 @@
               removable
               dense
               size="sm"
-              :color="getModifierById(modId)?.value > 0 ? 'positive' : 'negative'"
+              :color="
+                getModifierById(modId)?.value > 0 ? 'positive' : 'negative'
+              "
               text-color="white"
               @remove="toggleModifier(modId)"
             >
-              {{ getModifierById(modId)?.name }} ({{ getModifierById(modId)?.value > 0 ? '+' : '' }}{{ getModifierById(modId)?.value }})
+              {{ getModifierById(modId)?.name }} ({{
+                getModifierById(modId)?.value > 0 ? "+" : ""
+              }}{{ getModifierById(modId)?.value }})
             </q-chip>
           </div>
         </q-card-section>
@@ -950,7 +1427,17 @@
         <q-separator />
 
         <q-card-actions align="right">
-          <q-btn flat label="Alle zurücksetzen" color="grey" @click="resetCurrentAll" :disable="currentActiveModifiers.length === 0 && !currentSelectedManeuver && !currentSelectedWeapon" />
+          <q-btn
+            flat
+            label="Alle zurücksetzen"
+            color="grey"
+            @click="resetCurrentAll"
+            :disable="
+              currentActiveModifiers.length === 0 &&
+              !currentSelectedManeuver &&
+              !currentSelectedWeapon
+            "
+          />
           <q-btn flat label="Schließen" color="primary" v-close-popup />
         </q-card-actions>
       </q-card>
@@ -1118,14 +1605,19 @@
             clearable
           />
 
-          <!-- Speziell (Eigenschaften) -->
-          <q-input
-            v-model="newWeapon.special"
-            label="Speziell"
-            type="textarea"
+          <!-- Fernkampf Traits -->
+          <q-select
+            v-if="!isMeleeWeapon"
+            v-model="newWeapon.rangedTraits"
+            :options="rangedTraitOptions"
+            label="Eigenschaften"
             filled
-            rows="2"
-            hint="z.B. 'Ausgewogen, Reißend'"
+            dense
+            multiple
+            emit-value
+            map-options
+            clearable
+            use-chips
           />
 
           <!-- Qualität -->
@@ -1236,7 +1728,9 @@
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <div class="text-caption text-grey-6">Schaden</div>
-              <div class="text-body1">{{ currentWeapon?.damage || "-" }}</div>
+              <div class="text-body1">
+                {{ currentWeapon ? formatDamageDisplay(currentWeapon) : "-" }}
+              </div>
             </div>
             <div class="col-6">
               <div class="text-caption text-grey-6">Penetration</div>
@@ -1576,7 +2070,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useCharacterStore } from "../../stores/characterStore";
@@ -1593,41 +2087,169 @@ const { character } = storeToRefs(characterStore);
 const settingsStore = useSettingsStore();
 const { settings } = storeToRefs(settingsStore);
 
-// Weapon stacks for pistol damage bonus (session only)
-const weaponStacks = ref(0);
+// Ensure combatState exists with defaults
+const ensureCombatState = () => {
+  if (!character.value.combatState) {
+    character.value.combatState = {
+      weaponStacks: 0,
+      activeKgModifiers: [],
+      activeBfModifiers: [],
+      selectedKgManeuver: null,
+      selectedBfManeuver: null,
+      selectedKgWeaponIndex: null,
+      selectedBfWeaponIndex: null,
+    };
+  }
+};
 
-// Combat modifiers (KG/BF)
+// Weapon stacks for pistol damage bonus (persisted in character store)
+const weaponStacks = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.weaponStacks || 0;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.weaponStacks = val;
+  },
+});
+
+// Combat modifiers (KG/BF) - calculated values, not persisted directly
 const kgModifier = ref(0);
 const bfModifier = ref(0);
 const showModifierDialog = ref(false);
-const currentModifierStat = ref('KG');
-const modifierDialogTab = ref('modifiers');
+const currentModifierStat = ref("KG");
+const modifierDialogTab = ref("modifiers");
 
-// Selected maneuvers (exclusive, one per stat)
-const selectedKgManeuver = ref(null);
-const selectedBfManeuver = ref(null);
+// Selected maneuvers (exclusive, one per stat) - persisted
+const selectedKgManeuver = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.selectedKgManeuver;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.selectedKgManeuver = val;
+  },
+});
+const selectedBfManeuver = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.selectedBfManeuver;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.selectedBfManeuver = val;
+  },
+});
 
-// Selected weapons for modifier calculation
-const selectedKgWeaponIndex = ref(null);
-const selectedBfWeaponIndex = ref(null);
+// Selected weapons for modifier calculation - persisted
+const selectedKgWeaponIndex = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.selectedKgWeaponIndex;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.selectedKgWeaponIndex = val;
+  },
+});
+const selectedBfWeaponIndex = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.selectedBfWeaponIndex;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.selectedBfWeaponIndex = val;
+  },
+});
+
+// Ensure combatAttributes exists with defaults
+const ensureCombatAttributes = () => {
+  if (!character.value.combatAttributes) {
+    character.value.combatAttributes = { kg: "KG", bf: "BF" };
+  }
+};
+
+// Get the base attribute value for KG (respects attribute swap)
+const kgBaseAttribute = computed(() => {
+  ensureCombatAttributes();
+  const attr = character.value.combatAttributes.kg || "KG";
+  return character.value.attributes[attr] || character.value.attributes.KG;
+});
+
+// Get the base attribute value for BF (respects attribute swap)
+const bfBaseAttribute = computed(() => {
+  ensureCombatAttributes();
+  const attr = character.value.combatAttributes.bf || "BF";
+  return character.value.attributes[attr] || character.value.attributes.BF;
+});
 
 // Computed totals for KG/BF
-const kgTotal = computed(() => character.value.attributes.KG + kgModifier.value);
-const bfTotal = computed(() => character.value.attributes.BF + bfModifier.value);
+const kgTotal = computed(() => kgBaseAttribute.value + kgModifier.value);
+const bfTotal = computed(() => bfBaseAttribute.value + bfModifier.value);
+
+// Available attributes for swap
+const availableAttributes = [
+  { value: "KG", label: "Kampfgeschick (KG)" },
+  { value: "BF", label: "Ballistische Fe. (BF)" },
+  { value: "ST", label: "Stärke (ST)" },
+  { value: "WI", label: "Widerstand (WI)" },
+  { value: "GE", label: "Gewandtheit (GE)" },
+  { value: "IN", label: "Intelligenz (IN)" },
+  { value: "WA", label: "Wahrnehmung (WA)" },
+  { value: "WK", label: "Willenskraft (WK)" },
+  { value: "CH", label: "Charisma (CH)" },
+];
 
 // Current modifier value based on selected stat
 const currentModifierValue = computed(() =>
-  currentModifierStat.value === 'KG' ? kgModifier.value : bfModifier.value
+  currentModifierStat.value === "KG" ? kgModifier.value : bfModifier.value,
 );
 
 // Current total based on selected stat
 const currentTotal = computed(() =>
-  currentModifierStat.value === 'KG' ? kgTotal.value : bfTotal.value
+  currentModifierStat.value === "KG" ? kgTotal.value : bfTotal.value,
 );
 
-// Active modifiers (stored as arrays of modifier IDs)
-const activeKgModifiers = ref([]);
-const activeBfModifiers = ref([]);
+// Check if Waffenmeister bonus is active for current weapon
+const isWaffenmeisterActive = computed(() => {
+  const waffenmeister = character.value.specialAbilities?.waffenmeister;
+  if (!waffenmeister?.enabled || !waffenmeister?.weaponType) return false;
+
+  const selectedWeaponIndex =
+    currentModifierStat.value === "KG"
+      ? selectedKgWeaponIndex.value
+      : selectedBfWeaponIndex.value;
+
+  if (selectedWeaponIndex === null) return false;
+
+  const weapon = character.value.weapons[selectedWeaponIndex];
+  return weapon?.type === waffenmeister.weaponType;
+});
+
+// Active modifiers (stored as arrays of modifier IDs) - persisted
+const activeKgModifiers = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.activeKgModifiers || [];
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.activeKgModifiers = val;
+  },
+});
+const activeBfModifiers = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.activeBfModifiers || [];
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.activeBfModifiers = val;
+  },
+});
 
 // Ignored auto-modifiers (when user wants to override automatic modifiers)
 const ignoredAutoModifiers = ref([]);
@@ -1643,135 +2265,277 @@ watch(isExhausted, () => {
 // All available modifiers organized by category
 const modifierCategories = {
   zielgroesse: {
-    name: 'Zielgröße',
-    stat: 'BF', // Only for BF
+    name: "Zielgröße",
+    stat: "BF", // Only for BF
     exclusive: true, // Only one can be selected
     modifiers: [
-      { id: 'gigantisch', name: 'Gigantisches Ziel', value: 30 },
-      { id: 'riesig', name: 'Riesiges Ziel', value: 20 },
-      { id: 'gross', name: 'Großes Ziel', value: 10 },
-      { id: 'klein', name: 'Kleines Ziel', value: -10 },
-      { id: 'sehrklein', name: 'Sehr kleines Ziel', value: -20 },
-      { id: 'winzig', name: 'Winziges Ziel', value: -30 },
-    ]
+      { id: "gigantisch", name: "Gigantisches Ziel", value: 30 },
+      { id: "riesig", name: "Riesiges Ziel", value: 20 },
+      { id: "gross", name: "Großes Ziel", value: 10 },
+      { id: "klein", name: "Kleines Ziel", value: -10 },
+      { id: "sehrklein", name: "Sehr kleines Ziel", value: -20 },
+      { id: "winzig", name: "Winziges Ziel", value: -30 },
+    ],
   },
   distanz: {
-    name: 'Distanz',
-    stat: 'BF',
+    name: "Distanz",
+    stat: "BF",
     exclusive: true, // Only one can be selected
     modifiers: [
-      { id: 'kernschuss', name: 'Kernschussweite', value: 30 },
-      { id: 'kurz', name: 'Kurze Distanz', value: 10 },
-      { id: 'gross_entf', name: 'Große Entfernung', value: -10 },
-      { id: 'extrem', name: 'Extreme Distanz', value: -30 },
-    ]
+      { id: "kernschuss", name: "Kernschussweite", value: 30 },
+      { id: "kurz", name: "Kurze Distanz", value: 10 },
+      { id: "gross_entf", name: "Große Entfernung", value: -10 },
+      { id: "extrem", name: "Extreme Distanz", value: -30 },
+    ],
   },
   ueberzahl: {
-    name: 'Überzahl',
-    stat: 'KG', // Only for KG
+    name: "Überzahl",
+    stat: "KG", // Only for KG
     exclusive: true, // Only one can be selected (2:1 OR 3:1)
     modifiers: [
-      { id: 'ueber3zu1', name: '3:1 Überzahl', value: 20 },
-      { id: 'ueber2zu1', name: '2:1 Überzahl', value: 10 },
-    ]
+      { id: "ueber3zu1", name: "3:1 Überzahl", value: 20 },
+      { id: "ueber2zu1", name: "2:1 Überzahl", value: 10 },
+    ],
   },
   zielzustand: {
-    name: 'Ziel-Zustand',
-    stat: 'both',
+    name: "Ziel-Zustand",
+    stat: "both",
     exclusive: true, // Only one can be selected
     modifiers: [
-      { id: 'unaufmerksam', name: 'Unaufmerksamer Gegner', value: 30 },
-      { id: 'betaeubt', name: 'Betäubter Gegner', value: 20 },
-      { id: 'liegend_nah', name: 'Liegendes Ziel (Nahkampf)', value: 10, stat: 'KG' },
-      { id: 'liegend_fern', name: 'Liegendes Ziel (Fernkampf)', value: -10, stat: 'BF' },
-      { id: 'verborgen', name: 'Völlig verborgenes Ziel', value: -30, stat: 'BF' },
-    ]
+      { id: "unaufmerksam", name: "Unaufmerksamer Gegner", value: 30 },
+      { id: "betaeubt", name: "Betäubter Gegner", value: 20 },
+      {
+        id: "liegend_nah",
+        name: "Liegendes Ziel (Nahkampf)",
+        value: 10,
+        stat: "KG",
+      },
+      {
+        id: "liegend_fern",
+        name: "Liegendes Ziel (Fernkampf)",
+        value: -10,
+        stat: "BF",
+      },
+      {
+        id: "verborgen",
+        name: "Völlig verborgenes Ziel",
+        value: -30,
+        stat: "BF",
+      },
+    ],
   },
   eigenposition: {
-    name: 'Eigene Position/Zustand',
-    stat: 'both',
+    name: "Eigene Position/Zustand",
+    stat: "both",
     exclusive: false, // Can be additive
     modifiers: [
-      { id: 'erhoeht', name: 'Erhöhte Position', value: 10 },
-      { id: 'liegend_selbst', name: 'Im Liegen (Nahkampf)', value: -10, stat: 'KG' },
-      { id: 'schlamm', name: 'Im Schlamm/dichter Regen', value: -10 },
-      { id: 'tiefschnee', name: 'In Tiefschnee', value: -30 },
-    ]
+      { id: "erhoeht", name: "Erhöhte Position", value: 10 },
+      {
+        id: "liegend_selbst",
+        name: "Im Liegen (Nahkampf)",
+        value: -10,
+        stat: "KG",
+      },
+      { id: "schlamm", name: "Im Schlamm/dichter Regen", value: -10 },
+      { id: "tiefschnee", name: "In Tiefschnee", value: -30 },
+    ],
   },
   sicht: {
-    name: 'Sicht/Umgebung',
-    stat: 'both',
+    name: "Sicht/Umgebung",
+    stat: "both",
     exclusive: true, // Only one can be selected
     modifiers: [
-      { id: 'nebel', name: 'Nebel/Dunst/Schatten', value: -20, stat: 'BF' },
-      { id: 'dunkel_nah', name: 'Im Dunkeln', value: -20, stat: 'KG' },
-      { id: 'dunkel_fern', name: 'Schuss im Dunkeln', value: -30, stat: 'BF' },
-    ]
+      { id: "nebel", name: "Nebel/Dunst/Schatten", value: -20, stat: "BF" },
+      { id: "dunkel_nah", name: "Im Dunkeln", value: -20, stat: "KG" },
+      { id: "dunkel_fern", name: "Schuss im Dunkeln", value: -30, stat: "BF" },
+    ],
   },
   spezial: {
-    name: 'Spezielle Situationen',
-    stat: 'both',
+    name: "Spezielle Situationen",
+    stat: "both",
     exclusive: false, // Can be additive
     modifiers: [
-      { id: 'nahkampf_schuss', name: 'Schuss in den Nahkampf', value: -20, stat: 'BF' },
-      { id: 'unbewaffnet', name: 'Unbewaffnet vs. bewaffnet', value: -20, stat: 'KG' },
-      { id: 'ohne_talent', name: 'Waffe ohne Talent', value: -20 },
-      { id: 'schwer_nicht_abgestuetzt', name: 'Schwere Waffe nicht abgestützt', value: -30, stat: 'BF' },
-    ]
+      { id: "hass", name: "Haß (verhaßte Kreatur)", value: 10, stat: "KG" },
+      {
+        id: "nahkampf_schuss",
+        name: "Schuss in den Nahkampf",
+        value: -20,
+        stat: "BF",
+      },
+      {
+        id: "unbewaffnet",
+        name: "Unbewaffnet vs. bewaffnet",
+        value: -20,
+        stat: "KG",
+      },
+      { id: "ohne_talent", name: "Waffe ohne Talent", value: -20 },
+      {
+        id: "schwer_nicht_abgestuetzt",
+        name: "Schwere Waffe nicht abgestützt",
+        value: -30,
+        stat: "BF",
+      },
+    ],
   },
 };
 
 // Combat maneuvers (KG)
 const kgManeuvers = [
-  { id: 'standard_kg', name: 'Standardangriff', value: 0, type: 'Halb', description: 'Ein normaler Nahkampfangriff ohne Modifikatoren.' },
-  { id: 'sturmangriff', name: 'Sturmangriff', value: 10, type: 'Voll', description: 'Muss sich mindestens 4m bewegen. +10 KG.' },
-  { id: 'kompromisslos', name: 'Kompromißloser Angriff', value: 20, type: 'Voll', description: '+20 KG, kann in dieser Runde weder ausweichen noch parieren.' },
-  { id: 'vorsichtig', name: 'Vorsichtiger Angriff', value: -10, type: 'Voll', description: '-10 KG, aber +10 auf Parade und Ausweichen.' },
-  { id: 'gezielt_kg', name: 'Gezielter Angriff', value: -20, type: 'Voll', description: 'Bestimmtes Körperteil angreifen mit -20 KG.' },
-  { id: 'finte', name: 'Finte', value: 0, type: 'Halb', description: 'Vergleichender KG-Wurf. Bei Erfolg kann Ziel weder ausweichen noch parieren.' },
-  { id: 'manoever', name: 'Manöver', value: 0, type: 'Halb', description: 'Vergleichender KG-Wurf. Bei Erfolg kann Feind 1m bewegt werden.' },
-  { id: 'umreissen', name: 'Umreißen', value: 0, type: 'Halb', description: 'Versuch, den Gegner zu Boden zu werfen.' },
-  { id: 'betaeuben', name: 'Betäuben', value: 0, type: 'Voll', description: 'Versuch, einen Gegner zu betäuben.' },
-  { id: 'packen', name: 'Packen', value: 0, type: 'Halb/Voll', description: 'Packen-Angriff oder Befreiungsversuch.' },
+  {
+    id: "standard_kg",
+    name: "Standardangriff",
+    value: 0,
+    type: "Halb",
+    description: "Ein normaler Nahkampfangriff ohne Modifikatoren.",
+  },
+  {
+    id: "sturmangriff",
+    name: "Sturmangriff",
+    value: 10,
+    type: "Voll",
+    description: "Muss sich mindestens 4m bewegen. +10 KG.",
+  },
+  {
+    id: "kompromisslos",
+    name: "Kompromißloser Angriff",
+    value: 20,
+    type: "Voll",
+    description: "+20 KG, kann in dieser Runde weder ausweichen noch parieren.",
+  },
+  {
+    id: "vorsichtig",
+    name: "Vorsichtiger Angriff",
+    value: -10,
+    type: "Voll",
+    description: "-10 KG, aber +10 auf Parade und Ausweichen.",
+  },
+  {
+    id: "gezielt_kg",
+    name: "Gezielter Angriff",
+    value: -20,
+    type: "Voll",
+    description: "Bestimmtes Körperteil angreifen mit -20 KG.",
+  },
+  {
+    id: "finte",
+    name: "Finte",
+    value: 0,
+    type: "Halb",
+    description:
+      "Vergleichender KG-Wurf. Bei Erfolg kann Ziel weder ausweichen noch parieren.",
+  },
+  {
+    id: "manoever",
+    name: "Manöver",
+    value: 0,
+    type: "Halb",
+    description:
+      "Vergleichender KG-Wurf. Bei Erfolg kann Feind 1m bewegt werden.",
+  },
+  {
+    id: "umreissen",
+    name: "Umreißen",
+    value: 0,
+    type: "Halb",
+    description: "Versuch, den Gegner zu Boden zu werfen.",
+  },
+  {
+    id: "betaeuben",
+    name: "Betäuben",
+    value: 0,
+    type: "Voll",
+    description: "Versuch, einen Gegner zu betäuben.",
+  },
+  {
+    id: "packen",
+    name: "Packen",
+    value: 0,
+    type: "Halb/Voll",
+    description: "Packen-Angriff oder Befreiungsversuch.",
+  },
 ];
 
 // Combat maneuvers (BF)
 const bfManeuvers = [
-  { id: 'standard_bf', name: 'Standardangriff', value: 0, type: 'Halb', description: 'Ein normaler Fernkampfangriff ohne Modifikatoren.' },
-  { id: 'halbautomatisch', name: 'Halbautom. Feuer', value: 10, type: 'Voll', description: '+10 BF, weiterer Treffer für je zwei Erfolgsgrade.' },
-  { id: 'automatisch', name: 'Automatisches Feuer', value: 20, type: 'Voll', description: '+20 BF, weiterer Treffer für jeden Erfolgsgrad.' },
-  { id: 'zielen_halb', name: 'Zielen (Halb)', value: 10, type: 'Halb', description: '+10 auf den nächsten Angriff.' },
-  { id: 'zielen_voll', name: 'Zielen (Voll)', value: 20, type: 'Voll', description: '+20 auf den nächsten Angriff.' },
-  { id: 'gezielt_bf', name: 'Gezielter Angriff', value: -20, type: 'Voll', description: 'Bestimmtes Körperteil angreifen mit -20 BF.' },
-  { id: 'sperrfeuer', name: 'Sperrfeuer', value: -20, type: 'Voll', description: 'Zwingt Gegner in Deckung. -20 BF.' },
+  {
+    id: "standard_bf",
+    name: "Standardangriff",
+    value: 0,
+    type: "Halb",
+    description: "Ein normaler Fernkampfangriff ohne Modifikatoren.",
+  },
+  {
+    id: "halbautomatisch",
+    name: "Halbautom. Feuer",
+    value: 10,
+    type: "Voll",
+    description: "+10 BF, weiterer Treffer für je zwei Erfolgsgrade.",
+  },
+  {
+    id: "automatisch",
+    name: "Automatisches Feuer",
+    value: 20,
+    type: "Voll",
+    description: "+20 BF, weiterer Treffer für jeden Erfolgsgrad.",
+  },
+  {
+    id: "zielen_halb",
+    name: "Zielen (Halb)",
+    value: 10,
+    type: "Halb",
+    description: "+10 auf den nächsten Angriff.",
+  },
+  {
+    id: "zielen_voll",
+    name: "Zielen (Voll)",
+    value: 20,
+    type: "Voll",
+    description: "+20 auf den nächsten Angriff.",
+  },
+  {
+    id: "gezielt_bf",
+    name: "Gezielter Angriff",
+    value: -20,
+    type: "Voll",
+    description: "Bestimmtes Körperteil angreifen mit -20 BF.",
+  },
+  {
+    id: "sperrfeuer",
+    name: "Sperrfeuer",
+    value: -20,
+    type: "Voll",
+    description: "Zwingt Gegner in Deckung. -20 BF.",
+  },
 ];
 
 // Get maneuvers for current stat
 const currentManeuvers = computed(() =>
-  currentModifierStat.value === 'KG' ? kgManeuvers : bfManeuvers
+  currentModifierStat.value === "KG" ? kgManeuvers : bfManeuvers,
 );
 
 // Filter weapons by type for dropdown
 const meleeWeapons = computed(() =>
   character.value.weapons
     .map((w, i) => ({ ...w, originalIndex: i }))
-    .filter(w => isWeaponMelee(w))
+    .filter((w) => isWeaponMelee(w)),
 );
 
 const rangedWeapons = computed(() =>
   character.value.weapons
     .map((w, i) => ({ ...w, originalIndex: i }))
-    .filter(w => !isWeaponMelee(w))
+    .filter((w) => !isWeaponMelee(w)),
 );
 
 // Current weapons list based on stat
 const currentWeaponsList = computed(() =>
-  currentModifierStat.value === 'KG' ? meleeWeapons.value : rangedWeapons.value
+  currentModifierStat.value === "KG" ? meleeWeapons.value : rangedWeapons.value,
 );
 
 // Current selected weapon index
 const currentSelectedWeaponIndex = computed(() =>
-  currentModifierStat.value === 'KG' ? selectedKgWeaponIndex.value : selectedBfWeaponIndex.value
+  currentModifierStat.value === "KG"
+    ? selectedKgWeaponIndex.value
+    : selectedBfWeaponIndex.value,
 );
 
 // Current selected weapon object
@@ -1783,7 +2547,7 @@ const currentSelectedWeapon = computed(() => {
 
 // Select weapon
 const selectWeapon = (index) => {
-  if (currentModifierStat.value === 'KG') {
+  if (currentModifierStat.value === "KG") {
     selectedKgWeaponIndex.value = index;
   } else {
     selectedBfWeaponIndex.value = index;
@@ -1798,38 +2562,44 @@ const calculateWeaponBonus = (weapon, stat, maneuver) => {
   let bonus = 0;
   const details = [];
 
-  if (stat === 'KG') {
+  if (stat === "KG") {
     // Melee weapon quality
-    if (weapon.quality === 'Gering') {
+    if (weapon.quality === "Gering") {
       bonus -= 10;
-      details.push('Gering: -10');
-    } else if (weapon.quality === 'Gut') {
+      details.push("Gering: -10");
+    } else if (weapon.quality === "Gut") {
       bonus += 5;
-      details.push('Gut: +5');
-    } else if (weapon.quality === 'Hervorragend') {
+      details.push("Gut: +5");
+    } else if (weapon.quality === "Hervorragend") {
       bonus += 10;
-      details.push('Hervorragend: +10');
+      details.push("Hervorragend: +10");
     }
 
     // Melee traits
-    if (weapon.traits?.includes('defensiv')) {
+    if (weapon.traits?.includes("defensiv")) {
       bonus -= 10;
-      details.push('Defensiv: -10 Angriff');
+      details.push("Defensiv: -10 Angriff");
     }
   } else {
     // Ranged weapon mods
     const mods = weapon.mods || [];
 
     // Laser-Zielvorrichtung: +10 bei Einzelschuss (standard_bf)
-    if ((mods.includes('laserziel') || mods.includes('praezision')) && maneuver === 'standard_bf') {
+    if (
+      (mods.includes("laserziel") || mods.includes("praezision")) &&
+      maneuver === "standard_bf"
+    ) {
       bonus += 10;
-      details.push('Laser-Zielvorrichtung: +10');
+      details.push("Laser-Zielvorrichtung: +10");
     }
 
     // Bewegungsspuerer: +10 bei Salve/Auto
-    if (mods.includes('bewegungsspuerer') && (maneuver === 'halbautomatisch' || maneuver === 'automatisch')) {
+    if (
+      mods.includes("bewegungsspuerer") &&
+      (maneuver === "halbautomatisch" || maneuver === "automatisch")
+    ) {
       bonus += 10;
-      details.push('Bewegungsspürer: +10');
+      details.push("Bewegungsspürer: +10");
     }
   }
 
@@ -1838,18 +2608,24 @@ const calculateWeaponBonus = (weapon, stat, maneuver) => {
 
 // Get description of current weapon bonus
 const getWeaponBonusDescription = () => {
-  if (!currentSelectedWeapon.value) return '';
+  if (!currentSelectedWeapon.value) return "";
 
   const maneuver = currentSelectedManeuver.value;
   const stat = currentModifierStat.value;
-  const { details } = calculateWeaponBonus(currentSelectedWeapon.value, stat, maneuver);
+  const { details } = calculateWeaponBonus(
+    currentSelectedWeapon.value,
+    stat,
+    maneuver,
+  );
 
-  return details.join(', ');
+  return details.join(", ");
 };
 
 // Get currently selected maneuver for current stat
 const currentSelectedManeuver = computed(() =>
-  currentModifierStat.value === 'KG' ? selectedKgManeuver.value : selectedBfManeuver.value
+  currentModifierStat.value === "KG"
+    ? selectedKgManeuver.value
+    : selectedBfManeuver.value,
 );
 
 // Check if maneuver is active
@@ -1859,26 +2635,30 @@ const isManeuverActive = (maneuverId) => {
 
 // Select a maneuver (or deselect if same or null)
 const selectManeuver = (maneuverId) => {
-  if (currentModifierStat.value === 'KG') {
-    selectedKgManeuver.value = selectedKgManeuver.value === maneuverId ? null : maneuverId;
+  if (currentModifierStat.value === "KG") {
+    selectedKgManeuver.value =
+      selectedKgManeuver.value === maneuverId ? null : maneuverId;
   } else {
-    selectedBfManeuver.value = selectedBfManeuver.value === maneuverId ? null : maneuverId;
+    selectedBfManeuver.value =
+      selectedBfManeuver.value === maneuverId ? null : maneuverId;
   }
   updateModifierTotals();
 };
 
 // Get maneuver by ID
 const getManeuverById = (maneuverId) => {
-  return [...kgManeuvers, ...bfManeuvers].find(m => m.id === maneuverId) || null;
+  return (
+    [...kgManeuvers, ...bfManeuvers].find((m) => m.id === maneuverId) || null
+  );
 };
 
 // Get modifiers for current stat (KG or BF)
 const getModifiersForStat = (stat) => {
   const result = {};
   for (const [catKey, category] of Object.entries(modifierCategories)) {
-    const filteredMods = category.modifiers.filter(mod => {
+    const filteredMods = category.modifiers.filter((mod) => {
       const modStat = mod.stat || category.stat;
-      return modStat === 'both' || modStat === stat;
+      return modStat === "both" || modStat === stat;
     });
     if (filteredMods.length > 0) {
       result[catKey] = { ...category, modifiers: filteredMods };
@@ -1888,11 +2668,15 @@ const getModifiersForStat = (stat) => {
 };
 
 // Computed: categories for current stat
-const currentCategories = computed(() => getModifiersForStat(currentModifierStat.value));
+const currentCategories = computed(() =>
+  getModifiersForStat(currentModifierStat.value),
+);
 
 // Computed: active modifiers list for current stat
 const currentActiveModifiers = computed(() =>
-  currentModifierStat.value === 'KG' ? activeKgModifiers.value : activeBfModifiers.value
+  currentModifierStat.value === "KG"
+    ? activeKgModifiers.value
+    : activeBfModifiers.value,
 );
 
 // Calculate total modifier from active modifiers, maneuver, and weapon
@@ -1904,7 +2688,7 @@ const calculateModifierTotal = (activeIds, stat) => {
     for (const mod of category.modifiers) {
       if (activeIds.includes(mod.id)) {
         const modStat = mod.stat || category.stat;
-        if (modStat === 'both' || modStat === stat) {
+        if (modStat === "both" || modStat === stat) {
           total += mod.value;
         }
       }
@@ -1912,7 +2696,8 @@ const calculateModifierTotal = (activeIds, stat) => {
   }
 
   // Add selected maneuver value
-  const selectedManeuver = stat === 'KG' ? selectedKgManeuver.value : selectedBfManeuver.value;
+  const selectedManeuver =
+    stat === "KG" ? selectedKgManeuver.value : selectedBfManeuver.value;
   if (selectedManeuver) {
     const maneuver = getManeuverById(selectedManeuver);
     if (maneuver) {
@@ -1921,7 +2706,8 @@ const calculateModifierTotal = (activeIds, stat) => {
   }
 
   // Add weapon bonus (quality, traits, mods)
-  const selectedWeaponIndex = stat === 'KG' ? selectedKgWeaponIndex.value : selectedBfWeaponIndex.value;
+  const selectedWeaponIndex =
+    stat === "KG" ? selectedKgWeaponIndex.value : selectedBfWeaponIndex.value;
   if (selectedWeaponIndex !== null) {
     const weapon = character.value.weapons[selectedWeaponIndex];
     if (weapon) {
@@ -1929,26 +2715,41 @@ const calculateModifierTotal = (activeIds, stat) => {
       total += bonus;
 
       // Check for mods that negate darkness penalty
-      if (stat === 'BF') {
+      if (stat === "BF") {
         const mods = weapon.mods || [];
-        const hasDarknessNegation = mods.includes('beutespuerer') || mods.includes('restlicht') || mods.includes('praezision');
-        if (hasDarknessNegation && activeIds.includes('dunkel_fern')) {
+        const hasDarknessNegation =
+          mods.includes("beutespuerer") ||
+          mods.includes("restlicht") ||
+          mods.includes("praezision");
+        if (hasDarknessNegation && activeIds.includes("dunkel_fern")) {
           // Remove darkness penalty
           total += 30; // Negate the -30
         }
 
         // Zielfernrohr negates distance penalties when using Zielen Voll
-        const hasScope = mods.includes('zielfernrohr') || mods.includes('praezision');
-        if (hasScope && selectedManeuver === 'zielen_voll') {
-          if (activeIds.includes('gross_entf')) total += 10;
-          if (activeIds.includes('extrem')) total += 30;
+        const hasScope =
+          mods.includes("zielfernrohr") || mods.includes("praezision");
+        if (hasScope && selectedManeuver === "zielen_voll") {
+          if (activeIds.includes("gross_entf")) total += 10;
+          if (activeIds.includes("extrem")) total += 30;
+        }
+      }
+
+      // Waffenmeister bonus (+10 for selected weapon type)
+      const waffenmeister = character.value.specialAbilities?.waffenmeister;
+      if (waffenmeister?.enabled && waffenmeister?.weaponType) {
+        if (weapon.type === waffenmeister.weaponType) {
+          total += 10;
         }
       }
     }
   }
 
   // Add automatic exhaustion modifier (-10) if exhausted and not ignored
-  if (isExhausted.value && !ignoredAutoModifiers.value.includes('auto_erschoepft')) {
+  if (
+    isExhausted.value &&
+    !ignoredAutoModifiers.value.includes("auto_erschoepft")
+  ) {
     total -= 10;
   }
 
@@ -1958,9 +2759,14 @@ const calculateModifierTotal = (activeIds, stat) => {
 
 // Update computed totals when active modifiers change
 const updateModifierTotals = () => {
-  kgModifier.value = calculateModifierTotal(activeKgModifiers.value, 'KG');
-  bfModifier.value = calculateModifierTotal(activeBfModifiers.value, 'BF');
+  kgModifier.value = calculateModifierTotal(activeKgModifiers.value, "KG");
+  bfModifier.value = calculateModifierTotal(activeBfModifiers.value, "BF");
 };
+
+// Initialize modifiers from persisted state on mount
+onMounted(() => {
+  updateModifierTotals();
+});
 
 // Toggle ignore for auto-modifier
 const toggleIgnoreAutoModifier = (modId) => {
@@ -1981,7 +2787,7 @@ const isAutoModifierIgnored = (modId) => {
 // Find which category a modifier belongs to
 const findModifierCategory = (modId) => {
   for (const [catKey, category] of Object.entries(modifierCategories)) {
-    if (category.modifiers.some(m => m.id === modId)) {
+    if (category.modifiers.some((m) => m.id === modId)) {
       return { key: catKey, category };
     }
   }
@@ -1990,7 +2796,8 @@ const findModifierCategory = (modId) => {
 
 // Toggle a modifier on/off
 const toggleModifier = (modId) => {
-  const activeList = currentModifierStat.value === 'KG' ? activeKgModifiers : activeBfModifiers;
+  const activeList =
+    currentModifierStat.value === "KG" ? activeKgModifiers : activeBfModifiers;
   const index = activeList.value.indexOf(modId);
 
   if (index >= 0) {
@@ -2001,8 +2808,10 @@ const toggleModifier = (modId) => {
     const catInfo = findModifierCategory(modId);
     if (catInfo && catInfo.category.exclusive) {
       // Remove all other modifiers from this category first
-      const categoryModIds = catInfo.category.modifiers.map(m => m.id);
-      activeList.value = activeList.value.filter(id => !categoryModIds.includes(id));
+      const categoryModIds = catInfo.category.modifiers.map((m) => m.id);
+      activeList.value = activeList.value.filter(
+        (id) => !categoryModIds.includes(id),
+      );
     }
     activeList.value.push(modId);
   }
@@ -2017,7 +2826,7 @@ const isModifierActive = (modId) => {
 // Get modifier by ID
 const getModifierById = (modId) => {
   for (const category of Object.values(modifierCategories)) {
-    const mod = category.modifiers.find(m => m.id === modId);
+    const mod = category.modifiers.find((m) => m.id === modId);
     if (mod) return mod;
   }
   return null;
@@ -2029,9 +2838,19 @@ const openModifierDialog = (stat) => {
   showModifierDialog.value = true;
 };
 
+// Update combat attribute (for attribute swap feature)
+const updateCombatAttribute = (newAttribute) => {
+  ensureCombatAttributes();
+  if (currentModifierStat.value === "KG") {
+    character.value.combatAttributes.kg = newAttribute;
+  } else {
+    character.value.combatAttributes.bf = newAttribute;
+  }
+};
+
 // Reset all modifiers, maneuver, and weapon for current stat
 const resetCurrentAll = () => {
-  if (currentModifierStat.value === 'KG') {
+  if (currentModifierStat.value === "KG") {
     activeKgModifiers.value = [];
     selectedKgManeuver.value = null;
     selectedKgWeaponIndex.value = null;
@@ -2062,54 +2881,267 @@ const weaponTypeOptions = [
 
 // Melee weapon traits
 const meleeTraitOptions = [
-  { label: 'Ausgewogen (+10 Parade)', value: 'ausgewogen' },
-  { label: 'Defensiv (+15 Parade, -10 Angriff)', value: 'defensiv' },
-  { label: 'Unausgewogen (-10 Parade)', value: 'unausgewogen' },
+  { label: "Ausgewogen", value: "ausgewogen", description: "+10 auf Paraden." },
+  {
+    label: "Defensiv",
+    value: "defensiv",
+    description: "+15 auf Paraden, -10 auf Angriffe.",
+  },
+  {
+    label: "Energiefeld",
+    value: "energiefeld",
+    description:
+      "Bei erfolgreicher Parade wird die gegnerische Waffe zu 75% zerstört (außer Warp/natürliche Waffen).",
+  },
+  {
+    label: "Felxibel",
+    value: "flexibel",
+    description: "Kann nicht pariert werden.",
+  },
+  {
+    label: "Giftig",
+    value: "giftig",
+    description:
+      "Nach Schaden WI-Wurf (-5 je Schadenspunkt). Bei Fehlschlag zusätzlich 1W10 Wuchtschaden.",
+  },
+  {
+    label: "Kettenwaffe",
+    value: "kettenwaffe",
+    description:
+      "Bei Schaden von 10+ vor Abzügen: +2W10 zusätzlicher Schaden (Reißend).",
+  },
+  {
+    label: "Primitiv",
+    value: "primitiv",
+    description: "RP von nicht-primitiven Rüstungen zählen doppelt.",
+  },
+  {
+    label: "Proven",
+    value: "proven",
+    description: "Schadenswürfel unter X werden als X behandelt.",
+  },
+  {
+    label: "Reißend",
+    value: "reissend",
+    description: "+1W10 Schaden, niedrigster Würfel wird ignoriert.",
+  },
+  {
+    label: "Sanctified",
+    value: "sanctified",
+    description:
+      "Ignoriert WI-Bonus durch Daemonic. Kann Stuff of Nightmares zerstören.",
+  },
+  {
+    label: "Schock",
+    value: "schock",
+    description:
+      "Bei Schaden WI-Wurf (+10 je RP). Fehlschlag: betäubt für halbe Schadensmenge Runden.",
+  },
+  {
+    label: "Unausgewogen",
+    value: "unausgewogen",
+    description: "-10 auf Paraden.",
+  },
+  {
+    label: "Unhandlich",
+    value: "unhandlich",
+    description: "Kann nicht zum Parieren verwendet werden.",
+  },
+  {
+    label: "Zweihand",
+    value: "zweihand",
+    description: "Benötigt zwei Hände zum Führen.",
+  },
 ];
 
-// Ranged weapon mods
+// Ranged weapon mods (attachments)
 const rangedModOptions = [
-  { label: 'Beutespürer (negiert Dunkelheit)', value: 'beutespuerer' },
-  { label: 'Bewegungsspürer (+10 bei Salve/Auto)', value: 'bewegungsspuerer' },
-  { label: 'Laser-Zielvorrichtung (+10 Einzelschuss)', value: 'laserziel' },
-  { label: 'Zielfernrohr (ignoriert Distanz bei Zielen Voll)', value: 'zielfernrohr' },
-  { label: 'Restlichtverstärker (negiert Dunkelheit)', value: 'restlicht' },
-  { label: 'Präzisionszielfernrohr (Kombi)', value: 'praezision' },
+  { label: "Beutespürer (negiert Dunkelheit)", value: "beutespuerer" },
+  { label: "Bewegungsspürer (+10 bei Salve/Auto)", value: "bewegungsspuerer" },
+  { label: "Laser-Zielvorrichtung (+10 Einzelschuss)", value: "laserziel" },
+  {
+    label: "Zielfernrohr (ignoriert Distanz bei Zielen Voll)",
+    value: "zielfernrohr",
+  },
+  { label: "Restlichtverstärker (negiert Dunkelheit)", value: "restlicht" },
+  { label: "Präzisionszielfernrohr (Kombi)", value: "praezision" },
+];
+
+// Ranged weapon traits (inherent weapon properties)
+const rangedTraitOptions = [
+  {
+    label: "Aufladen",
+    value: "aufladen",
+    description: "Die Waffe muss nach jedem Schuss eine Runde aufladen.",
+  },
+  {
+    label: "Bewegungshemmend",
+    value: "bewegungshemmend",
+    description:
+      "Bei Treffer GE-Wurf oder bewegungsunfähig. Befreiung durch ST- oder GE-Wurf.",
+  },
+  {
+    label: "Energiefeld",
+    value: "energiefeld",
+    description:
+      "Bei erfolgreicher Parade wird die gegnerische Waffe zu 75% zerstört (außer Warp/natürliche Waffen).",
+  },
+  {
+    label: "Explosiv",
+    value: "explosiv",
+    description:
+      "Trifft alle im Explosionsradius. Trefferzonen und Schaden getrennt auswürfeln.",
+  },
+  {
+    label: "Felling",
+    value: "felling",
+    description: "Ignoriert X Stufen von Unnatural Toughness.",
+  },
+  {
+    label: "Flammenwerfer",
+    value: "flammenwerfer",
+    description:
+      "Kein BF-Wurf. 30°-Kegel bis Reichweite. Ziele machen GE-Wurf oder nehmen Schaden und fangen ggf. Feuer.",
+  },
+  {
+    label: "Genau",
+    value: "genau",
+    description:
+      "+10 BF beim Zielen (zusätzlich). Einzelschuss + Zielen: +1W10 Schaden je 2 Erfolgsgrade (max +2W10).",
+  },
+  {
+    label: "Giftig",
+    value: "giftig",
+    description:
+      "Nach Schaden WI-Wurf (-5 je Schadenspunkt). Bei Fehlschlag zusätzlich 1W10 Wuchtschaden.",
+  },
+  {
+    label: "Gyrostabilisiert",
+    value: "gyrostabilisiert",
+    description:
+      "Ziel nie weiter als große Distanz. Schwere Waffen: -20 statt -30 unabgestützt.",
+  },
+  {
+    label: "Instabil",
+    value: "instabil",
+    description: "1W10: 1=halber Schaden, 2-9=normal, 10=doppelt.",
+  },
+  {
+    label: "Overcharge",
+    value: "overcharge",
+    description:
+      "Kann Schaden um X erhöhen, aber Waffe erhält dann Überhitzung.",
+  },
+  {
+    label: "Primitiv",
+    value: "primitiv",
+    description: "RP von nicht-primitiven Rüstungen zählen doppelt.",
+  },
+  {
+    label: "Proven",
+    value: "proven",
+    description: "Schadenswürfel unter X werden als X behandelt.",
+  },
+  {
+    label: "Rauch",
+    value: "rauch",
+    description: "Erzeugt 3W10m Rauch für 2W10 Runden statt Schaden.",
+  },
+  {
+    label: "Reißend",
+    value: "reissend",
+    description: "+1W10 Schaden, niedrigster Würfel wird ignoriert.",
+  },
+  {
+    label: "Sanctified",
+    value: "sanctified",
+    description:
+      "Ignoriert WI-Bonus durch Daemonic. Kann Stuff of Nightmares zerstören.",
+  },
+  {
+    label: "Schock",
+    value: "schock",
+    description:
+      "Bei Schaden WI-Wurf (+10 je RP). Fehlschlag: betäubt für halbe Schadensmenge Runden.",
+  },
+  {
+    label: "Schrapnell",
+    value: "schrapnell",
+    description:
+      "Kernschuss: +1 Treffer je 2 Erfolgsgrade. Große/extreme Distanz: RP verdoppelt.",
+  },
+  {
+    label: "Stun",
+    value: "stun",
+    description:
+      "WI-Wurf oder 1W5 Runden betäubt. Schutzhelm/versiegelte Rüstung: +20.",
+  },
+  {
+    label: "Sturm",
+    value: "sturm",
+    description: "Doppelte Treffer, doppelter Munitionsverbrauch.",
+  },
+  {
+    label: "Ungenau",
+    value: "ungenau",
+    description: "Kein Bonus durch Zielen.",
+  },
+  {
+    label: "Unhandlich",
+    value: "unhandlich",
+    description: "Kann nicht zum Parieren verwendet werden.",
+  },
+  {
+    label: "Unzuverlässig",
+    value: "unzuverlaessig",
+    description: "Ladehemmung bei 91+ (auch bei Salve/Auto).",
+  },
+  {
+    label: "Zuverlässig",
+    value: "zuverlaessig",
+    description: "Bei Ladehemmung 1W10: nur bei 10 tatsächlich Ladehemmung.",
+  },
+  {
+    label: "Überhitzung",
+    value: "ueberhitzung",
+    description:
+      "Bei 91+ Energieschaden am Waffenarm. Waffe fallen lassen vermeidet Schaden.",
+  },
 ];
 
 // Icon helpers for mods
 const getModIcon = (mod) => {
   const icons = {
-    beutespuerer: 'visibility',
-    bewegungsspuerer: 'speed',
-    laserziel: 'gps_fixed',
-    zielfernrohr: 'zoom_in',
-    restlicht: 'nightlight',
-    praezision: 'my_location',
+    beutespuerer: "visibility",
+    bewegungsspuerer: "speed",
+    laserziel: "gps_fixed",
+    zielfernrohr: "zoom_in",
+    restlicht: "nightlight",
+    praezision: "my_location",
   };
-  return icons[mod] || 'settings';
+  return icons[mod] || "settings";
 };
 
 const getModColor = (mod) => {
   const colors = {
-    beutespuerer: 'cyan',
-    bewegungsspuerer: 'orange',
-    laserziel: 'red',
-    zielfernrohr: 'blue',
-    restlicht: 'purple',
-    praezision: 'amber',
+    beutespuerer: "cyan",
+    bewegungsspuerer: "orange",
+    laserziel: "red",
+    zielfernrohr: "blue",
+    restlicht: "purple",
+    praezision: "amber",
   };
-  return colors[mod] || 'grey';
+  return colors[mod] || "grey";
 };
 
 const getModLabel = (mod) => {
   const labels = {
-    beutespuerer: 'Beutespürer',
-    bewegungsspuerer: 'Bewegungsspürer',
-    laserziel: 'Laser-Zielvorrichtung',
-    zielfernrohr: 'Zielfernrohr',
-    restlicht: 'Restlichtverstärker',
-    praezision: 'Präzisionszielfernrohr',
+    beutespuerer: "Beutespürer",
+    bewegungsspuerer: "Bewegungsspürer",
+    laserziel: "Laser-Zielvorrichtung",
+    zielfernrohr: "Zielfernrohr",
+    restlicht: "Restlichtverstärker",
+    praezision: "Präzisionszielfernrohr",
   };
   return labels[mod] || mod;
 };
@@ -2117,27 +3149,27 @@ const getModLabel = (mod) => {
 // Icon helpers for traits
 const getTraitIcon = (trait) => {
   const icons = {
-    ausgewogen: 'balance',
-    defensiv: 'shield',
-    unausgewogen: 'warning',
+    ausgewogen: "balance",
+    defensiv: "shield",
+    unausgewogen: "warning",
   };
-  return icons[trait] || 'star';
+  return icons[trait] || "star";
 };
 
 const getTraitColor = (trait) => {
   const colors = {
-    ausgewogen: 'positive',
-    defensiv: 'blue',
-    unausgewogen: 'negative',
+    ausgewogen: "positive",
+    defensiv: "blue",
+    unausgewogen: "negative",
   };
-  return colors[trait] || 'grey';
+  return colors[trait] || "grey";
 };
 
 const getTraitLabel = (trait) => {
   const labels = {
-    ausgewogen: 'Ausgewogen (+10 Parade)',
-    defensiv: 'Defensiv (+15 Parade, -10 Angriff)',
-    unausgewogen: 'Unausgewogen (-10 Parade)',
+    ausgewogen: "Ausgewogen (+10 Parade)",
+    defensiv: "Defensiv (+15 Parade, -10 Angriff)",
+    unausgewogen: "Unausgewogen (-10 Parade)",
   };
   return labels[trait] || trait;
 };
@@ -2173,6 +3205,52 @@ const isWeaponMelee = (weapon) => {
   );
 };
 
+// Format damage display with total modifier in parentheses: "1W10+7" with mod 2 -> "1W10+7(+9)"
+const formatDamageDisplay = (weapon) => {
+  if (!weapon.damage) return "";
+
+  const baseDamage = weapon.damage;
+  let extraMod = weapon.damageMod || 0;
+
+  // Add weapon stacks bonus for pistols
+  if (weapon.type === "Pistolen" && weaponStacks.value > 0) {
+    extraMod += weaponStacks.value;
+  }
+
+  // Add Waffenmeister +2 damage bonus
+  const waffenmeister = character.value.specialAbilities?.waffenmeister;
+  if (
+    waffenmeister?.enabled &&
+    waffenmeister?.weaponType &&
+    weapon.type === waffenmeister.weaponType
+  ) {
+    extraMod += 2;
+  }
+
+  if (extraMod === 0) {
+    return baseDamage;
+  }
+
+  // Extract existing modifier from damage string: "1W10+7" -> base=+7, or "1W10" -> base=0
+  const match = baseDamage.match(/^(.+?)([+-]\d+)(\s*[EIRX])?$/i);
+  if (match) {
+    // Has existing modifier like "1W10+7"
+    const existingMod = parseInt(match[2]);
+    const totalMod = existingMod + extraMod;
+    const suffix = match[3] ? match[3].trim() : "";
+    const totalStr = totalMod >= 0 ? `+${totalMod}` : `${totalMod}`;
+    return `${baseDamage}(${totalStr}${suffix ? " " + suffix : ""})`;
+  } else {
+    // No existing modifier (e.g. "1W10" or "1W10 R")
+    const suffixMatch = baseDamage.match(/^(.+?)(\s+[EIRX])$/i);
+    const totalStr = extraMod >= 0 ? `+${extraMod}` : `${extraMod}`;
+    if (suffixMatch) {
+      return `${baseDamage}(${totalStr}${suffixMatch[2]})`;
+    }
+    return `${baseDamage}(${totalStr})`;
+  }
+};
+
 // Copy damage roll command to clipboard for Discord
 const copyDamageRoll = async (weapon) => {
   if (!weapon.damage) return;
@@ -2183,8 +3261,11 @@ const copyDamageRoll = async (weapon) => {
     .replace(/\s*[EIRX]\s*$/i, "") // Remove damage type suffix
     .trim();
 
-  // Add extra d10 for "Reißend" damage type
-  if (weapon.damageType && weapon.damageType.includes("R")) {
+  // Add extra d10 for "Reißend" trait (check both melee traits and ranged traits)
+  const hasReissend =
+    weapon.traits?.includes("reissend") ||
+    weapon.rangedTraits?.includes("reissend");
+  if (hasReissend) {
     const diceMatch = diceCode.match(/^(\d+)(d\d+)/);
     if (diceMatch) {
       const diceCount = parseInt(diceMatch[1]) + 1;
@@ -2198,6 +3279,16 @@ const copyDamageRoll = async (weapon) => {
   // Add weapon stacks bonus for pistols
   if (weapon.type === "Pistolen" && weaponStacks.value > 0) {
     extraMod += weaponStacks.value;
+  }
+
+  // Add Waffenmeister +2 damage bonus
+  const waffenmeister = character.value.specialAbilities?.waffenmeister;
+  if (
+    waffenmeister?.enabled &&
+    waffenmeister?.weaponType &&
+    weapon.type === waffenmeister.weaponType
+  ) {
+    extraMod += 2;
   }
 
   // Combine modifiers: "1d10+4" with extraMod 5 -> "1d10+9"
@@ -2302,6 +3393,7 @@ const editWeapon = (index) => {
     damageMod: weapon.damageMod || 0,
     traits: weapon.traits || [],
     mods: weapon.mods || [],
+    rangedTraits: weapon.rangedTraits || [],
   };
   showAddWeaponDialog.value = true;
 };
@@ -2343,6 +3435,98 @@ const duplicateWeapon = () => {
   cancelWeaponDialog();
 };
 
+// Get melee trait label by value
+const getMeleeTraitLabel = (traitValue) => {
+  const trait = meleeTraitOptions.find((t) => t.value === traitValue);
+  return trait?.label || traitValue;
+};
+
+// Get melee trait description by value
+const getMeleeTraitDescription = (traitValue) => {
+  const trait = meleeTraitOptions.find((t) => t.value === traitValue);
+  return trait?.description || "";
+};
+
+// Get ranged trait label by value
+const getRangedTraitLabel = (traitValue) => {
+  const trait = rangedTraitOptions.find((t) => t.value === traitValue);
+  return trait?.label || traitValue;
+};
+
+// Get ranged trait description by value
+const getRangedTraitDescription = (traitValue) => {
+  const trait = rangedTraitOptions.find((t) => t.value === traitValue);
+  return trait?.description || "";
+};
+
+// Parse rate of fire string "S/3/6", "E/3/-" etc. into object
+// S or E = Einzelschuss (1), - = nicht verfügbar (0), Zahl = Anzahl Schüsse
+const parseRof = (rof) => {
+  if (!rof) return { single: 0, salvo: 0, auto: 0 };
+  const parts = rof.split("/");
+
+  const parseRofPart = (part) => {
+    if (!part || part === "-") return 0;
+    if (part.toUpperCase() === "E" || part.toUpperCase() === "S") return 1;
+    return parseInt(part) || 0;
+  };
+
+  return {
+    single: parseRofPart(parts[0]),
+    salvo: parseRofPart(parts[1]),
+    auto: parseRofPart(parts[2]),
+  };
+};
+
+// Get current ammo for weapon (initialize if needed)
+const getWeaponAmmo = (weapon) => {
+  if (weapon.currentAmmo === undefined || weapon.currentAmmo === null) {
+    weapon.currentAmmo = parseInt(weapon.magazine) || 0;
+  }
+  return weapon.currentAmmo;
+};
+
+// Calculate ammo used for a fire mode (accounts for Sturm)
+const getAmmoUsed = (weapon, mode) => {
+  const rof = parseRof(weapon.rof);
+  let ammoUsed = 0;
+
+  if (mode === "single") ammoUsed = rof.single;
+  else if (mode === "salvo") ammoUsed = rof.salvo;
+  else if (mode === "auto") ammoUsed = rof.auto;
+
+  // Sturm trait: double ammo consumption
+  if (weapon.rangedTraits?.includes("sturm")) {
+    ammoUsed *= 2;
+  }
+
+  return ammoUsed;
+};
+
+// Fire weapon (subtract ammo based on fire mode)
+const fireWeapon = (weapon, index, mode) => {
+  const ammoUsed = getAmmoUsed(weapon, mode);
+  if (ammoUsed <= 0) return;
+
+  const currentAmmo = getWeaponAmmo(weapon);
+  const newAmmo = Math.max(0, currentAmmo - ammoUsed);
+
+  characterStore.updateWeapon(index, { currentAmmo: newAmmo });
+};
+
+// Reload weapon (reset to magazine capacity)
+const reloadWeapon = (weapon, index) => {
+  const maxAmmo = parseInt(weapon.magazine) || 0;
+  characterStore.updateWeapon(index, { currentAmmo: maxAmmo });
+};
+
+// Check if weapon has ammo tracking (has magazine)
+const hasAmmoTracking = (weapon) => {
+  return (
+    !isWeaponMelee(weapon) && weapon.magazine && parseInt(weapon.magazine) > 0
+  );
+};
+
 const cancelWeaponDialog = () => {
   showAddWeaponDialog.value = false;
   editingWeaponIndex.value = null;
@@ -2362,6 +3546,7 @@ const cancelWeaponDialog = () => {
     quality: "Normal",
     traits: [],
     mods: [],
+    rangedTraits: [],
   };
 };
 
@@ -2584,7 +3769,11 @@ const saveGear = () => {
   if (editingGearIndex.value !== null) {
     characterStore.updateGear(editingGearIndex.value, { ...newGear.value });
   } else {
-    characterStore.addGear({ ...newGear.value });
+    // Add to the shorter column
+    const leftCount = leftColumnGear.value.length;
+    const rightCount = rightColumnGear.value.length;
+    const column = leftCount <= rightCount ? 0 : 1;
+    characterStore.addGear({ ...newGear.value, column });
   }
 
   cancelGearDialog();
@@ -2595,6 +3784,56 @@ const changeGearQuantity = (index, delta) => {
   const newQuantity = (item.quantity || 1) + delta;
   if (newQuantity >= 1) {
     characterStore.updateGear(index, { quantity: newQuantity });
+  }
+};
+
+// Two-column gear management
+const leftColumnGear = computed({
+  get: () => character.value.gear.filter(item => item.column !== 1),
+  set: (newList) => {
+    // Mark items as column 0
+    newList.forEach(item => item.column = 0);
+    // Combine with right column and update
+    const rightItems = character.value.gear.filter(item => item.column === 1);
+    character.value.gear = [...newList, ...rightItems];
+  }
+});
+
+const rightColumnGear = computed({
+  get: () => character.value.gear.filter(item => item.column === 1),
+  set: (newList) => {
+    // Mark items as column 1
+    newList.forEach(item => item.column = 1);
+    // Combine with left column and update
+    const leftItems = character.value.gear.filter(item => item.column !== 1);
+    character.value.gear = [...leftItems, ...newList];
+  }
+});
+
+// Find gear index by item reference
+const findGearIndex = (item) => {
+  return character.value.gear.findIndex(g => g === item || (g.name === item.name && g.column === item.column));
+};
+
+// Item-based gear functions (for two-column layout)
+const changeGearQuantityByItem = (item, delta) => {
+  const index = findGearIndex(item);
+  if (index >= 0) {
+    changeGearQuantity(index, delta);
+  }
+};
+
+const editGearByItem = (item) => {
+  const index = findGearIndex(item);
+  if (index >= 0) {
+    editGear(index);
+  }
+};
+
+const removeGearByItem = (item) => {
+  const index = findGearIndex(item);
+  if (index >= 0) {
+    removeGear(item, index);
   }
 };
 
@@ -2623,6 +3862,21 @@ const cancelGearDialog = () => {
 
 .drag-handle:hover {
   color: #ffd54f !important;
+}
+
+.gear-column {
+  min-height: 50px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.gear-column:empty {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.gear-item {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .artifact-item {

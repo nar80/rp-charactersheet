@@ -41,6 +41,31 @@ const createDefaultCharacter = () => ({
     CH: 0
   },
 
+  // Combat attribute overrides (which attribute to use for KG/BF calculations)
+  combatAttributes: {
+    kg: 'KG', // Default: use KG for melee
+    bf: 'BF'  // Default: use BF for ranged
+  },
+
+  // Combat state (modifiers, maneuvers, weapon selection - persisted)
+  combatState: {
+    weaponStacks: 0,
+    activeKgModifiers: [],
+    activeBfModifiers: [],
+    selectedKgManeuver: null,
+    selectedBfManeuver: null,
+    selectedKgWeaponIndex: null,
+    selectedBfWeaponIndex: null
+  },
+
+  // Special abilities (class-specific features)
+  specialAbilities: {
+    waffenmeister: {
+      enabled: false,
+      weaponType: null // Selected weapon category for +10 BF bonus
+    }
+  },
+
   // Combat & Physical Stats
   hitPoints: {
     current: 10,
