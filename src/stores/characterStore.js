@@ -49,6 +49,7 @@ const createDefaultCharacter = () => ({
 
   // Combat state (modifiers, maneuvers, weapon selection - persisted)
   combatState: {
+    combatRound: 1,
     weaponStacks: 0,
     activeKgModifiers: [],
     activeBfModifiers: [],

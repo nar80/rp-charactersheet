@@ -25,9 +25,9 @@
 
     <!-- Combat Stats & Weapon Stacks -->
     <q-card-section class="q-pt-none">
-      <div class="row items-center justify-between">
-        <!-- Combat Stats (BF/KG with modifiers) -->
-        <div class="row items-center q-gutter-md">
+      <div class="row items-center">
+        <!-- Combat Stats (BF/KG with modifiers) - Left -->
+        <div class="col row items-center q-gutter-md">
           <!-- KG (Kampfgeschick) -->
           <div class="combat-stat-chip" @click="openModifierDialog('KG')">
             <span class="text-caption text-grey-6"
@@ -112,20 +112,17 @@
           </q-btn>
         </div>
 
-        <!-- Weapon Stacks (only if enabled) -->
-        <div
-          v-if="settings.enableWeaponStacks"
-          class="row items-center q-gutter-sm"
-        >
-          <q-icon name="auto_awesome" size="xs" style="color: #d4af37" />
-          <span class="text-caption text-grey-6">Stacks:</span>
+        <!-- Round Counter - Center -->
+        <div class="col-auto row items-center q-gutter-sm q-mx-md">
+          <q-icon name="schedule" size="xs" color="cyan" />
+          <span class="text-caption text-grey-6">Runde:</span>
           <NumberInput
-            :model-value="weaponStacks"
-            :min="0"
-            :max="99"
-            button-color="amber"
-            text-color="#d4af37"
-            @update:model-value="weaponStacks = $event"
+            :model-value="combatRound"
+            :min="1"
+            :max="999"
+            button-color="cyan"
+            text-color="cyan"
+            @update:model-value="combatRound = $event"
           />
           <q-btn
             flat
@@ -133,12 +130,40 @@
             round
             size="sm"
             icon="refresh"
-            :color="weaponStacks > 0 ? 'amber' : 'grey-7'"
-            :disable="weaponStacks <= 0"
-            @click="weaponStacks = 0"
+            :color="combatRound > 1 ? 'cyan' : 'grey-7'"
+            :disable="combatRound <= 1"
+            @click="combatRound = 1"
           >
-            <q-tooltip>Stacks zurücksetzen</q-tooltip>
+            <q-tooltip>Runde zurücksetzen</q-tooltip>
           </q-btn>
+        </div>
+
+        <!-- Weapon Stacks (only if enabled) - Right -->
+        <div class="col row items-center justify-end q-gutter-sm">
+          <template v-if="settings.enableWeaponStacks">
+            <q-icon name="auto_awesome" size="xs" style="color: #d4af37" />
+            <span class="text-caption text-grey-6">Stacks:</span>
+            <NumberInput
+              :model-value="weaponStacks"
+              :min="0"
+              :max="99"
+              button-color="amber"
+              text-color="#d4af37"
+              @update:model-value="weaponStacks = $event"
+            />
+            <q-btn
+              flat
+              dense
+              round
+              size="sm"
+              icon="refresh"
+              :color="weaponStacks > 0 ? 'amber' : 'grey-7'"
+              :disable="weaponStacks <= 0"
+              @click="weaponStacks = 0"
+            >
+              <q-tooltip>Stacks zurücksetzen</q-tooltip>
+            </q-btn>
+          </template>
         </div>
       </div>
     </q-card-section>
@@ -178,7 +203,7 @@
                       <q-tooltip>Ziehen zum Sortieren</q-tooltip>
                     </q-icon>
                   </div>
-                  <div class="col-auto q-pr-xs">
+                  <div v-if="weapon.description" class="col-auto q-pr-xs">
                     <q-btn
                       flat
                       dense
@@ -621,6 +646,19 @@
                           </span>
                           <span v-else>Alle Körperteile</span>
                         </div>
+                      </div>
+                      <div v-if="armor.description" class="col-auto q-pr-xs">
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          size="sm"
+                          icon="info"
+                          color="grey-6"
+                          @click="showArmorInfo(armor)"
+                        >
+                          <q-tooltip>Details anzeigen</q-tooltip>
+                        </q-btn>
                       </div>
                       <div class="col-auto">
                         <q-btn
@@ -1472,6 +1510,40 @@
       </q-card>
     </q-dialog>
 
+    <!-- Armor Info Dialog -->
+    <q-dialog v-model="showArmorInfoDialog">
+      <q-card style="min-width: 400px; max-width: 600px">
+        <q-card-section>
+          <div class="text-h6">{{ currentArmor?.name }}</div>
+          <div class="text-caption text-grey-6">
+            {{ currentArmor?.ap }} RP
+            <span v-if="currentArmor?.quality && currentArmor.quality !== 'Standard'">
+              - {{ currentArmor.quality }}
+            </span>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <div class="text-body1" style="white-space: pre-wrap">
+            {{ currentArmor?.description }}
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right">
+          <q-btn
+            flat
+            label="Schließen"
+            color="primary"
+            @click="showArmorInfoDialog = false"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Add/Edit Weapon Dialog -->
     <q-dialog v-model="showAddWeaponDialog">
       <q-card style="min-width: 500px">
@@ -1485,204 +1557,232 @@
           </div>
         </q-card-section>
 
+        <q-tabs
+          v-model="weaponEditTab"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="justify"
+        >
+          <q-tab name="properties" label="Eigenschaften" />
+          <q-tab name="description" label="Beschreibung" />
+        </q-tabs>
+
         <q-separator />
 
-        <q-card-section class="q-gutter-md">
-          <!-- Name -->
-          <q-input v-model="newWeapon.name" label="Name" filled dense />
+        <q-tab-panels v-model="weaponEditTab" animated>
+          <q-tab-panel name="properties">
+            <div class="q-gutter-md">
+              <!-- Name -->
+              <q-input v-model="newWeapon.name" label="Name" filled dense />
 
-          <!-- Gattung -->
-          <q-select
-            v-model="newWeapon.type"
-            :options="weaponTypeOptions"
-            label="Gattung"
-            filled
-            dense
-          />
-
-          <!-- Subtype for Exotic weapons -->
-          <q-select
-            v-if="newWeapon.type && newWeapon.type.includes('Exotisch')"
-            v-model="newWeapon.subtype"
-            :options="['Nahkampf', 'Fernkampf']"
-            label="Exotisch-Untertyp"
-            filled
-            dense
-            hint="Ist diese exotische Waffe für Nah- oder Fernkampf?"
-          />
-
-          <!-- RW (Reichweite) -->
-          <q-input
-            v-model="newWeapon.range"
-            label="RW (Reichweite)"
-            filled
-            dense
-            hint="z.B. '—' oder '3m'"
-          />
-
-          <!-- Sch (Schaden) -->
-          <div class="row q-col-gutter-sm">
-            <div class="col">
-              <q-input
-                v-model="newWeapon.damage"
-                label="Sch (Schaden)"
+              <!-- Gattung -->
+              <q-select
+                v-model="newWeapon.type"
+                :options="weaponTypeOptions"
+                label="Gattung"
                 filled
                 dense
-                hint="z.B. '1W10+4'"
               />
-            </div>
-            <div class="col-4">
+
+              <!-- Subtype for Exotic weapons -->
+              <q-select
+                v-if="newWeapon.type && newWeapon.type.includes('Exotisch')"
+                v-model="newWeapon.subtype"
+                :options="['Nahkampf', 'Fernkampf']"
+                label="Exotisch-Untertyp"
+                filled
+                dense
+                hint="Ist diese exotische Waffe für Nah- oder Fernkampf?"
+              />
+
+              <!-- RW (Reichweite) -->
               <q-input
-                v-model.number="newWeapon.damageMod"
-                label="Mod"
+                v-model="newWeapon.range"
+                label="RW (Reichweite)"
+                filled
+                dense
+                hint="z.B. '—' oder '3m'"
+              />
+
+              <!-- Sch (Schaden) -->
+              <div class="row q-col-gutter-sm">
+                <div class="col">
+                  <q-input
+                    v-model="newWeapon.damage"
+                    label="Sch (Schaden)"
+                    filled
+                    dense
+                    hint="z.B. '1W10+4'"
+                  />
+                </div>
+                <div class="col-4">
+                  <q-input
+                    v-model.number="newWeapon.damageMod"
+                    label="Mod"
+                    type="number"
+                    filled
+                    dense
+                    hint="z.B. SB"
+                  />
+                </div>
+              </div>
+
+              <!-- Art (Schadensart) -->
+              <q-select
+                v-model="newWeapon.damageType"
+                :options="[
+                  'E (Energie)',
+                  'I (Einschlag)',
+                  'R (Reißend)',
+                  'X (Explosiv)',
+                ]"
+                label="Art (Schadensart)"
+                filled
+                dense
+                clearable
+              />
+
+              <!-- DS (Durchschlag) -->
+              <q-input
+                v-model.number="newWeapon.penetration"
+                label="DS (Durchschlag)"
                 type="number"
                 filled
                 dense
-                hint="z.B. SB"
+              />
+
+              <!-- SF (Schussfolge) - nur für Fernkampf -->
+              <q-input
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.rof"
+                label="SF (Schussfolge)"
+                filled
+                dense
+                hint="z.B. 'S/3/-'"
+              />
+
+              <!-- Mag (Magazin) - nur für Fernkampf -->
+              <q-input
+                v-if="!isMeleeWeapon"
+                v-model.number="newWeapon.magazine"
+                label="Mag (Magazin)"
+                type="number"
+                filled
+                dense
+              />
+
+              <!-- Nachladen - nur für Fernkampf -->
+              <q-select
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.reload"
+                :options="[
+                  'Halbe',
+                  'Volle',
+                  '2 Volle',
+                  '3 Volle',
+                  '4 Volle',
+                  '5 Volle',
+                ]"
+                label="Nachladen"
+                filled
+                dense
+                clearable
+              />
+
+              <!-- Fernkampf Traits -->
+              <q-select
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.rangedTraits"
+                :options="rangedTraitOptions"
+                label="Eigenschaften"
+                filled
+                dense
+                multiple
+                emit-value
+                map-options
+                clearable
+                use-chips
+              />
+
+              <!-- Qualität -->
+              <q-select
+                v-model="newWeapon.quality"
+                :options="['Gering', 'Normal', 'Gut', 'Hervorragend']"
+                label="Qualität"
+                filled
+                dense
+              >
+                <template v-slot:hint>
+                  <span v-if="isMeleeWeapon">
+                    <span v-if="newWeapon.quality === 'Gering'"
+                      >-10 auf Angriffe/Paraden</span
+                    >
+                    <span v-else-if="newWeapon.quality === 'Gut'"
+                      >+5 auf Angriffe</span
+                    >
+                    <span v-else-if="newWeapon.quality === 'Hervorragend'"
+                      >+10 Angriffe, +1 Schaden</span
+                    >
+                  </span>
+                  <span v-else>
+                    <span v-if="newWeapon.quality === 'Gering'"
+                      >Eigenschaft Unzuverlässig</span
+                    >
+                    <span v-else-if="newWeapon.quality === 'Gut'"
+                      >Eigenschaft Zuverlässig</span
+                    >
+                    <span v-else-if="newWeapon.quality === 'Hervorragend'"
+                      >Keine Ladehemmung/Überhitzung</span
+                    >
+                  </span>
+                </template>
+              </q-select>
+
+              <!-- Nahkampf Traits -->
+              <q-select
+                v-if="isMeleeWeapon"
+                v-model="newWeapon.traits"
+                :options="meleeTraitOptions"
+                label="Eigenschaften"
+                filled
+                dense
+                multiple
+                emit-value
+                map-options
+                clearable
+              />
+
+              <!-- Fernkampf Mods -->
+              <q-select
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.mods"
+                :options="rangedModOptions"
+                label="Modifikationen"
+                filled
+                dense
+                multiple
+                emit-value
+                map-options
+                clearable
+                hint="Nur eine Zielvorrichtung möglich"
               />
             </div>
-          </div>
+          </q-tab-panel>
 
-          <!-- Art (Schadensart) -->
-          <q-select
-            v-model="newWeapon.damageType"
-            :options="[
-              'E (Energie)',
-              'I (Einschlag)',
-              'R (Reißend)',
-              'X (Explosiv)',
-            ]"
-            label="Art (Schadensart)"
-            filled
-            dense
-            clearable
-          />
-
-          <!-- DS (Durchschlag) -->
-          <q-input
-            v-model.number="newWeapon.penetration"
-            label="DS (Durchschlag)"
-            type="number"
-            filled
-            dense
-          />
-
-          <!-- SF (Schussfolge) - nur für Fernkampf -->
-          <q-input
-            v-if="!isMeleeWeapon"
-            v-model="newWeapon.rof"
-            label="SF (Schussfolge)"
-            filled
-            dense
-            hint="z.B. 'S/3/-'"
-          />
-
-          <!-- Mag (Magazin) - nur für Fernkampf -->
-          <q-input
-            v-if="!isMeleeWeapon"
-            v-model.number="newWeapon.magazine"
-            label="Mag (Magazin)"
-            type="number"
-            filled
-            dense
-          />
-
-          <!-- Nachladen - nur für Fernkampf -->
-          <q-select
-            v-if="!isMeleeWeapon"
-            v-model="newWeapon.reload"
-            :options="[
-              'Halbe',
-              'Volle',
-              '2 Volle',
-              '3 Volle',
-              '4 Volle',
-              '5 Volle',
-            ]"
-            label="Nachladen"
-            filled
-            dense
-            clearable
-          />
-
-          <!-- Fernkampf Traits -->
-          <q-select
-            v-if="!isMeleeWeapon"
-            v-model="newWeapon.rangedTraits"
-            :options="rangedTraitOptions"
-            label="Eigenschaften"
-            filled
-            dense
-            multiple
-            emit-value
-            map-options
-            clearable
-            use-chips
-          />
-
-          <!-- Qualität -->
-          <q-select
-            v-model="newWeapon.quality"
-            :options="['Gering', 'Normal', 'Gut', 'Hervorragend']"
-            label="Qualität"
-            filled
-            dense
-          >
-            <template v-slot:hint>
-              <span v-if="isMeleeWeapon">
-                <span v-if="newWeapon.quality === 'Gering'"
-                  >-10 auf Angriffe/Paraden</span
-                >
-                <span v-else-if="newWeapon.quality === 'Gut'"
-                  >+5 auf Angriffe</span
-                >
-                <span v-else-if="newWeapon.quality === 'Hervorragend'"
-                  >+10 Angriffe, +1 Schaden</span
-                >
-              </span>
-              <span v-else>
-                <span v-if="newWeapon.quality === 'Gering'"
-                  >Eigenschaft Unzuverlässig</span
-                >
-                <span v-else-if="newWeapon.quality === 'Gut'"
-                  >Eigenschaft Zuverlässig</span
-                >
-                <span v-else-if="newWeapon.quality === 'Hervorragend'"
-                  >Keine Ladehemmung/Überhitzung</span
-                >
-              </span>
-            </template>
-          </q-select>
-
-          <!-- Nahkampf Traits -->
-          <q-select
-            v-if="isMeleeWeapon"
-            v-model="newWeapon.traits"
-            :options="meleeTraitOptions"
-            label="Eigenschaften"
-            filled
-            dense
-            multiple
-            emit-value
-            map-options
-            clearable
-          />
-
-          <!-- Fernkampf Mods -->
-          <q-select
-            v-if="!isMeleeWeapon"
-            v-model="newWeapon.mods"
-            :options="rangedModOptions"
-            label="Modifikationen"
-            filled
-            dense
-            multiple
-            emit-value
-            map-options
-            clearable
-            hint="Nur eine Zielvorrichtung möglich"
-          />
-        </q-card-section>
+          <q-tab-panel name="description">
+            <q-input
+              v-model="newWeapon.description"
+              label="Besondere Beschreibung"
+              type="textarea"
+              filled
+              autogrow
+              :input-style="{ minHeight: '150px' }"
+              hint="Hier kannst du Hintergrundgeschichte, besondere Merkmale oder Notizen zur Waffe eintragen"
+            />
+          </q-tab-panel>
+        </q-tab-panels>
 
         <q-separator />
 
@@ -1716,7 +1816,7 @@
 
     <!-- Weapon Info Dialog -->
     <q-dialog v-model="showWeaponInfoDialog">
-      <q-card style="min-width: 400px">
+      <q-card style="min-width: 400px; max-width: 600px">
         <q-card-section>
           <div class="text-h6">{{ currentWeapon?.name }}</div>
           <div class="text-caption text-grey-6">{{ currentWeapon?.type }}</div>
@@ -1724,7 +1824,13 @@
 
         <q-separator />
 
-        <q-card-section>
+        <q-card-section v-if="currentWeapon?.description">
+          <div class="text-body1" style="white-space: pre-wrap">
+            {{ currentWeapon.description }}
+          </div>
+        </q-card-section>
+
+        <q-card-section v-else>
           <div class="row q-col-gutter-md">
             <div class="col-6">
               <div class="text-caption text-grey-6">Schaden</div>
@@ -1795,166 +1901,194 @@
           </div>
         </q-card-section>
 
+        <q-tabs
+          v-model="armorEditTab"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="justify"
+        >
+          <q-tab name="properties" label="Eigenschaften" />
+          <q-tab name="description" label="Beschreibung" />
+        </q-tabs>
+
         <q-separator />
 
-        <q-card-section class="q-gutter-md">
-          <q-input v-model="newArmor.name" label="Rüstungsname" filled dense />
+        <q-tab-panels v-model="armorEditTab" animated>
+          <q-tab-panel name="properties">
+            <div class="q-gutter-md">
+              <q-input v-model="newArmor.name" label="Rüstungsname" filled dense />
 
-          <q-input
-            v-model.number="newArmor.ap"
-            label="Rüstungspunkte (RP)"
-            type="number"
-            filled
-            dense
-            hint="Grundwert der Rüstung"
-          />
+              <q-input
+                v-model.number="newArmor.ap"
+                label="Rüstungspunkte (RP)"
+                type="number"
+                filled
+                dense
+                hint="Grundwert der Rüstung"
+              />
 
-          <div>
-            <div class="row q-col-gutter-sm q-mb-md">
-              <div class="col-6">
-                <q-checkbox v-model="newArmor.equipped" label="Angelegt" dense>
-                  <q-tooltip
-                    >Wird getragen und in RP-Berechnung einbezogen</q-tooltip
-                  >
-                </q-checkbox>
+              <div>
+                <div class="row q-col-gutter-sm q-mb-md">
+                  <div class="col-6">
+                    <q-checkbox v-model="newArmor.equipped" label="Angelegt" dense>
+                      <q-tooltip
+                        >Wird getragen und in RP-Berechnung einbezogen</q-tooltip
+                      >
+                    </q-checkbox>
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.additive"
+                      label="Additiv (z.B. Schild)"
+                      dense
+                      @update:model-value="onAdditiveChange"
+                    >
+                      <q-tooltip
+                        >Wird zu anderer Rüstung addiert statt Maximum zu
+                        nehmen</q-tooltip
+                      >
+                    </q-checkbox>
+                  </div>
+                </div>
               </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.additive"
-                  label="Additiv (z.B. Schild)"
-                  dense
-                  @update:model-value="onAdditiveChange"
-                >
-                  <q-tooltip
-                    >Wird zu anderer Rüstung addiert statt Maximum zu
-                    nehmen</q-tooltip
-                  >
-                </q-checkbox>
+
+              <div>
+                <div class="text-subtitle2 q-mb-sm">Bedeckte Körperteile:</div>
+                <!-- Standard-Rüstung: Einfache Körperteile -->
+                <div v-if="!newArmor.additive" class="row q-col-gutter-sm">
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Kopf"
+                      label="Kopf"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Arme"
+                      label="Arme"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Körper"
+                      label="Körper"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Beine"
+                      label="Beine"
+                      dense
+                    />
+                  </div>
+                </div>
+                <!-- Additive Rüstung: Erweiterte Körperteile (Links/Rechts) -->
+                <div v-else class="row q-col-gutter-sm">
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Kopf"
+                      label="Kopf"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Körper"
+                      label="Körper"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Linker Arm"
+                      label="Linker Arm"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Rechter Arm"
+                      label="Rechter Arm"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Linkes Bein"
+                      label="Linkes Bein"
+                      dense
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-checkbox
+                      v-model="newArmor.locations"
+                      val="Rechtes Bein"
+                      label="Rechtes Bein"
+                      dense
+                    />
+                  </div>
+                </div>
               </div>
+
+              <q-input
+                v-model.number="newArmor.weight"
+                label="Gewicht (kg)"
+                type="number"
+                step="0.5"
+                filled
+                dense
+                hint="In 0.5 kg Schritten"
+              />
+
+              <q-select
+                v-model="newArmor.quality"
+                :options="['Standard', 'Gering', 'Gut', 'Hervorragend']"
+                label="Qualität"
+                filled
+                dense
+              >
+                <template v-slot:hint>
+                  <div v-if="newArmor.quality === 'Gering'">
+                    -10 auf alle GE-Würfe
+                  </div>
+                  <div v-else-if="newArmor.quality === 'Gut'">
+                    Gegen ersten Angriff pro Runde +1 RP
+                  </div>
+                  <div v-else-if="newArmor.quality === 'Hervorragend'">
+                    Halbes Gewicht, +1 RP an allen Zonen
+                  </div>
+                  <div v-else>Normale Rüstung ohne Modifikatoren</div>
+                </template>
+              </q-select>
             </div>
-          </div>
+          </q-tab-panel>
 
-          <div>
-            <div class="text-subtitle2 q-mb-sm">Bedeckte Körperteile:</div>
-            <!-- Standard-Rüstung: Einfache Körperteile -->
-            <div v-if="!newArmor.additive" class="row q-col-gutter-sm">
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Kopf"
-                  label="Kopf"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Arme"
-                  label="Arme"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Körper"
-                  label="Körper"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Beine"
-                  label="Beine"
-                  dense
-                />
-              </div>
-            </div>
-            <!-- Additive Rüstung: Erweiterte Körperteile (Links/Rechts) -->
-            <div v-else class="row q-col-gutter-sm">
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Kopf"
-                  label="Kopf"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Körper"
-                  label="Körper"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Linker Arm"
-                  label="Linker Arm"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Rechter Arm"
-                  label="Rechter Arm"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Linkes Bein"
-                  label="Linkes Bein"
-                  dense
-                />
-              </div>
-              <div class="col-6">
-                <q-checkbox
-                  v-model="newArmor.locations"
-                  val="Rechtes Bein"
-                  label="Rechtes Bein"
-                  dense
-                />
-              </div>
-            </div>
-          </div>
-
-          <q-input
-            v-model.number="newArmor.weight"
-            label="Gewicht (kg)"
-            type="number"
-            step="0.5"
-            filled
-            dense
-            hint="In 0.5 kg Schritten"
-          />
-
-          <q-select
-            v-model="newArmor.quality"
-            :options="['Standard', 'Gering', 'Gut', 'Hervorragend']"
-            label="Qualität"
-            filled
-            dense
-          >
-            <template v-slot:hint>
-              <div v-if="newArmor.quality === 'Gering'">
-                -10 auf alle GE-Würfe
-              </div>
-              <div v-else-if="newArmor.quality === 'Gut'">
-                Gegen ersten Angriff pro Runde +1 RP
-              </div>
-              <div v-else-if="newArmor.quality === 'Hervorragend'">
-                Halbes Gewicht, +1 RP an allen Zonen
-              </div>
-              <div v-else>Normale Rüstung ohne Modifikatoren</div>
-            </template>
-          </q-select>
-        </q-card-section>
+          <q-tab-panel name="description">
+            <q-input
+              v-model="newArmor.description"
+              label="Besondere Beschreibung"
+              type="textarea"
+              filled
+              autogrow
+              :input-style="{ minHeight: '150px' }"
+              hint="Hier kannst du Hintergrundgeschichte, besondere Merkmale oder Notizen zur Rüstung eintragen"
+            />
+          </q-tab-panel>
+        </q-tab-panels>
 
         <q-separator />
 
@@ -2091,6 +2225,7 @@ const { settings } = storeToRefs(settingsStore);
 const ensureCombatState = () => {
   if (!character.value.combatState) {
     character.value.combatState = {
+      combatRound: 1,
       weaponStacks: 0,
       activeKgModifiers: [],
       activeBfModifiers: [],
@@ -2111,6 +2246,17 @@ const weaponStacks = computed({
   set: (val) => {
     ensureCombatState();
     character.value.combatState.weaponStacks = val;
+  },
+});
+
+const combatRound = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.combatRound || 1;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.combatRound = val;
   },
 });
 
@@ -3190,7 +3336,10 @@ const newWeapon = ref({
   quality: "Normal",
   traits: [],
   mods: [],
+  description: "",
 });
+
+const weaponEditTab = ref("properties");
 
 // Check if current weapon is melee
 const isMeleeWeapon = computed(() => {
@@ -3340,6 +3489,8 @@ const copyDamageRoll = async (weapon) => {
 // Armor state
 const showAddArmorDialog = ref(false);
 const showDeleteArmorDialog = ref(false);
+const showArmorInfoDialog = ref(false);
+const currentArmor = ref(null);
 const armorToDelete = ref(null);
 const editingArmorIndex = ref(null);
 
@@ -3351,7 +3502,10 @@ const newArmor = ref({
   quality: "Standard",
   equipped: true,
   additive: false,
+  description: "",
 });
+
+const armorEditTab = ref("properties");
 
 // Gear state
 const showAddGearDialog = ref(false);
@@ -3394,7 +3548,9 @@ const editWeapon = (index) => {
     traits: weapon.traits || [],
     mods: weapon.mods || [],
     rangedTraits: weapon.rangedTraits || [],
+    description: weapon.description || "",
   };
+  weaponEditTab.value = "properties";
   showAddWeaponDialog.value = true;
 };
 
@@ -3530,6 +3686,7 @@ const hasAmmoTracking = (weapon) => {
 const cancelWeaponDialog = () => {
   showAddWeaponDialog.value = false;
   editingWeaponIndex.value = null;
+  weaponEditTab.value = "properties";
   newWeapon.value = {
     name: "",
     type: "",
@@ -3547,6 +3704,7 @@ const cancelWeaponDialog = () => {
     traits: [],
     mods: [],
     rangedTraits: [],
+    description: "",
   };
 };
 
@@ -3682,6 +3840,11 @@ const confirmDeleteArmor = () => {
   armorToDelete.value = null;
 };
 
+const showArmorInfo = (armor) => {
+  currentArmor.value = armor;
+  showArmorInfoDialog.value = true;
+};
+
 const editArmor = (index) => {
   editingArmorIndex.value = index;
   const armor = character.value.armor[index];
@@ -3693,7 +3856,9 @@ const editArmor = (index) => {
     quality: armor.quality || "Standard",
     equipped: armor.equipped !== undefined ? armor.equipped : true,
     additive: armor.additive || false,
+    description: armor.description || "",
   };
+  armorEditTab.value = "properties";
   showAddArmorDialog.value = true;
 };
 
@@ -3712,6 +3877,7 @@ const saveArmor = () => {
 const cancelArmorDialog = () => {
   showAddArmorDialog.value = false;
   editingArmorIndex.value = null;
+  armorEditTab.value = "properties";
   newArmor.value = {
     name: "",
     ap: 0,
@@ -3720,6 +3886,7 @@ const cancelArmorDialog = () => {
     quality: "Standard",
     equipped: true,
     additive: false,
+    description: "",
   };
 };
 
