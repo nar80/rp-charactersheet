@@ -66,7 +66,7 @@
                   size="sm"
                   icon="delete"
                   color="negative"
-                  @click="removeNote(note.originalIndex)"
+                  @click="removeNote(note.originalIndex, note.title)"
                 >
                   <q-tooltip>Löschen</q-tooltip>
                 </q-btn>
@@ -128,9 +128,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 
+const $q = useQuasar()
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
 
@@ -203,8 +205,16 @@ const saveNote = () => {
   cancelNoteDialog()
 }
 
-const removeNote = (index) => {
-  characterStore.removeNote(index)
+const removeNote = (index, title) => {
+  $q.dialog({
+    title: 'Vox-Eintrag löschen',
+    message: `Willst du den Vox-Eintrag "${title}" wirklich löschen?`,
+    cancel: 'Abbrechen',
+    ok: { label: 'Löschen', color: 'negative' },
+    persistent: true
+  }).onOk(() => {
+    characterStore.removeNote(index)
+  })
 }
 
 const cancelNoteDialog = () => {

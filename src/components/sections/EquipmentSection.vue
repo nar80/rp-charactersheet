@@ -138,6 +138,32 @@
           </q-btn>
         </div>
 
+        <!-- Temp HP Counter - Between Round and Stacks -->
+        <div class="col-auto row items-center q-gutter-sm q-mx-md">
+          <q-icon name="favorite" size="xs" color="green" />
+          <span class="text-caption text-grey-6">Temp. TP:</span>
+          <NumberInput
+            :model-value="tempHp"
+            :min="0"
+            :max="999"
+            button-color="green"
+            text-color="green"
+            @update:model-value="tempHp = $event"
+          />
+          <q-btn
+            flat
+            dense
+            round
+            size="sm"
+            icon="refresh"
+            :color="tempHp > 0 ? 'green' : 'grey-7'"
+            :disable="tempHp <= 0"
+            @click="tempHp = 0"
+          >
+            <q-tooltip>Temporäre TP zurücksetzen</q-tooltip>
+          </q-btn>
+        </div>
+
         <!-- Weapon Stacks (only if enabled) - Right -->
         <div class="col row items-center justify-end q-gutter-sm">
           <template v-if="settings.enableWeaponStacks">
@@ -2227,6 +2253,7 @@ const ensureCombatState = () => {
     character.value.combatState = {
       combatRound: 1,
       weaponStacks: 0,
+      tempHp: 0,
       activeKgModifiers: [],
       activeBfModifiers: [],
       selectedKgManeuver: null,
@@ -2246,6 +2273,17 @@ const weaponStacks = computed({
   set: (val) => {
     ensureCombatState();
     character.value.combatState.weaponStacks = val;
+  },
+});
+
+const tempHp = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.tempHp || 0;
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.tempHp = val;
   },
 });
 

@@ -23,6 +23,16 @@
             </template>
           </q-input>
         </div>
+        <div class="col-auto" style="min-width: 120px">
+          <q-select
+            v-model="filterAttribute"
+            :options="attributeOptions"
+            label="Attribut"
+            filled
+            dense
+            clearable
+          />
+        </div>
         <div class="col-auto">
           <q-btn
             flat
@@ -624,7 +634,10 @@ const editDescription = ref('')
 const editAttribute = ref('')
 const editSpecialization = ref('')
 const filterText = ref('')
+const filterAttribute = ref(null)
 const filterInput = ref(null)
+
+const attributeOptions = ['CH', 'GE', 'IN', 'ST', 'WA', 'WI', 'WK']
 const sortAlphabetically = ref(true)
 
 // Load sort preference from localStorage and focus filter input
@@ -670,8 +683,6 @@ watch(() => newSkill.value.selectedSkill, (skill) => {
   }
 })
 
-const attributeOptions = ['KG', 'BF', 'ST', 'WI', 'GE', 'IN', 'WA', 'WK', 'CH']
-
 // Helper function to check if a skill can have its attribute changed
 const canChangeAttribute = (skillName) => {
   return skillName === 'Beruf' || skillName === 'Einschüchtern'
@@ -709,6 +720,9 @@ const filteredBasicSkills = computed(() => {
       skill.attribute.toLowerCase().includes(filter)
     )
   }
+  if (filterAttribute.value) {
+    skills = skills.filter(skill => skill.attribute === filterAttribute.value)
+  }
 
   // Always sort alphabetically (name, then specialization)
   skills.sort((a, b) => {
@@ -731,6 +745,9 @@ const filteredLearnedSkills = computed(() => {
       skill.attribute.toLowerCase().includes(filter) ||
       (skill.specialization && skill.specialization.toLowerCase().includes(filter))
     )
+  }
+  if (filterAttribute.value) {
+    skills = skills.filter(skill => skill.attribute === filterAttribute.value)
   }
 
   return skills

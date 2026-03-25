@@ -66,10 +66,10 @@ export const talents = [
     benefit: '+10 Bonus auf Interaktionswürfe'
   },
   {
-    name: 'Binharvasenbeton',
+    name: 'Binärkonversation',
     requiresSpecialization: false,
     prerequisites: '--',
-    benefit: '+10 zum Kontrollieren von Servitoren'
+    benefit: '+10 auf Servitoren-Interaktion; +1 Mannschaftsmoral solange an Bord'
   },
   {
     name: 'Blind Kämpfen',
@@ -698,8 +698,8 @@ export const talents = [
   {
     name: 'Standhaftigkeit',
     requiresSpecialization: false,
-    prerequisites: 'WK 40, KG 35',
-    benefit: 'Zusatzangriff bei gelungenem KG-Wurf'
+    prerequisites: 'WK 40',
+    benefit: 'Bei Blutverlust zweimal würfeln um Tod zu vermeiden'
   },
   {
     name: 'Steuermannchen',
