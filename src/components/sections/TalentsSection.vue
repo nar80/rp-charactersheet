@@ -432,8 +432,9 @@ const availableTalents = computed(() => {
     }
 
     // For talents without specialization, only show if not already added
-    const alreadyAdded = character.value.talents.some(t =>
-      t.name === talent.name && editingIndex.value === null
+    // When editing, allow the currently edited talent to still appear
+    const alreadyAdded = character.value.talents.some((t, idx) =>
+      t.name === talent.name && idx !== editingIndex.value
     )
     return !alreadyAdded
   })

@@ -468,6 +468,12 @@ export const talents = [
     benefit: 'Die Fähigkeit, eine Kraft aus einer der Navigatorenkräftegruppen zu verwenden'
   },
   {
+    name: 'Nackte Seele',
+    requiresSpecialization: false,
+    prerequisites: '--',
+    benefit: 'Der Warp sieht dich. Der Warp kennt dich. Der Warp holt dich. -5 auf Widerstandswürfe gegen Warp-Effekte'
+  },
+  {
     name: 'Orthoproxie',
     requiresSpecialization: false,
     prerequisites: '--',

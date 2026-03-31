@@ -109,8 +109,9 @@ const calculatedRank = computed(() => {
   if (spent >= 21000 && spent <= 24999) return 6;
   if (spent >= 25000 && spent <= 29999) return 7;
   if (spent >= 30000 && spent <= 34999) return 8;
+  if (spent >= 35000 && spent <= 44999) return 9;
 
-  return 8; // Max rank
+  return 10; // Max rank
 })
 
 const handleExport = () => {
@@ -160,14 +161,17 @@ const onFileSelected = (event) => {
       const data = JSON.parse(e.target.result)
 
       // Support both old format (just character) and new format (character + settings)
+      const charData = data.character || data
+      if (!charData || typeof charData !== 'object' || !charData.attributes) {
+        throw new Error('Ungültiges Charakter-Format')
+      }
+
       if (data.character) {
-        // New format with character and settings
         characterStore.loadCharacter(data.character)
         if (data.settings) {
           Object.assign(settingsStore.settings, data.settings)
         }
       } else {
-        // Old format - data is the character itself
         characterStore.loadCharacter(data)
       }
 

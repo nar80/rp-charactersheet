@@ -432,7 +432,12 @@ export const useCharacterStore = defineStore('character', () => {
 
   // Save to localStorage on changes
   const saveToStorage = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(character.value))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(character.value))
+    } catch (e) {
+      console.error('Speichern fehlgeschlagen:', e)
+      alert('Speichern fehlgeschlagen! Der lokale Speicher ist möglicherweise voll. Bitte exportiere deinen Charakter als Backup.')
+    }
   }
 
   // Watch for changes and auto-save
