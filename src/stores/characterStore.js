@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { defaultBuffs, createEmptyEffects } from '../data/buffs.js'
 
 const STORAGE_KEY = 'rp-character'
 
@@ -344,6 +345,9 @@ const createDefaultCharacter = () => ({
   // Psi Powers
   psiPowers: [],
 
+  // Buffs & Stimulanzen (modify effective attributes while active)
+  buffs: defaultBuffs.map(b => ({ ...b, effects: { ...b.effects } })),
+
   // Equipment
   weapons: [],
   armor: [],
@@ -358,6 +362,28 @@ const createDefaultCharacter = () => ({
 
 export const useCharacterStore = defineStore('character', () => {
   const character = ref(createDefaultCharacter())
+
+  // Sum of all active buff effects, per attribute (incl. ALL) and INI
+  const activeBuffModifiers = computed(() => {
+    const mod = createEmptyEffects()
+    const buffs = character.value.buffs || []
+    for (const buff of buffs) {
+      if (!buff.active || !buff.effects) continue
+      const all = buff.effects.ALL || 0
+      for (const attr of ['KG', 'BF', 'ST', 'WI', 'GE', 'IN', 'WA', 'WK', 'CH']) {
+        mod[attr] += all + (buff.effects[attr] || 0)
+      }
+      mod.INI += buff.effects.INI || 0
+    }
+    return mod
+  })
+
+  // Effective attribute value = base + active buff modifiers.
+  // This is the value that should drive ALL calculations (skills, combat, movement, ...).
+  const getEffectiveAttribute = (attr) => {
+    const base = character.value.attributes[attr] || 0
+    return base + (activeBuffModifiers.value[attr] || 0)
+  }
 
   // Load from localStorage on init
   const loadFromStorage = () => {
@@ -421,6 +447,31 @@ export const useCharacterStore = defineStore('character', () => {
         // Ensure initiativeModifier exists (new field)
         if (typeof parsed.initiativeModifier !== 'number') {
           parsed.initiativeModifier = 0
+        }
+
+        // Ensure buffs exist (new field) - seed with defaults on first run
+        if (!Array.isArray(parsed.buffs)) {
+          parsed.buffs = defaultChar.buffs.map(b => ({ ...b, effects: { ...b.effects } }))
+        } else {
+          // Normalize each buff so effects always has all keys
+          const presetDurations = Object.fromEntries(
+            defaultBuffs.map(b => [b.id, b.duration || 0])
+          )
+          parsed.buffs = parsed.buffs.map(b => {
+            // Backfill preset durations once (durations are a new feature, so an
+            // untouched preset still has duration 0 / undefined here).
+            let duration = typeof b.duration === 'number' ? b.duration : 0
+            if (b.preset && !duration && presetDurations[b.id]) {
+              duration = presetDurations[b.id]
+            }
+            return {
+              ...b,
+              active: !!b.active,
+              duration,
+              remaining: typeof b.remaining === 'number' ? b.remaining : 0,
+              effects: { ...createEmptyEffects(), ...(b.effects || {}) }
+            }
+          })
         }
 
         character.value = { ...defaultChar, ...parsed }
@@ -605,6 +656,76 @@ export const useCharacterStore = defineStore('character', () => {
     character.value.acquisitions.splice(index, 1)
   }
 
+  // --- Buffs & Stimulanzen ---
+  const addBuff = (buff) => {
+    character.value.buffs.push({
+      id: 'buff-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      name: buff.name || 'Neuer Buff',
+      description: buff.description || '',
+      icon: buff.icon || 'bolt',
+      color: buff.color || 'amber',
+      note: buff.note || '',
+      active: false,
+      preset: false,
+      duration: Number(buff.duration) || 0,
+      remaining: 0,
+      effects: { ...createEmptyEffects(), ...(buff.effects || {}) }
+    })
+  }
+
+  const updateBuff = (id, updates) => {
+    const index = character.value.buffs.findIndex(b => b.id === id)
+    if (index !== -1) {
+      const merged = { ...character.value.buffs[index], ...updates }
+      if (updates.effects) {
+        merged.effects = { ...character.value.buffs[index].effects, ...updates.effects }
+      }
+      character.value.buffs[index] = merged
+    }
+  }
+
+  const removeBuff = (id) => {
+    const index = character.value.buffs.findIndex(b => b.id === id)
+    if (index !== -1) {
+      character.value.buffs.splice(index, 1)
+    }
+  }
+
+  const toggleBuff = (id) => {
+    const buff = character.value.buffs.find(b => b.id === id)
+    if (buff) {
+      buff.active = !buff.active
+      // Starting a buff (re)starts its duration countdown
+      buff.remaining = buff.active ? (Number(buff.duration) || 0) : 0
+    }
+  }
+
+  const deactivateAllBuffs = () => {
+    character.value.buffs.forEach(b => {
+      b.active = false
+      b.remaining = 0
+    })
+  }
+
+  // Tick down buff durations when the combat round counter increases.
+  // Buffs with duration 0 run indefinitely; others expire (deactivate) at 0.
+  watch(
+    () => character.value.combatState?.combatRound,
+    (newRound, oldRound) => {
+      if (typeof newRound !== 'number' || typeof oldRound !== 'number') return
+      const advanced = newRound - oldRound
+      if (advanced <= 0) return // only count down when the round goes up
+      for (const buff of character.value.buffs || []) {
+        if (!buff.active || !(Number(buff.duration) > 0)) continue
+        buff.remaining = (buff.remaining || 0) - advanced
+        if (buff.remaining <= 0) {
+          buff.remaining = 0
+          buff.active = false
+        }
+      }
+    }
+  )
+
   const loadCharacter = (data) => {
     character.value = { ...createDefaultCharacter(), ...data }
   }
@@ -614,7 +735,7 @@ export const useCharacterStore = defineStore('character', () => {
   }
 
   const getSkillValue = (skill) => {
-    const baseAttribute = character.value.attributes[skill.attribute] || 0
+    const baseAttribute = getEffectiveAttribute(skill.attribute)
 
     // Grundfertigkeiten ohne Training: halbes Attribut (abgerundet)
     // Grundfertigkeiten mit Training oder erlernte Fertigkeiten: volles Attribut
@@ -663,6 +784,13 @@ export const useCharacterStore = defineStore('character', () => {
     addAcquisition,
     updateAcquisition,
     removeAcquisition,
+    addBuff,
+    updateBuff,
+    removeBuff,
+    toggleBuff,
+    deactivateAllBuffs,
+    activeBuffModifiers,
+    getEffectiveAttribute,
     loadCharacter,
     resetCharacter,
     getSkillValue

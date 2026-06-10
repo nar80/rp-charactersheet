@@ -73,7 +73,15 @@
               class="attribute-compact"
             >
               <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
-              <div class="text-h6 text-bold text-primary text-center">{{ value }}</div>
+              <div
+                class="text-h6 text-bold text-center"
+                :class="attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary'"
+              >
+                {{ effectiveAttr(attr) }}
+                <q-tooltip v-if="attrBuffMod(attr) !== 0">
+                  Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
+                </q-tooltip>
+              </div>
               <!-- Small dots indicator -->
               <div class="flex justify-center q-gutter-xs" style="min-height: 12px">
                 <div
@@ -132,7 +140,7 @@
               <span class="text-grey-6 q-mx-xs">|</span>
               <span class="text-caption text-grey-6">INI:</span>
               <span class="text-bold text-amber q-ml-xs" style="min-width: 40px;">
-                1W10{{ (agilityBonus + (character.initiativeModifier || 0)) >= 0 ? '+' : '' }}{{ agilityBonus + (character.initiativeModifier || 0) }}
+                1W10{{ (agilityBonus + totalInitiativeMod) >= 0 ? '+' : '' }}{{ agilityBonus + totalInitiativeMod }}
               </span>
               <q-btn
                 flat
@@ -144,7 +152,7 @@
                 @click="rollInitiative"
                 class="q-ml-xs"
               >
-                <q-tooltip>Würfelbefehl kopieren (1W10 + {{ agilityBonus }} GEb + {{ character.initiativeModifier || 0 }} Mod)</q-tooltip>
+                <q-tooltip>Würfelbefehl kopieren (1W10 + {{ agilityBonus }} GEb + {{ totalInitiativeMod }} Mod)</q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -173,6 +181,14 @@
                   input-class="text-center text-h5 text-bold text-primary"
                   class="centered-input"
                 />
+                <q-badge
+                  v-if="attrBuffMod(attr) !== 0"
+                  color="positive"
+                  class="q-mt-xs"
+                >
+                  {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} = {{ effectiveAttr(attr) }}
+                  <q-tooltip>Effektiver Wert durch aktive Buffs</q-tooltip>
+                </q-badge>
                 <!-- Dots for increases -->
                 <div
                   class="flex justify-center q-gutter-xs q-mt-xs"
@@ -597,6 +613,12 @@ const getAttributeName = (attr) => {
   return attributeNames[attr] || attr;
 };
 
+// Effective attribute value (base + active buffs)
+const effectiveAttr = (attr) => characterStore.getEffectiveAttribute(attr);
+
+// Total buff modifier for an attribute (0 if none active)
+const attrBuffMod = (attr) => characterStore.activeBuffModifiers[attr] || 0;
+
 const updateAttribute = (attr, value) => {
   characterStore.updateAttribute(attr, value);
 };
@@ -652,8 +674,7 @@ const resetShipPoints = () => {
 
 // Copy initiative roll command to clipboard
 const rollInitiative = async () => {
-  const modifier = character.value.initiativeModifier || 0;
-  const totalMod = agilityBonus.value + modifier;
+  const totalMod = agilityBonus.value + totalInitiativeMod.value;
 
   let diceCode = "1d10";
   if (totalMod > 0) {
@@ -721,20 +742,29 @@ const carryingCapacityTable = {
   20: { carry: 2250, lift: 4500, push: 9000 },
 };
 
-// Computed bonuses
+// Computed bonuses (based on effective attributes incl. active buffs)
 const agilityBonus = computed(() =>
-  Math.floor(character.value.attributes.GE / 10)
+  Math.floor(characterStore.getEffectiveAttribute("GE") / 10)
 );
 const strengthBonus = computed(() =>
-  Math.floor(character.value.attributes.ST / 10)
+  Math.floor(characterStore.getEffectiveAttribute("ST") / 10)
 );
 const toughnessBonus = computed(() =>
-  Math.floor(character.value.attributes.WI / 10)
+  Math.floor(characterStore.getEffectiveAttribute("WI") / 10)
 );
 const willpowerBonus = computed(() =>
-  Math.floor(character.value.attributes.WK / 10)
+  Math.floor(characterStore.getEffectiveAttribute("WK") / 10)
 );
 const carryBonus = computed(() => strengthBonus.value + toughnessBonus.value);
+
+// Initiative bonus contributed by active buffs (INI effect)
+const initiativeBuffMod = computed(
+  () => characterStore.activeBuffModifiers.INI || 0
+);
+// Total initiative modifier = manual modifier + active buff INI
+const totalInitiativeMod = computed(
+  () => (character.value.initiativeModifier || 0) + initiativeBuffMod.value
+);
 
 // Exhaustion system
 const isUnconscious = computed(() =>

@@ -24,8 +24,10 @@
     </q-card-section>
 
     <!-- Combat Stats & Weapon Stacks -->
-    <q-card-section class="q-pt-none">
-      <div class="row items-center">
+    <q-card-section class="q-pt-none combat-section-rel">
+      <!-- Ausfahrbares Buff-/Stimulanzen-Menü (rechts) -->
+      <CombatBuffsPanel />
+      <div class="row items-center combat-stats-row">
         <!-- Combat Stats (BF/KG with modifiers) - Left -->
         <div class="col row items-center q-gutter-md">
           <!-- KG (Kampfgeschick) -->
@@ -488,7 +490,8 @@
                           v-if="parseRof(weapon.rof).single > 0"
                           flat
                           dense
-                          size="sm"
+                          size="md"
+                          class="ammo-fire-btn"
                           label="E"
                           :disable="
                             getWeaponAmmo(weapon) <
@@ -509,7 +512,8 @@
                           v-if="parseRof(weapon.rof).salvo > 0"
                           flat
                           dense
-                          size="sm"
+                          size="md"
+                          class="ammo-fire-btn"
                           :label="parseRof(weapon.rof).salvo.toString()"
                           :disable="
                             getWeaponAmmo(weapon) < getAmmoUsed(weapon, 'salvo')
@@ -529,7 +533,8 @@
                           v-if="parseRof(weapon.rof).auto > 0"
                           flat
                           dense
-                          size="sm"
+                          size="md"
+                          class="ammo-fire-btn"
                           :label="parseRof(weapon.rof).auto.toString()"
                           :disable="
                             getWeaponAmmo(weapon) < getAmmoUsed(weapon, 'auto')
@@ -548,7 +553,7 @@
                       </q-btn-group>
                       <q-chip
                         dense
-                        size="sm"
+                        size="md"
                         :color="
                           getWeaponAmmo(weapon) === 0
                             ? 'negative'
@@ -558,7 +563,7 @@
                               : 'grey-8'
                         "
                         text-color="white"
-                        class="text-bold"
+                        class="text-bold ammo-count-chip"
                       >
                         {{ getWeaponAmmo(weapon) }}/{{ weapon.magazine }}
                       </q-chip>
@@ -566,7 +571,7 @@
                         flat
                         dense
                         round
-                        size="sm"
+                        size="md"
                         icon="refresh"
                         color="primary"
                         :disable="
@@ -2237,6 +2242,7 @@ import { useCharacterStore } from "../../stores/characterStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import ArmorVisualization from "../ArmorVisualization.vue";
 import NumberInput from "../NumberInput.vue";
+import CombatBuffsPanel from "../CombatBuffsPanel.vue";
 import draggable from "vuedraggable";
 
 const $q = useQuasar();
@@ -2356,18 +2362,18 @@ const ensureCombatAttributes = () => {
   }
 };
 
-// Get the base attribute value for KG (respects attribute swap)
+// Get the base attribute value for KG (respects attribute swap + active buffs)
 const kgBaseAttribute = computed(() => {
   ensureCombatAttributes();
   const attr = character.value.combatAttributes.kg || "KG";
-  return character.value.attributes[attr] || character.value.attributes.KG;
+  return characterStore.getEffectiveAttribute(attr);
 });
 
-// Get the base attribute value for BF (respects attribute swap)
+// Get the base attribute value for BF (respects attribute swap + active buffs)
 const bfBaseAttribute = computed(() => {
   ensureCombatAttributes();
   const attr = character.value.combatAttributes.bf || "BF";
-  return character.value.attributes[attr] || character.value.attributes.BF;
+  return characterStore.getEffectiveAttribute(attr);
 });
 
 // Computed totals for KG/BF
@@ -4102,6 +4108,29 @@ const cancelGearDialog = () => {
   ) !important;
   border-left: 3px solid #ffd54f;
   border-right: 3px solid #9c27b0;
+}
+
+/* Larger ammo counter chip in weapon cards */
+.ammo-count-chip {
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+
+/* Larger fire-mode buttons (E / Salve / Auto) for easier clicking */
+.ammo-fire-btn {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 34px;
+}
+
+/* Combat section anchors the slide-out buff panel on its right edge */
+.combat-section-rel {
+  position: relative;
+}
+
+/* Reserve space so the collapsed buff tab never overlaps the stats row */
+.combat-stats-row {
+  padding-right: 30px;
 }
 
 .combat-stat-chip {
