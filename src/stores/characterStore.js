@@ -353,6 +353,11 @@ const createDefaultCharacter = () => ({
   armor: [],
   gear: [],
 
+  // Lager (eingelagerte Ausrüstung, aus der Kampfansicht ausgeblendet)
+  storedWeapons: [],
+  storedArmor: [],
+  storedGear: [],
+
   // Acquisitions (Beschaffungen)
   acquisitions: [],
 
@@ -443,6 +448,11 @@ export const useCharacterStore = defineStore('character', () => {
         if (typeof parsed.exhaustion !== 'number') {
           parsed.exhaustion = 0
         }
+
+        // Ensure Lager arrays exist (new field)
+        if (!Array.isArray(parsed.storedWeapons)) parsed.storedWeapons = []
+        if (!Array.isArray(parsed.storedArmor)) parsed.storedArmor = []
+        if (!Array.isArray(parsed.storedGear)) parsed.storedGear = []
 
         // Ensure initiativeModifier exists (new field)
         if (typeof parsed.initiativeModifier !== 'number') {
@@ -614,6 +624,37 @@ export const useCharacterStore = defineStore('character', () => {
     character.value.gear.splice(index, 1)
   }
 
+  // --- Lager: ein-/auslagern (verschiebt zwischen aktiver Liste und Lager) ---
+  const storeWeapon = (index) => {
+    const [item] = character.value.weapons.splice(index, 1)
+    if (item) character.value.storedWeapons.push(item)
+  }
+
+  const unstoreWeapon = (index) => {
+    const [item] = character.value.storedWeapons.splice(index, 1)
+    if (item) character.value.weapons.push(item)
+  }
+
+  const storeArmor = (index) => {
+    const [item] = character.value.armor.splice(index, 1)
+    if (item) character.value.storedArmor.push(item)
+  }
+
+  const unstoreArmor = (index) => {
+    const [item] = character.value.storedArmor.splice(index, 1)
+    if (item) character.value.armor.push(item)
+  }
+
+  const storeGear = (index) => {
+    const [item] = character.value.gear.splice(index, 1)
+    if (item) character.value.storedGear.push(item)
+  }
+
+  const unstoreGear = (index) => {
+    const [item] = character.value.storedGear.splice(index, 1)
+    if (item) character.value.gear.push(item)
+  }
+
   const addNote = (note) => {
     character.value.notes.push(note)
   }
@@ -775,6 +816,12 @@ export const useCharacterStore = defineStore('character', () => {
     addGear,
     updateGear,
     removeGear,
+    storeWeapon,
+    unstoreWeapon,
+    storeArmor,
+    unstoreArmor,
+    storeGear,
+    unstoreGear,
     addNote,
     updateNote,
     removeNote,

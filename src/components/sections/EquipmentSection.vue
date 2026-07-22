@@ -341,6 +341,17 @@
                       dense
                       round
                       size="sm"
+                      icon="archive"
+                      color="grey-6"
+                      @click="characterStore.storeWeapon(index)"
+                    >
+                      <q-tooltip>Ins Lager verschieben</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
                       icon="delete"
                       color="grey-6"
                       @click="removeWeapon(weapon, index)"
@@ -708,6 +719,17 @@
                           dense
                           round
                           size="sm"
+                          icon="archive"
+                          color="grey-6"
+                          @click="characterStore.storeArmor(index)"
+                        >
+                          <q-tooltip>Ins Lager verschieben</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          size="sm"
                           icon="delete"
                           color="grey-6"
                           @click="removeArmor(armor, index)"
@@ -920,6 +942,17 @@
                       dense
                       round
                       size="sm"
+                      icon="archive"
+                      color="grey-6"
+                      @click="storeGearByItem(item)"
+                    >
+                      <q-tooltip>Ins Lager verschieben</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
                       icon="delete"
                       color="grey-6"
                       @click="removeGearByItem(item)"
@@ -1019,6 +1052,17 @@
                       color="grey-6"
                       @click="editGearByItem(item)"
                     />
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      size="sm"
+                      icon="archive"
+                      color="grey-6"
+                      @click="storeGearByItem(item)"
+                    >
+                      <q-tooltip>Ins Lager verschieben</q-tooltip>
+                    </q-btn>
                     <q-btn
                       flat
                       dense
@@ -4045,6 +4089,13 @@ const removeGearByItem = (item) => {
   const index = findGearIndex(item);
   if (index >= 0) {
     removeGear(item, index);
+  }
+};
+
+const storeGearByItem = (item) => {
+  const index = findGearIndex(item);
+  if (index >= 0) {
+    characterStore.storeGear(index);
   }
 };
 
