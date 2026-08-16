@@ -27,6 +27,8 @@
     <q-card-section class="q-pt-none combat-section-rel">
       <!-- Ausfahrbares Buff-/Stimulanzen-Menü (rechts) -->
       <CombatBuffsPanel />
+      <!-- Ausfahrbare Kampfnotizen (rechts, unterhalb der Buffs) -->
+      <CombatNotesPanel />
       <div class="row items-center combat-stats-row">
         <!-- Combat Stats (BF/KG with modifiers) - Left -->
         <div class="col row items-center q-gutter-md">
@@ -375,12 +377,7 @@
                     <span class="text-bold">{{ weapon.damageType }}</span>
                     <span class="q-mx-sm">•</span>
                   </span>
-                  <span
-                    v-if="
-                      weapon.penetration !== undefined &&
-                      weapon.penetration !== null
-                    "
-                  >
+                  <span v-if="hasPenetration(weapon)">
                     <span class="text-grey-6">DS:</span>
                     <span class="text-bold">{{ weapon.penetration }}</span>
                     <span class="q-mx-sm">•</span>
@@ -1285,6 +1282,80 @@
           >
             {{ getWeaponBonusDescription() }}
           </div>
+
+          <!-- Feuern: zieht die Munition der aktiven Waffe ab. Der Modus kommt aus
+               dem gewaehlten Manoever, die moeglichen Modi aus ihrer Schussfolge. -->
+          <div v-if="fireAvailability.show" class="q-mt-sm">
+            <div class="row items-center no-wrap q-gutter-sm">
+              <q-btn
+                :disable="fireAvailability.disabled"
+                :color="
+                  fireAvailability.disabled
+                    ? 'grey-7'
+                    : fireAvailability.empty
+                      ? 'grey-6'
+                      : 'negative'
+                "
+                dense
+                no-caps
+                icon="local_fire_department"
+                :label="fireButtonLabel"
+                class="col"
+                @click="fireCurrentWeapon()"
+              />
+              <div
+                class="text-bold ammo-count-chip"
+                style="flex: 0 0 auto"
+                :class="
+                  getWeaponAmmo(currentSelectedWeapon) === 0
+                    ? 'text-negative'
+                    : 'text-grey-4'
+                "
+              >
+                {{ getWeaponAmmo(currentSelectedWeapon) }}/{{
+                  currentSelectedWeapon.magazine
+                }}
+              </div>
+              <q-btn
+                flat
+                dense
+                round
+                size="sm"
+                icon="refresh"
+                color="grey-5"
+                style="flex: 0 0 auto"
+                @click="
+                  reloadWeapon(currentSelectedWeapon, currentSelectedWeaponIndex)
+                "
+              >
+                <q-tooltip>Nachladen</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                dense
+                round
+                size="sm"
+                :icon="soundEnabled ? 'volume_up' : 'volume_off'"
+                :color="soundEnabled ? 'grey-5' : 'grey-7'"
+                style="flex: 0 0 auto"
+                @click="soundEnabled = !soundEnabled"
+              >
+                <q-tooltip>
+                  Schussgeräusche {{ soundEnabled ? "aus" : "ein" }}schalten<span
+                    v-if="soundEnabled"
+                  >
+                    — aktuell: {{ soundProfileLabel }}</span
+                  >
+                </q-tooltip>
+              </q-btn>
+            </div>
+            <div
+              v-if="fireAvailability.reason"
+              class="text-caption text-orange q-mt-xs"
+            >
+              {{ fireAvailability.reason }}
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
@@ -1341,11 +1412,19 @@
                       class="full-width modifier-btn"
                       @click="toggleModifier(mod.id)"
                     >
-                      <div class="row items-center full-width justify-between">
+                      <div class="row items-center full-width justify-between no-wrap">
                         <span class="text-left ellipsis" style="flex: 1">{{
                           mod.name
                         }}</span>
-                        <span class="text-bold q-ml-sm"
+                        <!-- Distanzbereiche der aktiven Waffe: eigener Span, damit
+                             die Zahlen nicht der Namenskuerzung zum Opfer fallen -->
+                        <span
+                          v-if="modifierRangeHint(mod.id)"
+                          class="text-caption text-grey-5 q-ml-xs"
+                          style="flex: 0 0 auto"
+                          >{{ modifierRangeHint(mod.id) }}</span
+                        >
+                        <span class="text-bold q-ml-sm" style="flex: 0 0 auto"
                           >{{ mod.value > 0 ? "+" : "" }}{{ mod.value }}</span
                         >
                       </div>
@@ -1384,7 +1463,13 @@
                     "
                     dense
                     no-caps
-                    class="full-width modifier-btn"
+                    :class="[
+                      'full-width',
+                      'modifier-btn',
+                      maneuverAmmoNote(maneuver.id)?.supported === false
+                        ? 'maneuver-unsupported'
+                        : '',
+                    ]"
                     @click="selectManeuver(maneuver.id)"
                   >
                     <div class="column full-width">
@@ -1398,15 +1483,41 @@
                         >
                       </div>
                       <div
-                        class="text-caption text-left text-grey-5"
+                        class="row items-center justify-between no-wrap text-caption text-left text-grey-5"
                         style="font-size: 10px"
                       >
-                        {{ maneuver.type }}
+                        <span>{{ maneuver.type }}</span>
+                        <!-- Munitionsbedarf bzw. Hinweis, dass die Waffe den
+                             Modus laut ihrer Schussfolge nicht kennt -->
+                        <span
+                          v-if="maneuverAmmoNote(maneuver.id)"
+                          :class="
+                            maneuverAmmoNote(maneuver.id).supported
+                              ? 'text-grey-4'
+                              : 'text-orange'
+                          "
+                        >
+                          {{ maneuverAmmoNote(maneuver.id).text }}
+                        </span>
                       </div>
                     </div>
-                    <q-tooltip class="text-body2" :delay="300">{{
-                      maneuver.description
-                    }}</q-tooltip>
+                    <q-tooltip class="text-body2" :delay="300">
+                      {{ maneuver.description }}
+                      <template v-if="maneuverAmmoNote(maneuver.id)">
+                        <br />
+                        <span
+                          v-if="!maneuverAmmoNote(maneuver.id).supported"
+                          class="text-orange"
+                        >
+                          {{ currentSelectedWeapon.name }} kennt diesen Modus
+                          laut Schussfolge nicht - trotzdem waehlbar, feuern
+                          lässt sich damit aber nicht.
+                        </span>
+                        <span v-else>
+                          Verbraucht {{ maneuverAmmoNote(maneuver.id).text }}.
+                        </span>
+                      </template>
+                    </q-tooltip>
                   </q-btn>
                 </div>
               </div>
@@ -1719,11 +1830,30 @@
                 clearable
               />
 
-              <!-- DS (Durchschlag) -->
+              <!-- Schussgeraeusch. "Automatisch" rät über Name, Kategorie und
+                   Schadensart - reicht für Standardwaffen, versagt aber bei
+                   benannten Einzelstücken wie "Der Zorn des Imperators". -->
+              <q-select
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.soundProfile"
+                :options="SOUND_PROFILE_OPTIONS"
+                label="Schussgeräusch"
+                filled
+                dense
+                emit-value
+                map-options
+                :hint="
+                  !newWeapon.soundProfile || newWeapon.soundProfile === 'auto'
+                    ? `Erkannt: ${describeWeaponSound(newWeapon)}`
+                    : 'Übersteuert die automatische Erkennung'
+                "
+              />
+
+              <!-- DS (Durchschlag) - Freitext, damit Spezialmunition als "4(6)" eintragbar ist -->
               <q-input
-                v-model.number="newWeapon.penetration"
+                v-model="newWeapon.penetration"
                 label="DS (Durchschlag)"
-                type="number"
+                hint="Freitext, z.B. 4 oder 4(6) bei Spezialmunition"
                 filled
                 dense
               />
@@ -1916,7 +2046,7 @@
             <div class="col-6">
               <div class="text-caption text-grey-6">Penetration</div>
               <div class="text-body1">
-                {{ currentWeapon?.penetration || 0 }}
+                {{ hasPenetration(currentWeapon) ? currentWeapon.penetration : "-" }}
               </div>
             </div>
             <div class="col-4">
@@ -2287,6 +2417,15 @@ import { useSettingsStore } from "../../stores/settingsStore";
 import ArmorVisualization from "../ArmorVisualization.vue";
 import NumberInput from "../NumberInput.vue";
 import CombatBuffsPanel from "../CombatBuffsPanel.vue";
+import CombatNotesPanel from "../CombatNotesPanel.vue";
+import {
+  playWeaponSound,
+  playReloadSound,
+  playDryFireSound,
+  soundEnabled,
+  describeWeaponSound,
+  SOUND_PROFILE_OPTIONS,
+} from "../../composables/weaponSounds.js";
 import draggable from "vuedraggable";
 
 const $q = useQuasar();
@@ -2644,6 +2783,22 @@ const kgManeuvers = [
     description: "-10 KG, aber +10 auf Parade und Ausweichen.",
   },
   {
+    // Tabelle 9-4: Kategorie "Konzentration", nicht auf Fernkampf beschraenkt -
+    // Zielen gilt fuer den naechsten Angriff, also auch im Nahkampf.
+    id: "zielen_halb_kg",
+    name: "Zielen (Halb)",
+    value: 10,
+    type: "Halb",
+    description: "+10 auf den nächsten Angriff.",
+  },
+  {
+    id: "zielen_voll_kg",
+    name: "Zielen (Voll)",
+    value: 20,
+    type: "Voll",
+    description: "+20 auf den nächsten Angriff.",
+  },
+  {
     id: "gezielt_kg",
     name: "Gezielter Angriff",
     value: -20,
@@ -2686,6 +2841,22 @@ const kgManeuvers = [
     value: 0,
     type: "Halb/Voll",
     description: "Packen-Angriff oder Befreiungsversuch.",
+  },
+  {
+    id: "mehrfach_kg",
+    name: "Mehrfacher Angriff",
+    value: 0,
+    type: "Voll",
+    description:
+      "Mehrere Angriffe je Runde. Erfordert zwei Waffen oder entsprechende Talente.",
+  },
+  {
+    id: "verteidigungshaltung",
+    name: "Verteidigungshaltung",
+    value: 0,
+    type: "Voll",
+    description:
+      "Zusätzliche Reaktion, Feinde haben -20 KG gegen Sie. Sie können in dieser Runde nicht angreifen.",
   },
 ];
 
@@ -2778,6 +2949,42 @@ const currentSelectedWeapon = computed(() => {
   if (index === null) return null;
   return character.value.weapons[index] || null;
 });
+
+// Reichweite der aktiven Waffe als Zahl. Das Feld ist Freitext ("30m", "3m", "—"),
+// deshalb die erste Zahl herausziehen statt alle Ziffern zusammenzukleben -
+// "20/40m" wuerde sonst zu 2040. Ohne brauchbaren Wert: 0 (= nichts anzeigen).
+const activeWeaponRange = computed(() => {
+  const raw = currentSelectedWeapon.value?.range;
+  if (raw === undefined || raw === null) return 0;
+  const match = String(raw).match(/\d+/);
+  if (!match) return 0;
+  const value = Number(match[0]);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+});
+
+// Distanzbereiche nach Regelwerk. Zwischen RW/2 und RW*2 liegt die normale
+// Reichweite ohne Modifikator - deshalb die Luecke zwischen kurz und gross.
+const distanceRangeFormatters = {
+  kernschuss: () => "0-2",
+  kurz: (rw) => {
+    // Bei sehr kurzen Reichweiten (z.B. RW 3) liegt die halbe Reichweite noch
+    // im Kernschussbereich - dann gibt es kein eigenes Band, sonst stuende
+    // dort eine rueckwaerts laufende Spanne wie "2-1".
+    const half = Math.floor(rw / 2);
+    return half > 2 ? `2-${half}` : "";
+  },
+  gross_entf: (rw) => `${rw * 2}-${rw * 3}`,
+  extrem: (rw) => `${rw * 3}-${rw * 4}`,
+};
+
+const modifierRangeHint = (modId) => {
+  const rw = activeWeaponRange.value;
+  if (!rw) return "";
+  const format = distanceRangeFormatters[modId];
+  if (!format) return "";
+  const text = format(rw);
+  return text ? `(${text})` : "";
+};
 
 // Select weapon
 const selectWeapon = (index) => {
@@ -3415,6 +3622,7 @@ const newWeapon = ref({
   damage: "",
   damageMod: 0,
   damageType: "",
+  soundProfile: "auto",
   penetration: 0,
   range: "",
   rof: "",
@@ -3441,6 +3649,13 @@ const isWeaponMelee = (weapon) => {
     (weapon.type === "Exotische Waffen" && weapon.subtype === "Nahkampf")
   );
 };
+
+// DS ist Freitext ("4", "4(6)" bei Spezialmunition) und wird nirgends verrechnet.
+// 0 ist ein gueltiger Wert und muss angezeigt werden, "" bedeutet "nicht gesetzt".
+const hasPenetration = (weapon) =>
+  weapon?.penetration !== undefined &&
+  weapon?.penetration !== null &&
+  weapon?.penetration !== "";
 
 // Format damage display with total modifier in parentheses: "1W10+7" with mod 2 -> "1W10+7(+9)"
 const formatDamageDisplay = (weapon) => {
@@ -3632,6 +3847,7 @@ const editWeapon = (index) => {
     quality: weapon.quality || "Normal",
     subtype: weapon.subtype || "",
     damageType: weapon.damageType || "",
+    soundProfile: weapon.soundProfile || "auto",
     damageMod: weapon.damageMod || 0,
     traits: weapon.traits || [],
     mods: weapon.mods || [],
@@ -3756,12 +3972,18 @@ const fireWeapon = (weapon, index, mode) => {
   const newAmmo = Math.max(0, currentAmmo - ammoUsed);
 
   characterStore.updateWeapon(index, { currentAmmo: newAmmo });
+
+  // Hier statt in den Aufrufern, damit Waffenkarten und BF-Dialog denselben
+  // Ton bekommen. Die Schusszahl kommt aus der Schussfolge, nicht aus dem
+  // Munitionsverbrauch - Sturm verdoppelt die Munition, nicht die Schuesse.
+  playWeaponSound(weapon, mode, parseRof(weapon.rof)[mode]);
 };
 
 // Reload weapon (reset to magazine capacity)
 const reloadWeapon = (weapon, index) => {
   const maxAmmo = parseInt(weapon.magazine) || 0;
   characterStore.updateWeapon(index, { currentAmmo: maxAmmo });
+  playReloadSound(weapon);
 };
 
 // Check if weapon has ammo tracking (has magazine)
@@ -3769,6 +3991,116 @@ const hasAmmoTracking = (weapon) => {
   return (
     !isWeaponMelee(weapon) && weapon.magazine && parseInt(weapon.magazine) > 0
   );
+};
+
+// --- Feuern aus dem BF-Dialog -------------------------------------------------
+// Der Feuermodus wird nicht separat gewaehlt, sondern aus dem bereits selektierten
+// Manoever abgeleitet - sonst koennte man ein Manoever einstellen und in einem
+// anderen Modus feuern. Ohne Manoever (oder beim Zielen) gilt der Standardangriff.
+const MANEUVER_FIRE_MODES = {
+  standard_bf: "single",
+  halbautomatisch: "salvo",
+  automatisch: "auto",
+  sperrfeuer: "auto", // Sperrfeuer ist regeltechnisch vollautomatisches Feuer
+  // Zielen und Gezielter Angriff fallen bewusst durch: das sind Einzelschuesse
+  // bzw. gar kein Schuss, beides deckt der Standardfall "single" ab.
+};
+
+const FIRE_MODE_LABELS = {
+  single: "Einzelschuss",
+  salvo: "Salve",
+  auto: "Automatisch",
+};
+
+const currentFireMode = computed(
+  () => MANEUVER_FIRE_MODES[currentSelectedManeuver.value] || "single",
+);
+
+const fireModeLabel = computed(() => FIRE_MODE_LABELS[currentFireMode.value]);
+
+// Sagt dem Dialog, ob und warum gefeuert werden kann. Wichtig ist der Fall
+// "Waffe kennt den Modus nicht": fireWeapon() wuerde bei 0 Schuss stillschweigend
+// nichts tun, deshalb hier lieber sperren und den Grund anzeigen.
+const fireAvailability = computed(() => {
+  const weapon = currentSelectedWeapon.value;
+  if (currentModifierStat.value !== "BF" || !weapon) return { show: false };
+  if (!hasAmmoTracking(weapon)) return { show: false };
+
+  const mode = currentFireMode.value;
+  const rof = parseRof(weapon.rof);
+  const shotsForMode = rof[mode === "single" ? "single" : mode] || 0;
+
+  if (shotsForMode <= 0) {
+    return {
+      show: true,
+      disabled: true,
+      cost: 0,
+      reason: `Diese Waffe kennt kein "${FIRE_MODE_LABELS[mode]}" (SF: ${weapon.rof || "—"})`,
+    };
+  }
+
+  const cost = getAmmoUsed(weapon, mode);
+  const ammo = getWeaponAmmo(weapon);
+  if (ammo < cost) {
+    // Bewusst NICHT gesperrt: abdruecken darf man immer, es kommt nur nichts.
+    // Ein toter Knopf sagt weniger als ein Klicken ins Leere.
+    return {
+      show: true,
+      disabled: false,
+      empty: true,
+      cost,
+      reason: `Nicht genug Munition - ${cost} nötig, ${ammo} im Magazin`,
+    };
+  }
+
+  return { show: true, disabled: false, empty: false, cost, reason: "" };
+});
+
+const soundProfileLabel = computed(() =>
+  currentSelectedWeapon.value
+    ? describeWeaponSound(currentSelectedWeapon.value)
+    : "",
+);
+
+const fireButtonLabel = computed(() => {
+  const { cost, empty } = fireAvailability.value;
+  if (empty) return "Leer - klicken";
+  if (!cost) return `Feuern - ${fireModeLabel.value}`;
+  const sturm = currentSelectedWeapon.value?.rangedTraits?.includes("sturm")
+    ? ", Sturm"
+    : "";
+  return `Feuern - ${fireModeLabel.value} (${cost}${sturm})`;
+});
+
+// Unterstuetzt die aktive Waffe den Feuermodus dieses Manoevers?
+// Bewusst nur eine Markierung statt Ausblenden: das SF-Feld ist Freitext, ein
+// leerer oder krummer Wert sieht fuer den Code aus wie "kann die Waffe nicht".
+// Ausgeblendete Manoever waeren dann unerklaerlich verschwunden.
+const maneuverAmmoNote = (maneuverId) => {
+  const mode = MANEUVER_FIRE_MODES[maneuverId];
+  if (!mode) return null;
+
+  const weapon = currentSelectedWeapon.value;
+  if (!weapon || !hasAmmoTracking(weapon)) return null;
+
+  const rof = parseRof(weapon.rof);
+  if (rof[mode] > 0) {
+    return { supported: true, text: `${getAmmoUsed(weapon, mode)} Schuss` };
+  }
+  return { supported: false, text: `SF: ${weapon.rof || "—"}` };
+};
+
+const fireCurrentWeapon = () => {
+  const index = currentSelectedWeaponIndex.value;
+  const weapon = currentSelectedWeapon.value;
+  if (index === null || !weapon || fireAvailability.value.disabled) return;
+
+  // Leeres Magazin: klicken lassen, aber nichts abziehen
+  if (fireAvailability.value.empty) {
+    playDryFireSound();
+    return;
+  }
+  fireWeapon(weapon, index, currentFireMode.value);
 };
 
 const cancelWeaponDialog = () => {
@@ -4159,6 +4491,12 @@ const cancelGearDialog = () => {
   ) !important;
   border-left: 3px solid #ffd54f;
   border-right: 3px solid #9c27b0;
+}
+
+/* Manoever, dessen Feuermodus die aktive Waffe laut Schussfolge nicht kennt.
+   Bewusst nur gedaempft und nicht gesperrt - siehe maneuverAmmoNote(). */
+.maneuver-unsupported {
+  opacity: 0.5;
 }
 
 /* Larger ammo counter chip in weapon cards */

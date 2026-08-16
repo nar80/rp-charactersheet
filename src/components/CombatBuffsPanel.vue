@@ -143,7 +143,7 @@
     </div>
 
     <!-- Toggle tab (always visible at the right edge) -->
-    <button class="buffs-tab" @click="expanded = !expanded">
+    <button class="buffs-tab" @click="toggle">
       <q-icon :name="expanded ? 'chevron_right' : 'chevron_left'" size="sm" />
       <q-icon name="local_pharmacy" size="xs" />
       <span v-if="activeCount > 0" class="buffs-tab-count">{{ activeCount }}</span>
@@ -279,11 +279,14 @@ import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCharacterStore } from "../stores/characterStore";
 import { ATTRIBUTE_KEYS, createEmptyEffects } from "../data/buffs.js";
+import { useCombatFlyout } from "../composables/combatFlyout.js";
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
 
-const expanded = ref(false);
+// Teilt sich den Offen-Zustand mit den Kampfnotizen: immer hoechstens eins offen,
+// sonst wuerden sich die beiden gleich hohen Panels ueberlagern.
+const { expanded, toggle } = useCombatFlyout("buffs");
 const editMode = ref(false);
 const editorOpen = ref(false);
 const editing = ref(null);
@@ -394,10 +397,25 @@ const confirmDelete = (buff) => {
   flex-direction: row;
   align-items: stretch;
   z-index: 20;
+  /* Der Container ist so hoch wie das (auch eingeklappt gelayoutete) Panel und
+     wuerde sonst Klicks auf darunterliegende Reiter abfangen. Nur die sichtbaren
+     Teile nehmen Zeigerereignisse entgegen. */
+  pointer-events: none;
 }
 
-/* Toggle tab */
+.buffs-tab,
+.buffs-panel {
+  pointer-events: auto;
+}
+
+/* Toggle tab.
+   align-self/height sind noetig, weil der Flyout-Container align-items: stretch hat:
+   das eingeklappte Panel ist zwar width 0, aber weiterhin ~277px hoch, und der
+   Reiter wuerde sich sonst auf diese volle Hoehe strecken. */
 .buffs-tab {
+  align-self: flex-start;
+  height: 60px;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -419,14 +437,19 @@ const confirmDelete = (buff) => {
   box-shadow: -2px 0 10px rgba(255, 213, 79, 0.25);
 }
 
+/* Absolut positioniert, damit der Zaehler die feste Reiterhoehe nicht aufblaeht */
 .buffs-tab-count {
-  font-size: 0.7rem;
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
   font-weight: bold;
   background: #21ba45;
   color: #fff;
   border-radius: 8px;
   padding: 0 4px;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 /* Sliding panel */

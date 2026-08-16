@@ -14,7 +14,6 @@ const createDefaultCharacter = () => ({
   homeworld: '',
   motivation: '',
   description: '',
-  notes: '',
 
   // Attributes (WH40k Rogue Trader)
   attributes: {
@@ -348,6 +347,10 @@ const createDefaultCharacter = () => ({
   // Buffs & Stimulanzen (modify effective attributes while active)
   buffs: defaultBuffs.map(b => ({ ...b, effects: { ...b.effects } })),
 
+  // Kampfnotizen: freier Schmierzettel neben den Waffen (kein Vox-Log-Ersatz).
+  // Bewusst ein einzelnes Textfeld ohne Struktur - Eintraege mit Titel/Datum gehoeren ins Vox-Log.
+  combatNotes: '',
+
   // Equipment
   weapons: [],
   armor: [],
@@ -501,14 +504,48 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
-  // Watch for changes and auto-save
-  watch(
-    character,
-    () => {
+  // Auto-Save wird entprellt: ohne das loeste jeder einzelne Tastendruck in jedem
+  // Textfeld ein JSON.stringify ueber den kompletten Charakter plus einen synchronen
+  // localStorage-Write aus - bei gut gefuellten Charakteren als Tippverzoegerung spuerbar.
+  const SAVE_DEBOUNCE_MS = 400
+  let saveTimer = null
+  let saveDirty = false
+
+  const flushSave = () => {
+    if (saveTimer !== null) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    if (saveDirty) {
+      saveDirty = false
       saveToStorage()
-    },
-    { deep: true }
-  )
+    }
+  }
+
+  const scheduleSave = () => {
+    saveDirty = true
+    if (saveTimer !== null) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null
+      saveDirty = false
+      saveToStorage()
+    }, SAVE_DEBOUNCE_MS)
+  }
+
+  // Watch for changes and auto-save (debounced)
+  watch(character, scheduleSave, { deep: true })
+
+  // Ausstehende Aenderungen sofort schreiben, wenn der Tab in den Hintergrund geht
+  // oder geschlossen wird - sonst gingen die letzten Tastendruecke im Debounce-Fenster
+  // verloren. 'pagehide' ist dafuer zuverlaessiger als 'beforeunload' (bfcache, Mobile).
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushSave()
+    })
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', flushSave)
+  }
 
   // Actions
   const updateBasicInfo = (field, value) => {
