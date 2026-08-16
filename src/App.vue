@@ -131,7 +131,10 @@ const handleExport = () => {
     const day = String(now.getDate()).padStart(2, '0')
     const hours = String(now.getHours()).padStart(2, '0')
     const minutes = String(now.getMinutes()).padStart(2, '0')
-    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}`
+    // Sekunden, damit mehrere Exporte innerhalb einer Minute nicht denselben
+    // Dateinamen bekommen und sich gegenseitig ueberschreiben
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
     filename = `${timestamp}_${filename}`
   }
 

@@ -115,7 +115,7 @@
               <q-icon name="schedule" class="q-ml-sm" size="sm" />
             </q-toggle>
             <div v-if="settings.exportWithTimestamp" class="text-caption text-grey-6 q-ml-lg">
-              Beispiel: 2025-12-02_14-30_Charaktername.json
+              Beispiel: 2025-12-02_14-30-52_Charaktername.json
             </div>
           </div>
         </q-card-section>
