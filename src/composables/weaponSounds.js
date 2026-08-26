@@ -11,8 +11,26 @@ import { hasSamples, playSampleSet } from './weaponSamples.js'
 // klingen aber deutlich verschieden.
 
 const STORAGE_KEY = 'rp-weapon-sound'
+const VOLUME_KEY = 'rp-weapon-volume'
 
 export const soundEnabled = ref(localStorage.getItem(STORAGE_KEY) !== '0')
+
+// Lautstaerke in Prozent. Bewusst NICHT im settingsStore: die liegt am Geraet
+// des Spielers, nicht am Charakter - sonst reist die Kopfhoerer-Lautstaerke
+// eines Spielers per JSON-Export in fremde Bogen.
+const DEFAULT_VOLUME = 100
+
+const readVolume = () => {
+  const raw = Number(localStorage.getItem(VOLUME_KEY))
+  return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : DEFAULT_VOLUME
+}
+
+export const soundVolume = ref(readVolume())
+
+// Quadratisch statt linear: Gehoer nimmt Pegel logarithmisch wahr, ein linearer
+// Regler waere auf der unteren Haelfte praktisch wirkungslos. 100 % entspricht
+// exakt dem bisherigen Pegel, der Regler kann also nur leiser machen.
+const volumeToGain = (percent) => Math.pow(Math.min(Math.max(percent, 0), 100) / 100, 2)
 
 watch(soundEnabled, (val) => {
   try {
@@ -22,7 +40,17 @@ watch(soundEnabled, (val) => {
   }
 })
 
+watch(soundVolume, (val) => {
+  if (masterOut) masterOut.gain.value = volumeToGain(val)
+  try {
+    localStorage.setItem(VOLUME_KEY, String(val))
+  } catch {
+    // s. o. - ohne Speicher gilt der Regler nur fuer diese Sitzung
+  }
+})
+
 let ctx = null
+let masterOut = null
 let noiseBuffer = null
 let reverb = null
 
@@ -34,6 +62,17 @@ const getCtx = () => {
   if (!ctx) ctx = new AudioCtor()
   if (ctx.state === 'suspended') ctx.resume()
   return ctx
+}
+
+// Alles laeuft ueber diesen einen Knoten - Samples wie Synthese. Nur so wirkt
+// der Regler auf beide Wege gleich.
+const getOut = (audio) => {
+  if (!masterOut) {
+    masterOut = audio.createGain()
+    masterOut.gain.value = volumeToGain(soundVolume.value)
+    masterOut.connect(audio.destination)
+  }
+  return masterOut
 }
 
 const getNoise = (audio) => {
@@ -360,7 +399,7 @@ export const playWeaponSound = (weapon, mode, shotCount) => {
   // Bolter hat eine andere Schussfolge als der Boltgun.
   const spacing = intervalFor(sampleKey) * w.spacing
   if (hasSamples(sampleKey)) {
-    playSampleSet(audio, sampleKey, { shots, spacing }).then((played) => {
+    playSampleSet(audio, sampleKey, { shots, spacing, out: getOut(audio) }).then((played) => {
       if (!played) synthesize(audio, profileKey, shots, spacing, w)
     })
     return
@@ -372,15 +411,16 @@ const synthesize = (audio, profileKey, shots, spacing, w) => {
   // Melta ohne Samples faellt auf das Flammer-Fauchen zurueck
   const profile = PROFILES[profileKey] || PROFILES[profileKey === 'melta' ? 'flammer' : 'solid'] || PROFILES.solid
 
+  const out = getOut(audio)
   const master = audio.createGain()
   master.gain.value = 0.2
-  master.connect(audio.destination)
+  master.connect(out)
 
   // Hallanteil parallel zum Direktschall
   const send = audio.createGain()
   send.gain.value = 0.3
   master.connect(send)
-  send.connect(getReverb(audio)).connect(audio.destination)
+  send.connect(getReverb(audio)).connect(out)
 
   // Vorlauf gross genug, dass die Plasma-Aufladung vor dem Schuss Platz hat
   const start = audio.currentTime + 0.2
@@ -400,10 +440,10 @@ export const playReloadSound = (weapon) => {
 
   const key = `reload:${sampleKeyFor(weapon, profileKey)}`
   if (hasSamples(key)) {
-    playSampleSet(audio, key, { volume: 0.9 })
+    playSampleSet(audio, key, { volume: 0.9, out: getOut(audio) })
   } else if (hasSamples('reload:bolt')) {
     // Generisches Nachladen fuer alles ohne eigene Aufnahme
-    playSampleSet(audio, 'reload:bolt', { volume: 0.75 })
+    playSampleSet(audio, 'reload:bolt', { volume: 0.75, out: getOut(audio) })
   }
 }
 
@@ -412,5 +452,12 @@ export const playDryFireSound = () => {
   if (!soundEnabled.value) return
   const audio = getCtx()
   if (!audio) return
-  playSampleSet(audio, 'dryfire', { volume: 0.85 })
+  playSampleSet(audio, 'dryfire', { volume: 0.85, out: getOut(audio) })
+}
+
+// Hoerprobe fuer den Lautstaerkeregler. Ein Regler, den man nur mitten im
+// Gefecht hoert, wird nicht eingestellt, sondern geraten. Bolter, weil das
+// Sample vorhanden und der haeufigste Fall am Tisch ist.
+export const playSoundPreview = () => {
+  playWeaponSound({ name: 'Bolter', type: 'Basiswaffen' }, 'single', 1)
 }

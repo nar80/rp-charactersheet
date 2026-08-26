@@ -96,9 +96,11 @@ const nextVariant = (key) => {
  * shots  - Anzahl Schuesse (Varianten rotieren, Ueberlagerung wird gedaempft)
  * spacing- Abstand in Sekunden
  * detune - zufaellige Tonhoehenstreuung in Cent, bricht Wiederholungen auf
+ * out    - Zielknoten. Der Aufrufer haengt hier den Lautstaerkeregler ein;
+ *          ohne Angabe geht es direkt an die Ausgabe.
  * Liefert true, wenn abgespielt werden konnte.
  */
-export const playSampleSet = async (audio, key, { shots = 1, spacing = 0, volume = 1, detune = 60 } = {}) => {
+export const playSampleSet = async (audio, key, { shots = 1, spacing = 0, volume = 1, detune = 60, out = null } = {}) => {
   if (!hasSamples(key)) return false
 
   const names = []
@@ -127,7 +129,7 @@ export const playSampleSet = async (audio, key, { shots = 1, spacing = 0, volume
     const overlap = !dense || i === 0 ? 1 : Math.max(0.35, 1 - i * 0.18)
     gain.gain.value = entry.gain * volume * overlap
 
-    src.connect(gain).connect(audio.destination)
+    src.connect(gain).connect(out || audio.destination)
     src.start(start + i * spacing)
   })
   return true

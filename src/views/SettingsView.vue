@@ -97,6 +97,69 @@
 
       <q-card class="q-mt-md">
         <q-card-section>
+          <div class="text-h6">Ton</div>
+          <div class="text-subtitle2 text-grey-7">
+            Waffengeräusche beim Feuern, Nachladen und Trockenschuss
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section>
+          <div class="q-gutter-md">
+            <q-toggle
+              v-model="soundEnabled"
+              label="Waffengeräusche"
+              color="primary"
+            >
+              <q-icon
+                :name="soundEnabled ? 'volume_up' : 'volume_off'"
+                class="q-ml-sm"
+                size="sm"
+              />
+            </q-toggle>
+
+            <div :class="{ 'text-grey-7': !soundEnabled }">
+              <div class="text-subtitle2 q-mb-sm">
+                Lautstärke
+                <span class="text-grey-6">({{ soundVolume }}%)</span>
+              </div>
+              <div class="row items-center no-wrap q-gutter-sm">
+                <q-slider
+                  v-model="soundVolume"
+                  :min="0"
+                  :max="100"
+                  :step="5"
+                  :disable="!soundEnabled"
+                  color="primary"
+                  label
+                  :label-value="soundVolume + '%'"
+                  class="col"
+                  @change="playSoundPreview"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="play_arrow"
+                  color="primary"
+                  :disable="!soundEnabled"
+                  @click="playSoundPreview"
+                >
+                  <q-tooltip>Hörprobe</q-tooltip>
+                </q-btn>
+              </div>
+              <div class="text-caption text-grey-6">
+                Gilt nur für dieses Gerät und wird nicht mit dem Charakter
+                exportiert.
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <q-card class="q-mt-md">
+        <q-card-section>
           <div class="text-h6">Export</div>
           <div class="text-subtitle2 text-grey-7">
             Einstellungen für den Charakter-Export
@@ -223,6 +286,11 @@ import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../stores/characterStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import {
+  soundEnabled,
+  soundVolume,
+  playSoundPreview
+} from '../composables/weaponSounds.js'
 
 const $q = useQuasar()
 const characterStore = useCharacterStore()
