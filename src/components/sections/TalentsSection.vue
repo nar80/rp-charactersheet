@@ -19,7 +19,7 @@
             :color="alphabetSort ? 'primary' : 'grey'"
             @click="alphabetSort = !alphabetSort"
           >
-            <q-tooltip>Alphabetisch sortieren</q-tooltip>
+            <q-tooltip>{{ alphabetSort ? 'Alphabetische Ansicht – ausschalten, um die Reihenfolge per Ziehen zu ändern' : 'Alphabetisch anzeigen' }}</q-tooltip>
           </q-btn>
           <q-btn
             color="primary"
@@ -41,130 +41,75 @@
       </div>
 
       <div v-else class="row q-col-gutter-md">
-        <!-- Left Column -->
-        <div class="col-12 col-md-6">
-          <q-card
-            v-for="talent in leftColumnTalents"
-            :key="talent.originalIndex"
-            bordered
-            flat
-            class="bg-grey-9 q-mb-sm"
+        <div v-for="(columnTalents, col) in talentColumns" :key="col" class="col-12 col-md-6">
+          <draggable
+            :model-value="columnTalents"
+            @update:model-value="setColumnTalents(col, $event)"
+            :item-key="talentKey"
+            group="talents"
+            :disabled="alphabetSort"
+            :animation="150"
+            :delay="200"
+            :delay-on-touch-only="true"
+            class="talent-column"
+            :class="{ 'talent-column-sortable': !alphabetSort }"
           >
-            <q-card-section class="q-pa-sm">
-              <div class="row items-start">
-                <div class="col-auto q-pr-xs">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="info"
-                    color="grey-6"
-                    @click="showInfoDialog(talent)"
-                  >
-                    <q-tooltip>Details anzeigen</q-tooltip>
-                  </q-btn>
-                </div>
-                <div class="col">
-                  <div class="text-subtitle1 text-bold" :class="{ 'important-talent': talent.important }">
-                    {{ talent.name }}
-                    <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
-                    <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
+            <template #item="{ element: talent }">
+              <q-card bordered flat class="bg-grey-9 q-mb-sm" :class="{ 'cursor-grab': !alphabetSort }">
+                <q-card-section class="q-pa-sm">
+                  <div class="row items-start">
+                    <div class="col-auto q-pr-xs">
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="info"
+                        color="grey-6"
+                        @click="showInfoDialog(talent)"
+                      >
+                        <q-tooltip>Details anzeigen</q-tooltip>
+                      </q-btn>
+                    </div>
+                    <div class="col">
+                      <div class="text-subtitle1 text-bold" :class="{ 'important-talent': talent.important }">
+                        {{ talent.name }}
+                        <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
+                        <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
+                      </div>
+                      <div v-if="talent.benefit" class="text-body2 text-grey-4 q-mt-xs">
+                        {{ talent.benefit }}
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="edit"
+                        color="grey-6"
+                        @click="editTalent(talentIndex(talent))"
+                      >
+                        <q-tooltip>Bearbeiten</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        size="sm"
+                        icon="delete"
+                        color="grey-6"
+                        @click="removeTalent(talent)"
+                      >
+                        <q-tooltip>Entfernen</q-tooltip>
+                      </q-btn>
+                    </div>
                   </div>
-                  <div v-if="talent.benefit" class="text-body2 text-grey-4 q-mt-xs">
-                    {{ talent.benefit }}
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="edit"
-                    color="grey-6"
-                    @click="editTalent(talent.originalIndex)"
-                  >
-                    <q-tooltip>Bearbeiten</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="delete"
-                    color="grey-6"
-                    @click="removeTalent(talent)"
-                  >
-                    <q-tooltip>Entfernen</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <!-- Right Column -->
-        <div class="col-12 col-md-6">
-          <q-card
-            v-for="talent in rightColumnTalents"
-            :key="talent.originalIndex"
-            bordered
-            flat
-            class="bg-grey-9 q-mb-sm"
-          >
-            <q-card-section class="q-pa-sm">
-              <div class="row items-start">
-                <div class="col-auto q-pr-xs">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="info"
-                    color="grey-6"
-                    @click="showInfoDialog(talent)"
-                  >
-                    <q-tooltip>Details anzeigen</q-tooltip>
-                  </q-btn>
-                </div>
-                <div class="col">
-                  <div class="text-subtitle1 text-bold" :class="{ 'important-talent': talent.important }">
-                    {{ talent.name }}
-                    <span v-if="talent.specialization" class="text-weight-regular"> ({{ talent.specialization }})</span>
-                    <span v-if="talent.tier" class="text-weight-regular"> ({{ talent.tier }})</span>
-                  </div>
-                  <div v-if="talent.benefit" class="text-body2 text-grey-4 q-mt-xs">
-                    {{ talent.benefit }}
-                  </div>
-                </div>
-                <div class="col-auto">
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="edit"
-                    color="grey-6"
-                    @click="editTalent(talent.originalIndex)"
-                  >
-                    <q-tooltip>Bearbeiten</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    size="sm"
-                    icon="delete"
-                    color="grey-6"
-                    @click="removeTalent(talent)"
-                  >
-                    <q-tooltip>Entfernen</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
+                </q-card-section>
+              </q-card>
+            </template>
+          </draggable>
         </div>
       </div>
     </q-card-section>
@@ -407,6 +352,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import draggable from 'vuedraggable'
 import { useCharacterStore } from '../../stores/characterStore'
 import { talents } from '../../data/talents'
 
@@ -477,30 +423,52 @@ watch(() => newTalent.value.selectedTalent, (talent) => {
   }
 })
 
-// Sorted talents
-const sortedTalents = computed(() => {
-  const talentsWithIndex = character.value.talents.map((talent, index) => ({
-    ...talent,
-    originalIndex: index
-  }))
+// Talents keep their own order plus a column (0 = left, 1 = right) set by dragging.
+// The alphabetical view only changes the display, the stored order stays untouched.
+const hasColumn = (talent) => talent.column === 0 || talent.column === 1
 
+const shorterColumn = () => {
+  const left = character.value.talents.filter(t => t.column === 0).length
+  const right = character.value.talents.filter(t => t.column === 1).length
+  return left <= right ? 0 : 1
+}
+
+// Older characters have no column yet: split them in halves like the previous layout
+watch(() => character.value.talents, (list) => {
+  if (!list || list.every(hasColumn)) return
+  const legacy = !list.some(hasColumn)
+  const half = Math.ceil(list.length / 2)
+  list.forEach((talent, index) => {
+    if (hasColumn(talent)) return
+    talent.column = legacy ? (index < half ? 0 : 1) : shorterColumn()
+  })
+}, { immediate: true })
+
+const talentColumns = computed(() => {
+  const list = character.value.talents
   if (alphabetSort.value) {
-    return talentsWithIndex.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    const sorted = [...list].sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    const half = Math.ceil(sorted.length / 2)
+    return [sorted.slice(0, half), sorted.slice(half)]
   }
-
-  return talentsWithIndex
+  return [0, 1].map(col => list.filter(t => (hasColumn(t) ? t.column : 0) === col))
 })
 
-// Split talents into two columns (left column first, then right)
-const leftColumnTalents = computed(() => {
-  const half = Math.ceil(sortedTalents.value.length / 2)
-  return sortedTalents.value.slice(0, half)
-})
+const setColumnTalents = (col, newList) => {
+  newList.forEach(talent => { talent.column = col })
+  const otherList = talentColumns.value[1 - col]
+  character.value.talents = col === 0 ? [...newList, ...otherList] : [...otherList, ...newList]
+}
 
-const rightColumnTalents = computed(() => {
-  const half = Math.ceil(sortedTalents.value.length / 2)
-  return sortedTalents.value.slice(half)
-})
+// Stable keys for drag & drop (names are not unique, e.g. same talent with different specialization)
+const talentKeys = new WeakMap()
+let nextTalentKey = 0
+const talentKey = (talent) => {
+  if (!talentKeys.has(talent)) talentKeys.set(talent, nextTalentKey++)
+  return talentKeys.get(talent)
+}
+
+const talentIndex = (talent) => character.value.talents.indexOf(talent)
 
 const filterTalents = (val, update) => {
   update(() => {
@@ -546,7 +514,7 @@ const showInfoDialog = (talent) => {
 
 const editFromInfo = () => {
   showInfo.value = false
-  editTalent(currentTalent.value.originalIndex)
+  editTalent(talentIndex(currentTalent.value))
 }
 
 const saveTalent = () => {
@@ -560,7 +528,10 @@ const saveTalent = () => {
     prerequisites: newTalent.value.prerequisites || '',
     benefit: newTalent.value.benefit || '',
     description: newTalent.value.description || '',
-    important: newTalent.value.important || false
+    important: newTalent.value.important || false,
+    column: editingIndex.value !== null
+      ? character.value.talents[editingIndex.value].column
+      : shorterColumn()
   }
 
   if (editingIndex.value !== null) {
@@ -604,8 +575,9 @@ const removeTalent = (talent) => {
 }
 
 const confirmDeleteTalent = () => {
-  if (talentToDelete.value !== null) {
-    characterStore.removeTalent(talentToDelete.value.originalIndex)
+  const index = talentToDelete.value ? talentIndex(talentToDelete.value) : -1
+  if (index >= 0) {
+    characterStore.removeTalent(index)
   }
   showDeleteDialog.value = false
   talentToDelete.value = null
@@ -632,5 +604,23 @@ const cancelTalentDialog = () => {
 .important-talent {
   color: #ffd54f;
   text-shadow: 0 0 8px rgba(255, 213, 79, 0.6), 0 0 16px rgba(255, 213, 79, 0.3);
+}
+
+.cursor-grab {
+  cursor: grab;
+}
+
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+/* Keep an empty column as drop target */
+.talent-column-sortable {
+  min-height: 60px;
+  border-radius: 4px;
+}
+
+.talent-column-sortable:empty {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 </style>
