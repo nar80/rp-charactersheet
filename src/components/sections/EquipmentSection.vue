@@ -322,10 +322,10 @@
                       round
                       size="sm"
                       icon="casino"
-                      color="grey-6"
+                      :color="dice.connected.value ? 'amber' : 'grey-6'"
                       @click="copyDamageRoll(weapon)"
                     >
-                      <q-tooltip>Würfelbefehl kopieren</q-tooltip>
+                      <q-tooltip>{{ dice.connected.value ? 'Schaden würfeln' : 'Würfelbefehl kopieren' }}</q-tooltip>
                     </q-btn>
                     <q-btn
                       flat
@@ -1217,6 +1217,15 @@
           >
             Maximum erreicht (±60)
           </div>
+          <q-btn
+            v-if="dice.connected.value && !fireAvailability.show"
+            class="full-width q-mt-sm"
+            color="primary"
+            icon="casino"
+            no-caps
+            :label="`Probe würfeln (Ziel ${currentTotal})`"
+            @click="rollCombatTest"
+          />
         </q-card-section>
 
         <!-- Weapon Selection -->
@@ -2427,8 +2436,10 @@ import {
   SOUND_PROFILE_OPTIONS,
 } from "../../composables/weaponSounds.js";
 import draggable from "vuedraggable";
+import { useDiceRoom } from "../../composables/diceRoom";
 
 const $q = useQuasar();
+const dice = useDiceRoom();
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
@@ -3769,6 +3780,21 @@ const copyDamageRoll = async (weapon) => {
     }
   }
 
+  // Reißend im Würfelraum: der zusätzliche Würfel ist schon gezählt, der
+  // niedrigste fällt weg (kh = keep highest).
+  const roomCode = hasReissend
+    ? diceCode.replace(/^(\d+)(d\d+)/, (_, count, die) => `${count}${die}kh${count - 1}`)
+    : diceCode;
+  if (
+    dice.connected.value &&
+    dice.roll(roomCode, `Schaden – ${weapon.name}${hasReissend ? " (Reißend)" : ""}`, {
+      fury: true,
+      onFury: (damageRoll) => confirmRighteousFury(weapon, damageRoll.total),
+    })
+  ) {
+    return;
+  }
+
   const command = `/würfle generic eingabe: ${diceCode}`;
 
   try {
@@ -3787,6 +3813,49 @@ const copyDamageRoll = async (weapon) => {
       timeout: 2000,
     });
   }
+};
+
+// Zielwert des letzten Angriffs je Waffe, für die Bestätigung beim Zorn des Imperators
+const lastAttackTargets = {};
+
+// Hausregel: eine 10 beim Schaden -> Angriffsprobe wiederholen, bei Erfolg +1W10.
+// Der bisherige Schaden wird mitgewürfelt, damit der Wurf den Gesamtschaden zeigt.
+// Fällt dabei wieder eine 10, kann erneut bestätigt werden.
+const confirmRighteousFury = (weapon, damageSoFar) => {
+  const target =
+    lastAttackTargets[weapon.name] ??
+    (isWeaponMelee(weapon) ? kgTotal.value : bfTotal.value);
+  dice.test(target, `Bestätigung Zorn des Imperators – ${weapon.name}`, {
+    onResult: (roll, result) => {
+      if (!result.success) return;
+      dice.roll(
+        `1d10+${damageSoFar}`,
+        `Zorn des Imperators – ${weapon.name} (Gesamtschaden)`,
+        {
+          fury: true,
+          onFury: (furyRoll) => confirmRighteousFury(weapon, furyRoll.total),
+        },
+      );
+    },
+  });
+};
+
+const rollCombatTest = () => {
+  const stat = currentModifierStat.value;
+  if (currentSelectedWeapon.value) {
+    lastAttackTargets[currentSelectedWeapon.value.name] = currentTotal.value;
+  }
+  const maneuver = getManeuverById(currentSelectedManeuver.value)?.name;
+  const details = [
+    currentSelectedWeapon.value?.name,
+    maneuver || (fireAvailability.value.show ? fireModeLabel.value : null),
+  ].filter(Boolean);
+  const label = details.length
+    ? `${stat} – ${details.join(", ")}`
+    : stat === "KG"
+      ? "Kampfgeschick"
+      : "Ballistische Fertigkeit";
+  dice.test(currentTotal.value, label);
 };
 
 // Armor state
@@ -4065,11 +4134,12 @@ const soundProfileLabel = computed(() =>
 const fireButtonLabel = computed(() => {
   const { cost, empty } = fireAvailability.value;
   if (empty) return "Leer - klicken";
-  if (!cost) return `Feuern - ${fireModeLabel.value}`;
+  const probe = dice.connected.value ? ` + Probe auf ${currentTotal.value}` : "";
+  if (!cost) return `Feuern - ${fireModeLabel.value}${probe}`;
   const sturm = currentSelectedWeapon.value?.rangedTraits?.includes("sturm")
     ? ", Sturm"
     : "";
-  return `Feuern - ${fireModeLabel.value} (${cost}${sturm})`;
+  return `Feuern - ${fireModeLabel.value} (${cost}${sturm})${probe}`;
 });
 
 // Unterstuetzt die aktive Waffe den Feuermodus dieses Manoevers?
@@ -4101,6 +4171,7 @@ const fireCurrentWeapon = () => {
     return;
   }
   fireWeapon(weapon, index, currentFireMode.value);
+  if (dice.connected.value) rollCombatTest();
 };
 
 const cancelWeaponDialog = () => {

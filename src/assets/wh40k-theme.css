@@ -453,3 +453,15 @@ h1, h2, h3, h4, h5, h6,
 .imperial-divider::after {
   right: -16px;
 }
+
+/* Würfelraum: anklickbare Werte, die eine Probe würfeln */
+.dice-clickable {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.dice-clickable:hover {
+  background-color: rgba(212, 175, 55, 0.18);
+  transform: scale(1.05);
+}

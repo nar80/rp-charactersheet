@@ -64,6 +64,69 @@
 
       <q-card class="q-mt-md">
         <q-card-section>
+          <div class="text-h6">Würfelraum</div>
+          <div class="text-subtitle2 text-grey-7">
+            Würfe direkt aus dem Bogen – alle im selben Raum sehen sie sofort
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-gutter-md">
+          <q-toggle
+            v-model="settings.diceEnabled"
+            label="Mit Würfelraum verbinden"
+            color="primary"
+          >
+            <q-icon name="casino" class="q-ml-sm" size="sm" />
+          </q-toggle>
+          <div class="row q-col-gutter-md">
+            <q-input
+              v-model="settings.diceRoom"
+              label="Raum"
+              filled
+              dense
+              maxlength="40"
+              class="col-12 col-sm-6"
+              :hint="`Raum: ${dice.slugifyRoom(settings.diceRoom) || '–'}`"
+            />
+            <q-input
+              v-model="settings.dicePlayerName"
+              label="Name im Würfelraum"
+              filled
+              dense
+              maxlength="30"
+              class="col-12 col-sm-6"
+              :placeholder="character.name || 'Charaktername'"
+              hint="Leer = Charaktername"
+            />
+          </div>
+          <div class="row items-center q-gutter-sm">
+            <q-icon
+              :name="dice.connected.value ? 'wifi' : 'wifi_off'"
+              :color="dice.connected.value ? 'positive' : dice.state.status === 'connecting' ? 'warning' : 'grey-6'"
+            />
+            <span class="text-grey-5">
+              {{ { connected: 'Verbunden', connecting: 'Verbinde …', disconnected: 'Nicht verbunden' }[dice.state.status] }}
+              <template v-if="dice.state.players.length"> · Online: {{ dice.state.players.join(', ') }}</template>
+            </span>
+            <q-space />
+            <q-btn
+              flat
+              dense
+              no-caps
+              icon="open_in_new"
+              label="Würfelraum öffnen"
+              color="primary"
+              :href="dice.roomUrl.value"
+              target="_blank"
+            />
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <q-card class="q-mt-md">
+        <q-card-section>
           <div class="text-h6">Darstellung</div>
           <div class="text-subtitle2 text-grey-7">
             Visuelle Anpassungen
@@ -286,6 +349,7 @@ import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../stores/characterStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useDiceRoom } from '../composables/diceRoom'
 import {
   soundEnabled,
   soundVolume,
@@ -298,6 +362,7 @@ const settingsStore = useSettingsStore()
 
 const { settings } = storeToRefs(settingsStore)
 const { character } = storeToRefs(characterStore)
+const dice = useDiceRoom()
 
 // Weapon types for Waffenmeister selection
 const weaponTypeOptions = [

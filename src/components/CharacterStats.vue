@@ -71,6 +71,8 @@
               v-for="(value, attr) in character.attributes"
               :key="attr"
               class="attribute-compact"
+              :class="{ 'dice-clickable': dice.connected.value }"
+              @click="rollAttribute(attr)"
             >
               <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
               <div
@@ -78,8 +80,11 @@
                 :class="attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary'"
               >
                 {{ effectiveAttr(attr) }}
-                <q-tooltip v-if="attrBuffMod(attr) !== 0">
-                  Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
+                <q-tooltip v-if="attrBuffMod(attr) !== 0 || dice.connected.value">
+                  <div v-if="attrBuffMod(attr) !== 0">
+                    Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
+                  </div>
+                  <div v-if="dice.connected.value">Klick: Probe auf {{ effectiveAttr(attr) }} würfeln</div>
                 </q-tooltip>
               </div>
               <!-- Small dots indicator -->
@@ -147,12 +152,12 @@
                 dense
                 round
                 size="sm"
-                icon="content_copy"
+                :icon="dice.connected.value ? 'casino' : 'content_copy'"
                 color="amber"
                 @click="rollInitiative"
                 class="q-ml-xs"
               >
-                <q-tooltip>Würfelbefehl kopieren (1W10 + {{ agilityBonus }} GEb + {{ totalInitiativeMod }} Mod)</q-tooltip>
+                <q-tooltip>{{ dice.connected.value ? 'Initiative würfeln' : 'Würfelbefehl kopieren' }} (1W10 + {{ agilityBonus }} GEb + {{ totalInitiativeMod }} Mod)</q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -571,8 +576,10 @@ import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useCharacterStore } from "../stores/characterStore";
 import NumberInput from "./NumberInput.vue";
+import { useDiceRoom } from "../composables/diceRoom";
 
 const $q = useQuasar();
+const dice = useDiceRoom();
 
 const characterStore = useCharacterStore();
 const { character } = storeToRefs(characterStore);
@@ -621,6 +628,12 @@ const attrBuffMod = (attr) => characterStore.activeBuffModifiers[attr] || 0;
 
 const updateAttribute = (attr, value) => {
   characterStore.updateAttribute(attr, value);
+};
+
+const rollAttribute = (attr) => {
+  if (!dice.connected.value) return;
+  const name = attr === "BF" ? "Ballistische Fertigkeit" : getAttributeName(attr);
+  dice.test(effectiveAttr(attr), name);
 };
 
 const toggleIncrease = (attr, level) => {
@@ -682,6 +695,8 @@ const rollInitiative = async () => {
   } else if (totalMod < 0) {
     diceCode = `1d10${totalMod}`;
   }
+
+  if (dice.connected.value && dice.roll(diceCode, "Initiative")) return;
 
   const command = `/würfle generic eingabe: ${diceCode}`;
 

@@ -14,7 +14,10 @@ export const useSettingsStore = defineStore('settings', () => {
     aquilaOpacity: 3, // 0-10, where 0 = off
     enableWeaponStacks: false, // Special feature for pistol damage stacks
     exportWithTimestamp: false, // Add timestamp to exported filename
-    enableAttributeSwap: false // Allow swapping KG/BF base attribute (e.g. use Wahrnehmung instead)
+    enableAttributeSwap: false, // Allow swapping KG/BF base attribute (e.g. use Wahrnehmung instead)
+    diceEnabled: false,
+    diceRoom: 'gruppe',
+    dicePlayerName: ''
   })
 
   // Default values for new settings
@@ -28,7 +31,10 @@ export const useSettingsStore = defineStore('settings', () => {
     aquilaOpacity: 3,
     enableWeaponStacks: false,
     exportWithTimestamp: false,
-    enableAttributeSwap: false
+    enableAttributeSwap: false,
+    diceEnabled: false,
+    diceRoom: 'gruppe',
+    dicePlayerName: ''
   }
 
   // Load from localStorage on init

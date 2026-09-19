@@ -39,6 +39,25 @@
             flat
             dense
             round
+            icon="casino"
+            :color="settings.diceEnabled ? diceStatusColor : 'grey-7'"
+            v-bind="settings.diceEnabled ? { href: dice.roomUrl.value, target: '_blank' } : { to: '/settings' }"
+          >
+            <q-tooltip>
+              <template v-if="!settings.diceEnabled">Würfelraum aus – in den Einstellungen aktivieren</template>
+              <template v-else>
+                Würfelraum „{{ dice.slugifyRoom(settings.diceRoom) }}“:
+                {{ { connected: 'verbunden', connecting: 'verbinde …', disconnected: 'getrennt' }[dice.state.status] }}
+                <div v-if="dice.state.players.length">Online: {{ dice.state.players.join(', ') }}</div>
+                <div>Klick öffnet den Verlauf</div>
+              </template>
+            </q-tooltip>
+          </q-btn>
+
+          <q-btn
+            flat
+            dense
+            round
             icon="upload_file"
             @click="handleImport"
           >
@@ -79,12 +98,21 @@ import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from './stores/characterStore'
 import { useSettingsStore } from './stores/settingsStore'
+import { initDiceRoom, useDiceRoom } from './composables/diceRoom'
 
 const $q = useQuasar()
 const characterStore = useCharacterStore()
 const settingsStore = useSettingsStore()
 const { character } = storeToRefs(characterStore)
 const { settings } = storeToRefs(settingsStore)
+
+initDiceRoom()
+const dice = useDiceRoom()
+const diceStatusColor = computed(() => ({
+  connected: 'positive',
+  connecting: 'warning',
+  disconnected: 'negative'
+})[dice.state.status])
 
 // Update CSS variable for aquila opacity
 watchEffect(() => {

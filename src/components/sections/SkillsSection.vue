@@ -118,8 +118,13 @@
 
                   <!-- Value and Delete (for custom basic skills) -->
                   <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                    <div class="skill-value text-primary">
+                    <div
+                      class="skill-value text-primary"
+                      :class="{ 'dice-clickable': dice.connected.value }"
+                      @click="rollSkill(skill)"
+                    >
                       {{ getSkillValue(skill) }}
+                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
                     </div>
                     <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
@@ -202,8 +207,13 @@
 
                   <!-- Value and Delete (for custom basic skills) -->
                   <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                    <div class="skill-value text-primary">
+                    <div
+                      class="skill-value text-primary"
+                      :class="{ 'dice-clickable': dice.connected.value }"
+                      @click="rollSkill(skill)"
+                    >
                       {{ getSkillValue(skill) }}
+                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
                     </div>
                     <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
@@ -301,8 +311,13 @@
 
                     <!-- Value and Delete -->
                     <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                      <div class="skill-value text-primary">
+                      <div
+                        class="skill-value text-primary"
+                        :class="{ 'dice-clickable': dice.connected.value }"
+                        @click="rollSkill(skill)"
+                      >
                         {{ getSkillValue(skill) }}
+                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
                       </div>
                       <q-btn
                         flat
@@ -392,8 +407,13 @@
 
                     <!-- Value and Delete -->
                     <div class="col-2 text-right flex items-center justify-end q-gutter-xs">
-                      <div class="skill-value text-primary">
+                      <div
+                        class="skill-value text-primary"
+                        :class="{ 'dice-clickable': dice.connected.value }"
+                        @click="rollSkill(skill)"
+                      >
                         {{ getSkillValue(skill) }}
+                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
                       </div>
                       <q-btn
                         flat
@@ -620,6 +640,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 import { advancedSkills } from '../../data/advancedSkills'
+import { useDiceRoom } from '../../composables/diceRoom'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
@@ -811,6 +832,13 @@ const updateLearnedSkill = (skillId, updates) => {
 
 const getSkillValue = (skill) => {
   return characterStore.getSkillValue(skill)
+}
+
+const dice = useDiceRoom()
+
+const rollSkill = (skill) => {
+  if (!dice.connected.value) return
+  dice.test(getSkillValue(skill), skill.name)
 }
 
 const addNewSkill = () => {
