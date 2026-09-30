@@ -425,7 +425,8 @@
                       color="amber-9"
                       text-color="white"
                     >
-                      {{ getMeleeTraitLabel(trait) }}
+                      {{ getMeleeTraitLabel(trait)
+                      }}{{ traitValueSuffix(weapon, trait) }}
                       <q-tooltip max-width="300px">{{
                         getMeleeTraitDescription(trait)
                       }}</q-tooltip>
@@ -455,7 +456,8 @@
                       color="amber-9"
                       text-color="white"
                     >
-                      {{ getRangedTraitLabel(trait) }}
+                      {{ getRangedTraitLabel(trait)
+                      }}{{ traitValueSuffix(weapon, trait) }}
                       <q-tooltip max-width="300px">{{
                         getRangedTraitDescription(trait)
                       }}</q-tooltip>
@@ -1966,6 +1968,19 @@
                 emit-value
                 map-options
                 clearable
+              />
+
+              <!-- Proven X -->
+              <q-input
+                v-if="hasProvenTrait(newWeapon)"
+                v-model.number="newWeapon.proven"
+                label="Proven (X)"
+                type="number"
+                min="1"
+                max="10"
+                filled
+                dense
+                hint="Schadenswürfel unter X zählen als X"
               />
 
               <!-- Fernkampf Mods -->
@@ -3714,6 +3729,28 @@ const formatDamageDisplay = (weapon) => {
   }
 };
 
+const hasProvenTrait = (weapon) =>
+  (isWeaponMelee(weapon) ? weapon.traits : weapon.rangedTraits)?.includes(
+    "proven",
+  ) ?? false;
+
+// Proven X: Schadenswürfel unter X zählen als X. 0 = kein Wert erfasst.
+const getProvenValue = (weapon) => {
+  const value = Math.trunc(Number(weapon.proven));
+  return hasProvenTrait(weapon) && value > 1 ? value : 0;
+};
+
+const traitValueSuffix = (weapon, trait) =>
+  trait === "proven" && getProvenValue(weapon)
+    ? ` (${getProvenValue(weapon)})`
+    : "";
+
+// Würfelraum-Notation: "2d10kh1+4" mit Proven 3 -> "2d10min3kh1+4"
+const withProven = (diceCode, weapon) => {
+  const proven = getProvenValue(weapon);
+  return proven ? diceCode.replace(/(\d+d\d+)/, `$1min${proven}`) : diceCode;
+};
+
 // Copy damage roll command to clipboard for Discord
 const copyDamageRoll = async (weapon) => {
   if (!weapon.damage) return;
@@ -3782,12 +3819,19 @@ const copyDamageRoll = async (weapon) => {
 
   // Reißend im Würfelraum: der zusätzliche Würfel ist schon gezählt, der
   // niedrigste fällt weg (kh = keep highest).
-  const roomCode = hasReissend
-    ? diceCode.replace(/^(\d+)(d\d+)/, (_, count, die) => `${count}${die}kh${count - 1}`)
-    : diceCode;
+  const roomCode = withProven(
+    hasReissend
+      ? diceCode.replace(/^(\d+)(d\d+)/, (_, count, die) => `${count}${die}kh${count - 1}`)
+      : diceCode,
+    weapon,
+  );
+  const proven = getProvenValue(weapon);
+  const roomNotes = [hasReissend && "Reißend", proven && `Proven ${proven}`]
+    .filter(Boolean)
+    .join(", ");
   if (
     dice.connected.value &&
-    dice.roll(roomCode, `Schaden – ${weapon.name}${hasReissend ? " (Reißend)" : ""}`, {
+    dice.roll(roomCode, `Schaden – ${weapon.name}${roomNotes ? ` (${roomNotes})` : ""}`, {
       fury: true,
       onFury: (damageRoll) => confirmRighteousFury(weapon, damageRoll.total),
     })
@@ -3800,7 +3844,7 @@ const copyDamageRoll = async (weapon) => {
   try {
     await navigator.clipboard.writeText(command);
     $q.notify({
-      message: `Kopiert: ${command}`,
+      message: `Kopiert: ${command}${proven ? ` – Proven ${proven} selbst anwenden` : ""}`,
       color: "positive",
       icon: "content_copy",
       timeout: 2000,
@@ -3829,7 +3873,7 @@ const confirmRighteousFury = (weapon, damageSoFar) => {
     onResult: (roll, result) => {
       if (!result.success) return;
       dice.roll(
-        `1d10+${damageSoFar}`,
+        withProven(`1d10+${damageSoFar}`, weapon),
         `Zorn des Imperators – ${weapon.name} (Gesamtschaden)`,
         {
           fury: true,

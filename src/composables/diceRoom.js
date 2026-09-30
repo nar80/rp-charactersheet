@@ -98,9 +98,13 @@ function send(payload, options) {
 }
 
 // Rogue Trader: W100 gleich oder unter Zielwert, je volle 10 Punkte Abstand = 1 Grad.
+// Ab AUTO_FAIL_FROM misslingt immer, 01 gelingt immer (gleich wie im Würfelraum).
+const AUTO_FAIL_FROM = 95
+
 export function evaluateTest(roll, target) {
-  const success = roll !== 100 && (roll === 1 || roll <= target)
-  const degrees = Math.floor(Math.abs(target - roll) / 10)
+  const success = roll < AUTO_FAIL_FROM && (roll === 1 || roll <= target)
+  // Automatischer Erfolg/Misserfolg gegen den Zielwert hat keine Grade
+  const degrees = success === (roll <= target) ? Math.floor(Math.abs(target - roll) / 10) : 0
   const word = success
     ? degrees === 1 ? 'Erfolgsgrad' : 'Erfolgsgrade'
     : degrees === 1 ? 'Misserfolgsgrad' : 'Misserfolgsgrade'
@@ -122,13 +126,19 @@ function escapeHtml(text) {
 }
 
 // "3d10kh2+4: [6d, 8, 9]+4 = 21" -> "[<s>6</s>, 8, 9] +4 = 21"
+// Suffix d = weggefallen, ^ = auf Mindestwert angehoben (Proven)
 function diceHtml(output) {
   const body = escapeHtml(output.slice(output.indexOf(':') + 1).trim())
   return body.replace(/\[([^\]]*)\]/g, (_, dice) =>
     `[${dice
       .split(',')
       .map((d) => d.trim())
-      .map((d) => (d.endsWith('d') ? `<s style="opacity:.6">${d.slice(0, -1)}</s>` : d))
+      .map((d) => {
+        const value = d.replace(/[d^]+$/, '')
+        const flags = d.slice(value.length)
+        const text = flags.includes('^') ? `<u>${value}</u>` : value
+        return flags.includes('d') ? `<s style="opacity:.6">${text}</s>` : text
+      })
       .join(', ')}]`
   )
 }
