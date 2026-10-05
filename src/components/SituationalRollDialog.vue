@@ -33,7 +33,13 @@
 
       <q-card-actions align="right">
         <q-btn flat label="Abbrechen" color="grey" v-close-popup />
-        <q-btn unelevated icon="casino" :label="`Probe auf ${target}`" color="primary" @click="confirm" />
+        <q-btn
+          unelevated
+          icon="casino"
+          :label="isDamage ? `Würfeln: ${target}` : `Probe auf ${target}`"
+          color="primary"
+          @click="confirm"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -42,6 +48,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import {
+  addToNotation,
   alwaysBonuses,
   bonusSum,
   formatBonus,
@@ -53,13 +60,17 @@ const open = defineModel({ type: Boolean, default: false })
 
 const props = defineProps({
   title: { type: String, default: '' },
-  // Wert inklusive der "Immer"-Boni
-  base: { type: Number, default: 0 },
+  // Probe: Zielwert inklusive der "Immer"-Boni.
+  // Schaden: Würfelausdruck ohne Boni (String), z. B. "2W10+4".
+  base: { type: [Number, String], default: 0 },
   bonuses: { type: Array, default: () => [] }
 })
 
-// roll(target, label) – label nennt alle angewendeten Boni, z. B. "Tarnung (+10 Dunkelheit)"
+// roll(target, label) – target ist der Zielwert (Probe) oder der Würfelausdruck (Schaden);
+// label nennt alle angewendeten Boni, z. B. "Tarnung (+10 Dunkelheit)"
 const emit = defineEmits(['roll'])
+
+const isDamage = computed(() => typeof props.base === 'string')
 
 const selection = ref([])
 watch(open, (isOpen) => {
@@ -69,7 +80,11 @@ watch(open, (isOpen) => {
 const selected = computed(() =>
   optionalBonuses(props.bonuses).filter(b => selection.value.includes(b.id))
 )
-const target = computed(() => props.base + bonusSum(selected.value))
+const target = computed(() =>
+  isDamage.value
+    ? addToNotation(props.base, [...alwaysBonuses(props.bonuses), ...selected.value])
+    : props.base + bonusSum(selected.value)
+)
 
 function confirm() {
   emit('roll', target.value, rollLabel(props.title, [...alwaysBonuses(props.bonuses), ...selected.value]))

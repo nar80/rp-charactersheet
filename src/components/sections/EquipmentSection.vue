@@ -41,7 +41,7 @@
                   character.combatAttributes.kg !== 'KG'
                 "
                 >({{ character.combatAttributes.kg }})</span
-              >:</span
+              ><span v-if="kgAction === 'parry'"> Parade</span>:</span
             >
             <span
               class="text-bold"
@@ -58,7 +58,10 @@
             >
               ({{ kgModifier > 0 ? "+" : "" }}{{ kgModifier }})
             </span>
-            <q-tooltip>Kampfgeschick - Klicken für Modifikatoren</q-tooltip>
+            <q-tooltip
+              >Kampfgeschick{{ kgAction === "parry" ? " (Parade)" : "" }} -
+              Klicken für Modifikatoren</q-tooltip
+            >
           </div>
 
           <!-- BF (Ballistische Fertigkeit) -->
@@ -1156,6 +1159,23 @@
           <q-btn flat round dense icon="close" v-close-popup />
         </q-card-section>
 
+        <!-- Nahkampf: Angriff oder Parade -->
+        <q-card-section v-if="currentModifierStat === 'KG'" class="q-pt-none q-pb-sm">
+          <q-btn-toggle
+            v-model="kgAction"
+            spread
+            no-caps
+            unelevated
+            color="grey-9"
+            text-color="grey-4"
+            toggle-color="primary"
+            :options="[
+              { label: 'Angriff', value: 'attack', icon: 'sports_martial_arts' },
+              { label: 'Parade', value: 'parry', icon: 'shield' },
+            ]"
+          />
+        </q-card-section>
+
         <!-- Attribute Swap (if enabled) -->
         <q-card-section
           v-if="settings.enableAttributeSwap"
@@ -1219,13 +1239,19 @@
           >
             Maximum erreicht (±60)
           </div>
+          <div
+            v-if="parryWarning"
+            class="text-caption text-center text-orange q-mt-xs"
+          >
+            <q-icon name="warning" size="xs" /> {{ parryWarning }}
+          </div>
           <q-btn
             v-if="dice.connected.value && !fireAvailability.show"
             class="full-width q-mt-sm"
             color="primary"
-            icon="casino"
+            :icon="isParry ? 'shield' : 'casino'"
             no-caps
-            :label="`Probe würfeln (Ziel ${currentTotal})`"
+            :label="`${isParry ? 'Parade' : 'Probe'} würfeln (Ziel ${currentTotal})`"
             @click="rollCombatTest"
           />
         </q-card-section>
@@ -1268,13 +1294,13 @@
             <template v-slot:selected-item="{ opt }">
               {{ opt.label }}
               <q-badge
-                v-if="currentSelectedWeapon?.quality === 'Gut'"
+                v-if="currentSelectedWeapon?.quality === 'Gut' && !isParry"
                 color="positive"
                 class="q-ml-sm"
                 >+5</q-badge
               >
               <q-badge
-                v-if="currentSelectedWeapon?.quality === 'Hervorragend'"
+                v-if="currentSelectedWeapon?.quality === 'Hervorragend' && !isParry"
                 color="positive"
                 class="q-ml-sm"
                 >+10</q-badge
@@ -1381,7 +1407,7 @@
           align="justify"
         >
           <q-tab name="modifiers" label="Modifikatoren" />
-          <q-tab name="maneuvers" label="Manöver" />
+          <q-tab v-if="!isParry" name="maneuvers" label="Manöver" />
         </q-tabs>
 
         <q-separator />
@@ -1390,6 +1416,67 @@
           <!-- Modifiers Tab -->
           <q-tab-panel name="modifiers" class="q-pa-sm">
             <div style="max-height: 300px; overflow-y: auto">
+              <!-- Eigene Modifikatoren (Talente u. Ä.), je Angriff/Parade/BF -->
+              <div class="q-mb-md">
+                <div class="row items-center q-mb-xs">
+                  <div class="text-subtitle2 text-grey-6">
+                    Eigene Modifikatoren ({{ customModifierTitle }})
+                  </div>
+                  <q-space />
+                  <q-btn
+                    flat
+                    dense
+                    no-caps
+                    size="sm"
+                    icon="edit"
+                    label="Bearbeiten"
+                    color="primary"
+                    @click="openCustomModifierEditor"
+                  />
+                </div>
+                <div
+                  v-if="!currentCustomModifiers.length"
+                  class="text-caption text-grey-6"
+                >
+                  Noch keine – z. B. Boni aus Talenten hier hinterlegen.
+                </div>
+                <div class="row q-col-gutter-xs">
+                  <div
+                    v-for="mod in currentCustomModifiers"
+                    :key="mod.id"
+                    class="col-6"
+                  >
+                    <q-btn
+                      :color="
+                        mod.always || isModifierActive(mod.id)
+                          ? mod.value > 0
+                            ? 'positive'
+                            : 'negative'
+                          : 'grey-8'
+                      "
+                      :outline="!mod.always && !isModifierActive(mod.id)"
+                      :text-color="
+                        mod.always || isModifierActive(mod.id) ? 'white' : 'grey-4'
+                      "
+                      dense
+                      no-caps
+                      class="full-width modifier-btn"
+                      @click="!mod.always && toggleModifier(mod.id)"
+                    >
+                      <div class="row items-center full-width justify-between no-wrap">
+                        <span class="text-left ellipsis" style="flex: 1">{{
+                          mod.label
+                        }}</span>
+                        <span class="text-bold q-ml-sm" style="flex: 0 0 auto">{{
+                          formatBonus(mod.value)
+                        }}</span>
+                      </div>
+                      <q-tooltip v-if="mod.always">Immer aktiv</q-tooltip>
+                    </q-btn>
+                  </div>
+                </div>
+              </div>
+
               <div
                 v-for="(category, catKey) in currentCategories"
                 :key="catKey"
@@ -1590,7 +1677,8 @@
         <!-- Active Modifiers/Maneuver/Weapon Summary -->
         <q-card-section
           v-if="
-            currentActiveModifiers.length > 0 ||
+            visibleActiveModifiers.length > 0 ||
+            alwaysCustomModifiers.length > 0 ||
             currentSelectedManeuver ||
             currentSelectedWeapon ||
             isWaffenmeisterActive
@@ -1625,9 +1713,19 @@
               <q-icon name="military_tech" size="xs" class="q-mr-xs" />
               Waffenmeister (+10)
             </q-chip>
+            <!-- Parade nach vorsichtigem Angriff -->
+            <q-chip
+              v-if="isParry && currentSelectedManeuver === 'vorsichtig'"
+              dense
+              size="sm"
+              color="positive"
+              text-color="white"
+            >
+              Vorsichtiger Angriff (+10 Parade)
+            </q-chip>
             <!-- Selected Maneuver -->
             <q-chip
-              v-if="currentSelectedManeuver"
+              v-if="currentSelectedManeuver && !isParry"
               removable
               dense
               size="sm"
@@ -1641,7 +1739,7 @@
             </q-chip>
             <!-- Active Modifiers -->
             <q-chip
-              v-for="modId in currentActiveModifiers"
+              v-for="modId in visibleActiveModifiers"
               :key="modId"
               removable
               dense
@@ -1652,9 +1750,19 @@
               text-color="white"
               @remove="toggleModifier(modId)"
             >
-              {{ getModifierById(modId)?.name }} ({{
-                getModifierById(modId)?.value > 0 ? "+" : ""
-              }}{{ getModifierById(modId)?.value }})
+              {{ getModifierById(modId)?.name || getModifierById(modId)?.label }}
+              ({{ formatBonus(getModifierById(modId)?.value) }})
+            </q-chip>
+            <!-- Eigene Modifikatoren mit "Immer" -->
+            <q-chip
+              v-for="mod in alwaysCustomModifiers"
+              :key="mod.id"
+              dense
+              size="sm"
+              :color="mod.value > 0 ? 'positive' : 'negative'"
+              text-color="white"
+            >
+              {{ mod.label }} ({{ formatBonus(mod.value) }})
             </q-chip>
           </div>
         </q-card-section>
@@ -1674,6 +1782,31 @@
             "
           />
           <q-btn flat label="Schließen" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Eigene Kampf-Modifikatoren bearbeiten -->
+    <q-dialog v-model="showCustomModifierEditor">
+      <q-card style="min-width: 480px">
+        <q-card-section>
+          <div class="text-h6">Eigene Modifikatoren – {{ customModifierTitle }}</div>
+          <div class="text-caption text-grey-6">
+            Gelten nur für {{ customModifierTitle === 'Parade' ? 'Paraden' : customModifierTitle === 'Fernkampf' ? 'BF-Angriffe' : 'KG-Angriffe' }}
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <SituationalBonusEditor
+            v-model="customModifierDraft"
+            title="Modifikatoren"
+            hint="Erscheinen im Kampfdialog zum Anklicken. „Immer“ zählt automatisch."
+          />
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn flat label="Abbrechen" color="grey" v-close-popup />
+          <q-btn flat label="Speichern" color="primary" @click="saveCustomModifiers" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -2452,6 +2585,8 @@ import {
 } from "../../composables/weaponSounds.js";
 import draggable from "vuedraggable";
 import { useDiceRoom } from "../../composables/diceRoom";
+import { cleanBonuses, formatBonus } from "../../composables/situationalBonuses";
+import SituationalBonusEditor from "../SituationalBonusEditor.vue";
 
 const $q = useQuasar();
 const dice = useDiceRoom();
@@ -2475,6 +2610,7 @@ const ensureCombatState = () => {
       selectedBfManeuver: null,
       selectedKgWeaponIndex: null,
       selectedBfWeaponIndex: null,
+      kgAction: "attack",
     };
   }
 };
@@ -2519,6 +2655,68 @@ const bfModifier = ref(0);
 const showModifierDialog = ref(false);
 const currentModifierStat = ref("KG");
 const modifierDialogTab = ref("modifiers");
+
+// Nahkampf: Angriff oder Parade. Bestimmt, welche Modifikatoren, Manöver und
+// Waffeneigenschaften gelten. BF kennt nur den Angriff. Persistiert.
+const kgAction = computed({
+  get: () => {
+    ensureCombatState();
+    return character.value.combatState.kgAction || "attack";
+  },
+  set: (val) => {
+    ensureCombatState();
+    character.value.combatState.kgAction = val;
+    updateModifierTotals();
+  },
+});
+const actionFor = (stat) => (stat === "KG" ? kgAction.value : "attack");
+const isParry = computed(
+  () => currentModifierStat.value === "KG" && kgAction.value === "parry",
+);
+
+// Manöver gibt es nur beim Angriff
+watch(isParry, (parry) => {
+  if (parry && modifierDialogTab.value === "maneuvers") {
+    modifierDialogTab.value = "modifiers";
+  }
+});
+
+// Eigene Modifikatoren (z. B. aus Talenten), getrennt nach KG-Angriff, KG-Parade und BF.
+// Format wie situative Boni: [{ id, label, value, always }]
+const customModifierKey = (stat) =>
+  stat === "KG" ? `KG_${kgAction.value}` : "BF";
+const customModifiers = (stat) =>
+  character.value.combatCustomModifiers?.[customModifierKey(stat)] || [];
+const currentCustomModifiers = computed(() =>
+  customModifiers(currentModifierStat.value),
+);
+
+const showCustomModifierEditor = ref(false);
+const customModifierDraft = ref([]);
+
+const openCustomModifierEditor = () => {
+  customModifierDraft.value = currentCustomModifiers.value.map((m) => ({ ...m }));
+  showCustomModifierEditor.value = true;
+};
+
+const saveCustomModifiers = () => {
+  character.value.combatCustomModifiers = {
+    ...(character.value.combatCustomModifiers || {}),
+    [customModifierKey(currentModifierStat.value)]: cleanBonuses(
+      customModifierDraft.value,
+    ),
+  };
+  showCustomModifierEditor.value = false;
+  updateModifierTotals();
+};
+
+const customModifierTitle = computed(() =>
+  currentModifierStat.value === "BF"
+    ? "Fernkampf"
+    : isParry.value
+      ? "Parade"
+      : "Nahkampfangriff",
+);
 
 // Selected maneuvers (exclusive, one per stat) - persisted
 const selectedKgManeuver = computed({
@@ -2661,7 +2859,9 @@ watch(isExhausted, () => {
   updateModifierTotals();
 });
 
-// All available modifiers organized by category
+// All available modifiers organized by category.
+// action (Kategorie oder einzelner Modifikator): "attack" = nur Angriff,
+// "parry" = nur Parade, fehlt = beides. Gilt nur für KG.
 const modifierCategories = {
   zielgroesse: {
     name: "Zielgröße",
@@ -2690,6 +2890,7 @@ const modifierCategories = {
   ueberzahl: {
     name: "Überzahl",
     stat: "KG", // Only for KG
+    action: "attack",
     exclusive: true, // Only one can be selected (2:1 OR 3:1)
     modifiers: [
       { id: "ueber3zu1", name: "3:1 Überzahl", value: 20 },
@@ -2699,6 +2900,7 @@ const modifierCategories = {
   zielzustand: {
     name: "Ziel-Zustand",
     stat: "both",
+    action: "attack",
     exclusive: true, // Only one can be selected
     modifiers: [
       { id: "unaufmerksam", name: "Unaufmerksamer Gegner", value: 30 },
@@ -2728,7 +2930,7 @@ const modifierCategories = {
     stat: "both",
     exclusive: false, // Can be additive
     modifiers: [
-      { id: "erhoeht", name: "Erhöhte Position", value: 10 },
+      { id: "erhoeht", name: "Erhöhte Position", value: 10, action: "attack" },
       {
         id: "liegend_selbst",
         name: "Im Liegen (Nahkampf)",
@@ -2754,7 +2956,13 @@ const modifierCategories = {
     stat: "both",
     exclusive: false, // Can be additive
     modifiers: [
-      { id: "hass", name: "Haß (verhaßte Kreatur)", value: 10, stat: "KG" },
+      {
+        id: "hass",
+        name: "Haß (verhaßte Kreatur)",
+        value: 10,
+        stat: "KG",
+        action: "attack",
+      },
       {
         id: "nahkampf_schuss",
         name: "Schuss in den Nahkampf",
@@ -3030,20 +3238,36 @@ const calculateWeaponBonus = (weapon, stat, maneuver) => {
   const details = [];
 
   if (stat === "KG") {
-    // Melee weapon quality
+    // Melee weapon quality: Gering gilt für Angriff und Parade,
+    // Gut/Hervorragend nur für Angriffe (wie in der Qualitätsbeschreibung)
+    const isAttack = actionFor(stat) === "attack";
     if (weapon.quality === "Gering") {
       bonus -= 10;
       details.push("Gering: -10");
-    } else if (weapon.quality === "Gut") {
+    } else if (weapon.quality === "Gut" && isAttack) {
       bonus += 5;
       details.push("Gut: +5");
-    } else if (weapon.quality === "Hervorragend") {
+    } else if (weapon.quality === "Hervorragend" && isAttack) {
       bonus += 10;
       details.push("Hervorragend: +10");
     }
 
-    // Melee traits
-    if (weapon.traits?.includes("defensiv")) {
+    // Melee traits - je nach Angriff oder Parade
+    const traits = weapon.traits || [];
+    if (actionFor(stat) === "parry") {
+      if (traits.includes("ausgewogen")) {
+        bonus += 10;
+        details.push("Ausgewogen: +10 Parade");
+      }
+      if (traits.includes("defensiv")) {
+        bonus += 15;
+        details.push("Defensiv: +15 Parade");
+      }
+      if (traits.includes("unausgewogen")) {
+        bonus -= 10;
+        details.push("Unausgewogen: -10 Parade");
+      }
+    } else if (traits.includes("defensiv")) {
       bonus -= 10;
       details.push("Defensiv: -10 Angriff");
     }
@@ -3119,14 +3343,21 @@ const getManeuverById = (maneuverId) => {
   );
 };
 
+// Gilt der Modifikator für Attribut und (bei KG) Angriff/Parade?
+const modifierApplies = (mod, category, stat) => {
+  const modStat = mod.stat || category.stat;
+  if (modStat !== "both" && modStat !== stat) return false;
+  const action = mod.action || category.action;
+  return !action || action === actionFor(stat);
+};
+
 // Get modifiers for current stat (KG or BF)
 const getModifiersForStat = (stat) => {
   const result = {};
   for (const [catKey, category] of Object.entries(modifierCategories)) {
-    const filteredMods = category.modifiers.filter((mod) => {
-      const modStat = mod.stat || category.stat;
-      return modStat === "both" || modStat === stat;
-    });
+    const filteredMods = category.modifiers.filter((mod) =>
+      modifierApplies(mod, category, stat),
+    );
     if (filteredMods.length > 0) {
       result[catKey] = { ...category, modifiers: filteredMods };
     }
@@ -3153,19 +3384,26 @@ const calculateModifierTotal = (activeIds, stat) => {
   // Add modifier values
   for (const category of Object.values(modifierCategories)) {
     for (const mod of category.modifiers) {
-      if (activeIds.includes(mod.id)) {
-        const modStat = mod.stat || category.stat;
-        if (modStat === "both" || modStat === stat) {
-          total += mod.value;
-        }
+      if (activeIds.includes(mod.id) && modifierApplies(mod, category, stat)) {
+        total += mod.value;
       }
     }
   }
 
-  // Add selected maneuver value
+  // Eigene Modifikatoren: "Immer" zählt stets, die übrigen wenn angeklickt
+  for (const mod of customModifiers(stat)) {
+    if (mod.always || activeIds.includes(mod.id)) {
+      total += Number(mod.value) || 0;
+    }
+  }
+
+  // Add selected maneuver value - Manöver gelten nur für den Angriff.
+  // Bei der Parade zählt nur der vorsichtige Angriff dieser Runde (+10 Parade).
   const selectedManeuver =
     stat === "KG" ? selectedKgManeuver.value : selectedBfManeuver.value;
-  if (selectedManeuver) {
+  if (actionFor(stat) === "parry") {
+    if (selectedManeuver === "vorsichtig") total += 10;
+  } else if (selectedManeuver) {
     const maneuver = getManeuverById(selectedManeuver);
     if (maneuver) {
       total += maneuver.value;
@@ -3290,14 +3528,47 @@ const isModifierActive = (modId) => {
   return currentActiveModifiers.value.includes(modId);
 };
 
-// Get modifier by ID
+// Get modifier by ID (auch eigene Modifikatoren des aktuellen Dialogs)
 const getModifierById = (modId) => {
   for (const category of Object.values(modifierCategories)) {
     const mod = category.modifiers.find((m) => m.id === modId);
     if (mod) return mod;
   }
-  return null;
+  return (
+    currentCustomModifiers.value.find((m) => m.id === modId) || null
+  );
 };
+
+// Aktive Modifikatoren, die im aktuellen Modus tatsächlich zählen. Angriffs-
+// Modifikatoren bleiben beim Wechsel zur Parade gespeichert, werden aber nicht
+// angezeigt oder eingerechnet.
+const visibleActiveModifiers = computed(() =>
+  currentActiveModifiers.value.filter((id) => {
+    const catInfo = findModifierCategory(id);
+    if (catInfo) {
+      const mod = catInfo.category.modifiers.find((m) => m.id === id);
+      return modifierApplies(mod, catInfo.category, currentModifierStat.value);
+    }
+    return currentCustomModifiers.value.some((m) => m.id === id && !m.always);
+  }),
+);
+
+const alwaysCustomModifiers = computed(() =>
+  currentCustomModifiers.value.filter((m) => m.always),
+);
+
+// Parade nicht möglich: Hinweis statt Sperre, die Entscheidung trifft der Spieler
+const parryWarning = computed(() => {
+  if (!isParry.value) return "";
+  const weapon = currentSelectedWeapon.value;
+  if (weapon?.traits?.includes("unhandlich")) {
+    return `${weapon.name} ist unhandlich und kann nicht zum Parieren verwendet werden.`;
+  }
+  if (selectedKgManeuver.value === "kompromisslos") {
+    return "Nach einem kompromißlosen Angriff kann in dieser Runde nicht pariert werden.";
+  }
+  return "";
+});
 
 // Open modifier dialog for KG or BF
 const openModifierDialog = (stat) => {
@@ -3886,6 +4157,12 @@ const confirmRighteousFury = (weapon, damageSoFar) => {
 
 const rollCombatTest = () => {
   const stat = currentModifierStat.value;
+  if (isParry.value) {
+    const weapon = currentSelectedWeapon.value?.name;
+    dice.test(currentTotal.value, `KG – Parade${weapon ? `, ${weapon}` : ""}`);
+    return;
+  }
+  // Ziel für die Bestätigung von "Zorn des Imperators" - nur Angriffe zählen
   if (currentSelectedWeapon.value) {
     lastAttackTargets[currentSelectedWeapon.value.name] = currentTotal.value;
   }

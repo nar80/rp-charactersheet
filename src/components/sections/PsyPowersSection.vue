@@ -108,6 +108,33 @@
                   <span class="text-grey-6">Fokus:</span> <span class="text-bold">{{ power.focus }}</span>
                 </span>
               </div>
+
+              <!-- Hinterlegte Würfe: Proben und Schaden -->
+              <div v-if="power.rolls?.length" class="row q-gutter-xs q-mt-xs">
+                <q-btn
+                  v-for="roll in power.rolls"
+                  :key="roll.id"
+                  dense
+                  no-caps
+                  unelevated
+                  size="sm"
+                  :color="roll.kind === 'damage' ? 'deep-orange-9' : 'primary'"
+                  :text-color="roll.kind === 'damage' ? 'white' : 'dark'"
+                  :icon="roll.kind === 'damage' ? 'local_fire_department' : 'casino'"
+                  :disable="!dice.connected.value"
+                  @click="startRoll(power, roll)"
+                >
+                  <span class="q-ml-xs">{{ roll.label || (roll.kind === 'damage' ? 'Schaden' : 'Probe') }}:
+                    <b>{{ rollDisplay(roll) }}</b></span>
+                  <q-tooltip>
+                    <template v-if="!dice.connected.value">Würfelraum nicht verbunden</template>
+                    <template v-else>
+                      {{ roll.kind === 'damage' ? `Schaden würfeln (${damageNotation(roll)})` : `Probe auf ${testTarget(roll)} (${roll.attribute})` }}
+                      <template v-if="optionalBonuses(roll.bonuses).length"> – mit Auswahl situativer Boni</template>
+                    </template>
+                  </q-tooltip>
+                </q-btn>
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -171,6 +198,94 @@
             filled
             rows="5"
           />
+
+          <!-- Würfe: Proben und Schaden mit eigenen Boni -->
+          <div>
+            <div class="text-subtitle1">Würfe</div>
+            <div class="text-caption text-grey-6 q-mb-sm">
+              Erscheinen als Knöpfe auf der Karte. Werte für den aktuellen Rang eintragen.
+            </div>
+            <q-card
+              v-for="(roll, i) in newPower.rolls"
+              :key="roll.id"
+              flat
+              bordered
+              class="q-pa-sm q-mb-sm"
+            >
+              <div class="row items-center q-col-gutter-sm">
+                <!-- Art steht fest, sie ergibt sich aus "Probe/Schaden hinzufügen" -->
+                <div
+                  class="col-auto text-bold"
+                  :class="roll.kind === 'damage' ? 'text-deep-orange' : 'text-primary'"
+                >
+                  <q-icon :name="roll.kind === 'damage' ? 'local_fire_department' : 'casino'" />
+                  {{ roll.kind === 'damage' ? 'Schaden' : 'Probe' }}
+                </div>
+                <div class="col">
+                  <q-input
+                    v-model="roll.label"
+                    :label="roll.kind === 'damage' ? 'Bezeichnung (z. B. Schaden)' : 'Bezeichnung (z. B. Lidloser Blick)'"
+                    filled
+                    dense
+                    maxlength="40"
+                  />
+                </div>
+                <div class="col-auto">
+                  <q-btn flat dense round size="sm" icon="delete" color="grey-6" @click="newPower.rolls.splice(i, 1)" />
+                </div>
+              </div>
+
+              <div class="row q-col-gutter-sm q-mt-xs">
+                <template v-if="roll.kind === 'test'">
+                  <div class="col-6">
+                    <q-select
+                      v-model="roll.attribute"
+                      :options="attributeOptions"
+                      label="Attribut"
+                      filled
+                      dense
+                      emit-value
+                      map-options
+                    />
+                  </div>
+                  <div class="col-6">
+                    <q-input
+                      v-model.number="roll.modifier"
+                      type="number"
+                      label="Modifikator"
+                      hint="z. B. -10 für Schwer"
+                      filled
+                      dense
+                    />
+                  </div>
+                </template>
+                <div v-else class="col-12">
+                  <q-input
+                    v-model="roll.damage"
+                    label="Schaden"
+                    placeholder="z. B. 2W10+4 oder 1W10+WKb"
+                    hint="Attributbonus mit „b“: WKb, WAb, … wird eingerechnet"
+                    filled
+                    dense
+                    maxlength="40"
+                  />
+                </div>
+              </div>
+
+              <SituationalBonusEditor
+                v-model="roll.bonuses"
+                class="q-mt-sm"
+                :allow-dice="roll.kind === 'damage'"
+                :hint="roll.kind === 'damage'
+                  ? 'Zum Anklicken beim Würfeln, z. B. „gegen Dämonen“ +1W10 oder +5.'
+                  : 'Zum Anklicken beim Würfeln, z. B. „gegen Dämonen“ +10.'"
+              />
+            </q-card>
+            <div class="row q-gutter-sm">
+              <q-btn flat dense no-caps icon="casino" label="Probe hinzufügen" color="primary" @click="addRoll('test')" />
+              <q-btn flat dense no-caps icon="local_fire_department" label="Schaden hinzufügen" color="deep-orange" @click="addRoll('damage')" />
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
@@ -244,6 +359,14 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <SituationalRollDialog
+      v-model="showRollDialog"
+      :title="rollingTitle"
+      :base="rollingBase"
+      :bonuses="rolling?.roll.bonuses || []"
+      @roll="sendRoll"
+    />
   </q-card>
 </template>
 
@@ -251,9 +374,121 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
+import { useDiceRoom } from '../../composables/diceRoom'
+import {
+  addToNotation,
+  alwaysBonuses,
+  bonusSum,
+  cleanBonuses,
+  optionalBonuses,
+  rollLabel
+} from '../../composables/situationalBonuses'
+import SituationalBonusEditor from '../SituationalBonusEditor.vue'
+import SituationalRollDialog from '../SituationalRollDialog.vue'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
+const dice = useDiceRoom()
+
+const attributeOptions = [
+  { value: 'WK', label: 'Willenskraft (WK)' },
+  { value: 'WA', label: 'Wahrnehmung (WA)' },
+  { value: 'IN', label: 'Intelligenz (IN)' },
+  { value: 'CH', label: 'Charisma (CH)' },
+  { value: 'WI', label: 'Widerstand (WI)' },
+  { value: 'KG', label: 'Kampfgeschick (KG)' },
+  { value: 'BF', label: 'Ballistische Fe. (BF)' },
+  { value: 'ST', label: 'Stärke (ST)' },
+  { value: 'GE', label: 'Gewandtheit (GE)' }
+]
+
+// Würfe einer Psy-Kraft: [{ id, kind: 'test' | 'damage', label, attribute, modifier,
+// damage, bonuses: [situative Boni] }]
+const newRoll = (kind) => ({
+  id: Date.now() + Math.random(),
+  kind,
+  label: '',
+  attribute: 'WK',
+  modifier: 0,
+  damage: '',
+  bonuses: []
+})
+
+const addRoll = (kind) => {
+  newPower.value.rolls.push(newRoll(kind))
+}
+
+// Zielwert einer Probe: Attribut (mit Buffs) + Modifikator + "Immer"-Boni
+const testTarget = (roll) =>
+  characterStore.getEffectiveAttribute(roll.attribute) +
+  (Number(roll.modifier) || 0) +
+  bonusSum(alwaysBonuses(roll.bonuses))
+
+// "2W10+WKb" -> "2W10+4" (WK 45). Attributbonus = Zehnerstelle des effektiven Werts.
+const damageNotation = (roll) =>
+  String(roll.damage || '').replace(/\b(KG|BF|ST|WI|GE|IN|WA|WK|CH)b\b/g, (_, attr) =>
+    String(Math.floor(characterStore.getEffectiveAttribute(attr) / 10))
+  )
+
+const rollDisplay = (roll) =>
+  roll.kind === 'damage'
+    ? addToNotation(damageNotation(roll), alwaysBonuses(roll.bonuses))
+    : testTarget(roll)
+
+// Würfeln: ohne optionale Boni sofort, sonst erst Auswahl
+const showRollDialog = ref(false)
+const rolling = ref(null)
+
+const rollName = (power, roll) =>
+  roll.label && roll.label !== power.name ? `${power.name} – ${roll.label}` : power.name
+
+const rollingTitle = computed(() =>
+  rolling.value ? rollName(rolling.value.power, rolling.value.roll) : ''
+)
+const rollingBase = computed(() => {
+  if (!rolling.value) return 0
+  const { roll } = rolling.value
+  return roll.kind === 'damage' ? damageNotation(roll) : testTarget(roll)
+})
+
+const startRoll = (power, roll) => {
+  if (!dice.connected.value) return
+  if (!optionalBonuses(roll.bonuses).length) {
+    const always = alwaysBonuses(roll.bonuses)
+    const label = rollLabel(rollName(power, roll), always)
+    if (roll.kind === 'damage') {
+      dice.roll(addToNotation(damageNotation(roll), always), label)
+    } else {
+      dice.test(testTarget(roll), label)
+    }
+    return
+  }
+  rolling.value = { power, roll }
+  showRollDialog.value = true
+}
+
+const sendRoll = (target, label) => {
+  if (rolling.value?.roll.kind === 'damage') {
+    dice.roll(target, label)
+  } else {
+    dice.test(target, label)
+  }
+}
+
+// Kopie für den Dialog, damit "Abbrechen" nichts verändert
+const copyRolls = (rolls = []) =>
+  rolls.map(r => ({ ...r, bonuses: (r.bonuses || []).map(b => ({ ...b })) }))
+
+const cleanRolls = (rolls = []) =>
+  rolls
+    .map(r => ({
+      ...r,
+      label: String(r.label || '').trim(),
+      modifier: Number(r.modifier) || 0,
+      damage: String(r.damage || '').trim(),
+      bonuses: cleanBonuses(r.bonuses)
+    }))
+    .filter(r => (r.kind === 'damage' ? r.damage : r.attribute))
 
 const showAddPowerDialog = ref(false)
 const editingIndex = ref(null)
@@ -267,7 +502,8 @@ const newPower = ref({
   value: '',
   range: '',
   focus: '',
-  description: ''
+  description: '',
+  rolls: []
 })
 
 // Load sort preference
@@ -310,12 +546,13 @@ const editFromInfo = () => {
 const savePower = () => {
   if (!newPower.value.name) return
 
+  const power = { ...newPower.value, rolls: cleanRolls(newPower.value.rolls) }
   if (editingIndex.value !== null) {
     // Update existing power
-    characterStore.updatePsiPower(editingIndex.value, { ...newPower.value })
+    characterStore.updatePsiPower(editingIndex.value, power)
   } else {
     // Add new power
-    characterStore.addPsiPower({ ...newPower.value })
+    characterStore.addPsiPower(power)
   }
 
   cancelPowerDialog()
@@ -323,7 +560,8 @@ const savePower = () => {
 
 const editPower = (index) => {
   editingIndex.value = index
-  newPower.value = { ...character.value.psiPowers[index] }
+  const power = character.value.psiPowers[index]
+  newPower.value = { ...power, rolls: copyRolls(power.rolls) }
   showAddPowerDialog.value = true
 }
 
@@ -340,7 +578,8 @@ const cancelPowerDialog = () => {
     value: '',
     range: '',
     focus: '',
-    description: ''
+    description: '',
+    rolls: []
   }
 }
 </script>
