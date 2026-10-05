@@ -28,6 +28,9 @@ const createDefaultCharacter = () => ({
     CH: 30   // Charisma (Fellowship)
   },
 
+  // Situative Boni je Attribut, z. B. { WI: [{ id, label, value, always }] }
+  attributeBonuses: {},
+
   // Attribute increases (dots)
   attributeIncreases: {
     KG: 0,
@@ -457,6 +460,11 @@ export const useCharacterStore = defineStore('character', () => {
         if (!Array.isArray(parsed.storedArmor)) parsed.storedArmor = []
         if (!Array.isArray(parsed.storedGear)) parsed.storedGear = []
 
+        // Ensure attributeBonuses exists (new field)
+        if (!parsed.attributeBonuses || typeof parsed.attributeBonuses !== 'object') {
+          parsed.attributeBonuses = {}
+        }
+
         // Ensure initiativeModifier exists (new field)
         if (typeof parsed.initiativeModifier !== 'number') {
           parsed.initiativeModifier = 0
@@ -554,6 +562,10 @@ export const useCharacterStore = defineStore('character', () => {
 
   const updateAttribute = (attr, value) => {
     character.value.attributes[attr] = value
+  }
+
+  const updateAttributeBonuses = (attr, bonuses) => {
+    character.value.attributeBonuses = { ...(character.value.attributeBonuses || {}), [attr]: bonuses }
   }
 
   const updateAttributeIncrease = (attr, value) => {
@@ -838,6 +850,7 @@ export const useCharacterStore = defineStore('character', () => {
     updateBasicInfo,
     updateAttribute,
     updateAttributeIncrease,
+    updateAttributeBonuses,
     updateBasicSkill,
     updateLearnedSkill,
     addLearnedSkill,

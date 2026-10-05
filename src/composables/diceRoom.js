@@ -166,6 +166,7 @@ function showOwnResult(roll, options = {}) {
   }
 
   const fury = options.fury && hasNaturalTen(roll.output)
+  const needsAnswer = fury && !!options.onFury
   const dice = diceHtml(roll.output)
   Notify.create({
     html: true,
@@ -174,8 +175,9 @@ function showOwnResult(roll, options = {}) {
     color: fury ? 'deep-orange' : 'grey-9',
     icon: fury ? 'local_fire_department' : 'casino',
     position: 'top',
-    timeout: fury ? 15000 : 4000,
-    actions: fury && options.onFury
+    // Bestätigungsanfragen bleiben stehen, bis man einen der Buttons klickt
+    timeout: needsAnswer ? 0 : fury ? 15000 : 4000,
+    actions: needsAnswer
       ? [
           { label: 'Bestätigen', color: 'white', handler: () => options.onFury(roll) },
           { label: 'Ignorieren', color: 'white' }

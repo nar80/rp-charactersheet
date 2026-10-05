@@ -74,17 +74,25 @@
               :class="{ 'dice-clickable': dice.connected.value }"
               @click="rollAttribute(attr)"
             >
-              <div class="text-overline text-grey-6 text-center">{{ attr }}</div>
+              <div
+                class="text-overline text-center"
+                :class="attrBonuses(attr).length ? 'text-primary' : 'text-grey-6'"
+              >{{ attr }}</div>
               <div
                 class="text-h6 text-bold text-center"
                 :class="attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary'"
               >
                 {{ effectiveAttr(attr) }}
-                <q-tooltip v-if="attrBuffMod(attr) !== 0 || dice.connected.value">
+                <q-tooltip v-if="attrBuffMod(attr) !== 0 || dice.connected.value || attrBonuses(attr).length">
                   <div v-if="attrBuffMod(attr) !== 0">
                     Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
                   </div>
-                  <div v-if="dice.connected.value">Klick: Probe auf {{ effectiveAttr(attr) }} würfeln</div>
+                  <div v-for="b in attrBonuses(attr)" :key="b.id">
+                    {{ formatBonus(b.value) }} {{ b.label }}{{ b.always ? ' (immer)' : '' }}
+                  </div>
+                  <div v-if="dice.connected.value">
+                    Klick: Probe auf {{ attrRollBase(attr) }} würfeln{{ optionalBonuses(attrBonuses(attr)).length ? ' – mit Auswahl situativer Boni' : '' }}
+                  </div>
                 </q-tooltip>
               </div>
               <!-- Small dots indicator -->
@@ -172,8 +180,13 @@
           >
             <q-card bordered flat class="text-center attribute-card">
               <q-card-section class="q-pa-sm">
-                <div class="text-caption text-grey-5 q-mb-xs">
+                <div
+                  class="text-caption q-mb-xs attribute-name"
+                  :class="attrBonuses(attr).length ? 'text-primary text-weight-bold' : 'text-grey-5'"
+                  @click="openBonusEditor(attr)"
+                >
                   {{ getAttributeName(attr) }}
+                  <q-tooltip>Klick: situative Boni für {{ getAttributeName(attr) }}-Proben</q-tooltip>
                 </div>
                 <div class="text-overline text-grey-6">{{ attr }}</div>
                 <q-input
@@ -183,17 +196,18 @@
                   @update:model-value="
                     updateAttribute(attr, parseInt($event) || 0)
                   "
-                  input-class="text-center text-h5 text-bold text-primary"
+                  :input-class="[
+                    'text-center text-h5 text-bold',
+                    attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary',
+                  ]"
                   class="centered-input"
-                />
-                <q-badge
-                  v-if="attrBuffMod(attr) !== 0"
-                  color="positive"
-                  class="q-mt-xs"
                 >
-                  {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} = {{ effectiveAttr(attr) }}
-                  <q-tooltip>Effektiver Wert durch aktive Buffs</q-tooltip>
-                </q-badge>
+                  <!-- Buffs grün markieren statt eigener Zeile, damit die Karte nicht wächst -->
+                  <q-tooltip v-if="attrBuffMod(attr) !== 0">
+                    Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
+                    = {{ effectiveAttr(attr) }}
+                  </q-tooltip>
+                </q-input>
                 <!-- Dots for increases -->
                 <div
                   class="flex justify-center q-gutter-xs q-mt-xs"
@@ -567,6 +581,36 @@
         </div>
       </q-card-section>
     </q-card>
+
+    <!-- Situative Boni eines Attributs bearbeiten -->
+    <q-dialog v-model="bonusEditorOpen">
+      <q-card style="min-width: 480px">
+        <q-card-section>
+          <div class="text-h6">{{ getAttributeName(bonusEditorAttr) }}</div>
+          <div class="text-caption text-grey-6">Boni für Proben auf {{ bonusEditorAttr }}, z. B. durch Talente</div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <SituationalBonusEditor
+            v-model="bonusEditorList"
+            hint="Werden beim Würfeln zur Auswahl angeboten. „Immer“ zählt bei jeder Probe auf dieses Attribut, nicht bei Fertigkeiten."
+          />
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn flat label="Abbrechen" color="grey" v-close-popup />
+          <q-btn flat label="Speichern" color="primary" @click="saveBonusEditor" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <SituationalRollDialog
+      v-model="attrRollOpen"
+      :title="attrRollTitle(attrRollAttr)"
+      :base="attrRollAttr ? attrRollBase(attrRollAttr) : 0"
+      :bonuses="attrBonuses(attrRollAttr)"
+      @roll="(target, label) => dice.test(target, label)"
+    />
   </div>
 </template>
 
@@ -577,6 +621,16 @@ import { useQuasar } from "quasar";
 import { useCharacterStore } from "../stores/characterStore";
 import NumberInput from "./NumberInput.vue";
 import { useDiceRoom } from "../composables/diceRoom";
+import {
+  alwaysBonuses,
+  bonusSum,
+  cleanBonuses,
+  formatBonus,
+  optionalBonuses,
+  rollLabel,
+} from "../composables/situationalBonuses";
+import SituationalBonusEditor from "./SituationalBonusEditor.vue";
+import SituationalRollDialog from "./SituationalRollDialog.vue";
 
 const $q = useQuasar();
 const dice = useDiceRoom();
@@ -630,10 +684,42 @@ const updateAttribute = (attr, value) => {
   characterStore.updateAttribute(attr, value);
 };
 
+// Situative Boni gelten nur für Proben direkt auf das Attribut, nicht für Fertigkeiten
+// oder abgeleitete Werte. Deshalb ändern sie den angezeigten Attributwert nicht.
+const attrBonuses = (attr) => character.value.attributeBonuses?.[attr] || [];
+const attrRollBase = (attr) => effectiveAttr(attr) + bonusSum(alwaysBonuses(attrBonuses(attr)));
+
+const attrRollTitle = (attr) => {
+  if (!attr) return "";
+  return attr === "BF" ? "Ballistische Fertigkeit" : getAttributeName(attr);
+};
+
+const attrRollOpen = ref(false);
+const attrRollAttr = ref(null);
+
 const rollAttribute = (attr) => {
   if (!dice.connected.value) return;
-  const name = attr === "BF" ? "Ballistische Fertigkeit" : getAttributeName(attr);
-  dice.test(effectiveAttr(attr), name);
+  if (!optionalBonuses(attrBonuses(attr)).length) {
+    dice.test(attrRollBase(attr), rollLabel(attrRollTitle(attr), alwaysBonuses(attrBonuses(attr))));
+    return;
+  }
+  attrRollAttr.value = attr;
+  attrRollOpen.value = true;
+};
+
+const bonusEditorOpen = ref(false);
+const bonusEditorAttr = ref(null);
+const bonusEditorList = ref([]);
+
+const openBonusEditor = (attr) => {
+  bonusEditorAttr.value = attr;
+  bonusEditorList.value = attrBonuses(attr).map((b) => ({ ...b }));
+  bonusEditorOpen.value = true;
+};
+
+const saveBonusEditor = () => {
+  characterStore.updateAttributeBonuses(bonusEditorAttr.value, cleanBonuses(bonusEditorList.value));
+  bonusEditorOpen.value = false;
 };
 
 const toggleIncrease = (attr, level) => {
@@ -850,6 +936,17 @@ const calculatedRank = computed(() => {
 
 .centered-input {
   width: 100%;
+}
+
+/* Attributname öffnet die situativen Boni */
+.attribute-name {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.attribute-name:hover {
+  color: var(--q-primary) !important;
 }
 
 .centered-input >>> input {

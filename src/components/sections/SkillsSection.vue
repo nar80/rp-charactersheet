@@ -68,25 +68,16 @@
             >
               <q-item-section>
                 <div class="row items-center">
-                  <!-- Info Icon -->
-                  <div class="col-auto q-pr-xs">
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      size="xs"
-                      icon="info"
-                      color="grey-6"
+                  <!-- Skill Name: Klick öffnet Beschreibung und situative Boni -->
+                  <div class="col-6">
+                    <span
+                      class="skill-name skill-name-edit"
+                      :class="{ 'text-primary': skill.situationalBonuses?.length }"
                       @click="showInfoDialog(skill)"
                     >
-                      <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
-                    </q-btn>
-                  </div>
-
-                  <!-- Skill Name -->
-                  <div class="col-5 skill-name">
-                    {{ skill.name }}
-                    <span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      <q-tooltip>Klick: Beschreibung und situative Boni bearbeiten</q-tooltip>
+                    </span>
                     <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                   </div>
 
@@ -123,8 +114,8 @@
                       :class="{ 'dice-clickable': dice.connected.value }"
                       @click="rollSkill(skill)"
                     >
-                      {{ getSkillValue(skill) }}
-                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
+                      {{ skillTotal(skill) }}
+                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ skillTotal(skill) }} würfeln{{ optionalBonuses(skill).length ? ' – mit Auswahl situativer Boni' : '' }}</q-tooltip>
                     </div>
                     <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
@@ -157,25 +148,16 @@
             >
               <q-item-section>
                 <div class="row items-center">
-                  <!-- Info Icon -->
-                  <div class="col-auto q-pr-xs">
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      size="xs"
-                      icon="info"
-                      color="grey-6"
+                  <!-- Skill Name: Klick öffnet Beschreibung und situative Boni -->
+                  <div class="col-6">
+                    <span
+                      class="skill-name skill-name-edit"
+                      :class="{ 'text-primary': skill.situationalBonuses?.length }"
                       @click="showInfoDialog(skill)"
                     >
-                      <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
-                    </q-btn>
-                  </div>
-
-                  <!-- Skill Name -->
-                  <div class="col-5 skill-name">
-                    {{ skill.name }}
-                    <span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                      <q-tooltip>Klick: Beschreibung und situative Boni bearbeiten</q-tooltip>
+                    </span>
                     <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                   </div>
 
@@ -212,8 +194,8 @@
                       :class="{ 'dice-clickable': dice.connected.value }"
                       @click="rollSkill(skill)"
                     >
-                      {{ getSkillValue(skill) }}
-                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
+                      {{ skillTotal(skill) }}
+                      <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ skillTotal(skill) }} würfeln{{ optionalBonuses(skill).length ? ' – mit Auswahl situativer Boni' : '' }}</q-tooltip>
                     </div>
                     <!-- Delete button - visible for custom skills, invisible placeholder for others -->
                     <q-btn
@@ -252,24 +234,16 @@
               >
                 <q-item-section>
                   <div class="row items-center">
-                    <!-- Info Icon -->
-                    <div class="col-auto q-pr-xs">
-                      <q-btn
-                        flat
-                        dense
-                        round
-                        size="xs"
-                        icon="info"
-                        color="grey-6"
+                    <!-- Skill Name: Klick öffnet Beschreibung und situative Boni -->
+                    <div class="col-5">
+                      <span
+                        class="skill-name skill-name-edit"
+                        :class="{ 'text-primary': skill.situationalBonuses?.length }"
                         @click="showInfoDialog(skill)"
                       >
-                        <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
-                      </q-btn>
-                    </div>
-
-                    <!-- Skill Name with specialization -->
-                    <div class="col-4 skill-name">
-                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                        {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                        <q-tooltip>Klick: Beschreibung und situative Boni bearbeiten</q-tooltip>
+                      </span>
                       <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                     </div>
 
@@ -316,8 +290,8 @@
                         :class="{ 'dice-clickable': dice.connected.value }"
                         @click="rollSkill(skill)"
                       >
-                        {{ getSkillValue(skill) }}
-                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
+                        {{ skillTotal(skill) }}
+                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ skillTotal(skill) }} würfeln{{ optionalBonuses(skill).length ? ' – mit Auswahl situativer Boni' : '' }}</q-tooltip>
                       </div>
                       <q-btn
                         flat
@@ -348,24 +322,16 @@
               >
                 <q-item-section>
                   <div class="row items-center">
-                    <!-- Info Icon -->
-                    <div class="col-auto q-pr-xs">
-                      <q-btn
-                        flat
-                        dense
-                        round
-                        size="xs"
-                        icon="info"
-                        color="grey-6"
+                    <!-- Skill Name: Klick öffnet Beschreibung und situative Boni -->
+                    <div class="col-5">
+                      <span
+                        class="skill-name skill-name-edit"
+                        :class="{ 'text-primary': skill.situationalBonuses?.length }"
                         @click="showInfoDialog(skill)"
                       >
-                        <q-tooltip>Beschreibung anzeigen/bearbeiten</q-tooltip>
-                      </q-btn>
-                    </div>
-
-                    <!-- Skill Name with specialization -->
-                    <div class="col-4 skill-name">
-                      {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                        {{ skill.name }}<span v-if="skill.specialization"> - {{ skill.specialization }}</span>
+                        <q-tooltip>Klick: Beschreibung und situative Boni bearbeiten</q-tooltip>
+                      </span>
                       <span class="text-caption text-grey-6"> ({{ skill.attribute }})</span>
                     </div>
 
@@ -412,8 +378,8 @@
                         :class="{ 'dice-clickable': dice.connected.value }"
                         @click="rollSkill(skill)"
                       >
-                        {{ getSkillValue(skill) }}
-                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ getSkillValue(skill) }} würfeln</q-tooltip>
+                        {{ skillTotal(skill) }}
+                        <q-tooltip v-if="dice.connected.value">Klick: Probe auf {{ skillTotal(skill) }} würfeln{{ optionalBonuses(skill).length ? ' – mit Auswahl situativer Boni' : '' }}</q-tooltip>
                       </div>
                       <q-btn
                         flat
@@ -612,6 +578,11 @@
             rows="5"
             hint="Füge hier deine eigene Beschreibung oder Notizen zur Fertigkeit hinzu"
           />
+
+          <SituationalBonusEditor
+            v-model="editBonuses"
+            hint="Werden beim Würfeln zur Auswahl angeboten. „Immer“ zählt fest zum Wert."
+          />
         </q-card-section>
 
         <q-separator />
@@ -632,6 +603,14 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <SituationalRollDialog
+      v-model="showRollDialog"
+      :title="skillLabel(rollingSkill)"
+      :base="rollingSkill ? skillTotal(rollingSkill) : 0"
+      :bonuses="rollingSkill?.situationalBonuses || []"
+      @roll="(target, label) => dice.test(target, label)"
+    />
   </q-card>
 </template>
 
@@ -641,6 +620,15 @@ import { storeToRefs } from 'pinia'
 import { useCharacterStore } from '../../stores/characterStore'
 import { advancedSkills } from '../../data/advancedSkills'
 import { useDiceRoom } from '../../composables/diceRoom'
+import {
+  alwaysBonuses,
+  bonusSum,
+  cleanBonuses,
+  optionalBonuses as optionalOf,
+  rollLabel
+} from '../../composables/situationalBonuses'
+import SituationalBonusEditor from '../SituationalBonusEditor.vue'
+import SituationalRollDialog from '../SituationalRollDialog.vue'
 
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
@@ -654,6 +642,9 @@ const selectedSkillType = ref(null) // 'basic' or 'learned'
 const editDescription = ref('')
 const editAttribute = ref('')
 const editSpecialization = ref('')
+const editBonuses = ref([])
+const showRollDialog = ref(false)
+const rollingSkill = ref(null)
 const filterText = ref('')
 const filterAttribute = ref(null)
 const filterInput = ref(null)
@@ -836,9 +827,20 @@ const getSkillValue = (skill) => {
 
 const dice = useDiceRoom()
 
+// "Immer"-Boni zählen fest zum Wert, die übrigen werden beim Würfeln zur Auswahl angeboten
+const optionalBonuses = (skill) => optionalOf(skill?.situationalBonuses)
+const skillTotal = (skill) => getSkillValue(skill) + bonusSum(alwaysBonuses(skill.situationalBonuses))
+const skillLabel = (skill) =>
+  skill ? `${skill.name}${skill.specialization ? ` - ${skill.specialization}` : ''}` : ''
+
 const rollSkill = (skill) => {
   if (!dice.connected.value) return
-  dice.test(getSkillValue(skill), skill.name)
+  if (!optionalBonuses(skill).length) {
+    dice.test(skillTotal(skill), rollLabel(skillLabel(skill), alwaysBonuses(skill.situationalBonuses)))
+    return
+  }
+  rollingSkill.value = skill
+  showRollDialog.value = true
 }
 
 const addNewSkill = () => {
@@ -898,11 +900,15 @@ const showInfoDialog = (skill, type) => {
   editDescription.value = skill.description || ''
   editAttribute.value = skill.attribute || ''
   editSpecialization.value = skill.specialization || ''
+  editBonuses.value = (skill.situationalBonuses || []).map(b => ({ ...b }))
   showSkillInfoDialog.value = true
 }
 
 const saveDescription = () => {
-  const updates = { description: editDescription.value }
+  const updates = {
+    description: editDescription.value,
+    situationalBonuses: cleanBonuses(editBonuses.value)
+  }
 
   // For skills that can change their attribute (Beruf, Einschüchtern), also update the attribute
   if (canChangeAttribute(selectedSkill.value?.name)) {
@@ -939,6 +945,17 @@ const cancelInfoDialog = () => {
 .skill-name {
   font-size: 1rem;
   font-weight: 500;
+}
+
+.skill-name-edit {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+}
+
+.skill-name-edit:hover {
+  color: var(--q-primary);
 }
 
 .skill-value {
