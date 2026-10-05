@@ -97,8 +97,9 @@
               dense
               maxlength="30"
               class="col-12 col-sm-6"
-              :placeholder="character.name || 'Charaktername'"
-              hint="Leer = Charaktername"
+              hint="Pflichtfeld – so heißt du im Würfelraum"
+              :error="settings.diceEnabled && dice.nameMissing.value"
+              error-message="Ohne Namen wird nicht verbunden"
             />
           </div>
           <div class="row items-center q-gutter-sm">
@@ -120,6 +121,7 @@
               color="primary"
               :href="dice.roomUrl.value"
               target="_blank"
+              :disable="dice.nameMissing.value"
             />
           </div>
         </q-card-section>

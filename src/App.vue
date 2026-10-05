@@ -41,10 +41,11 @@
             round
             icon="casino"
             :color="settings.diceEnabled ? diceStatusColor : 'grey-7'"
-            v-bind="settings.diceEnabled ? { href: dice.roomUrl.value, target: '_blank' } : { to: '/settings' }"
+            v-bind="settings.diceEnabled && !dice.nameMissing.value ? { href: dice.roomUrl.value, target: '_blank' } : { to: '/settings' }"
           >
             <q-tooltip>
               <template v-if="!settings.diceEnabled">Würfelraum aus – in den Einstellungen aktivieren</template>
+              <template v-else-if="dice.nameMissing.value">„Name im Würfelraum“ fehlt – in den Einstellungen eintragen</template>
               <template v-else>
                 Würfelraum „{{ dice.slugifyRoom(settings.diceRoom) }}“:
                 {{ { connected: 'verbunden', connecting: 'verbinde …', disconnected: 'getrennt' }[dice.state.status] }}

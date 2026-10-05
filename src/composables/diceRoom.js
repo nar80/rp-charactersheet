@@ -5,7 +5,7 @@ import { Notify } from 'quasar'
 import { useCharacterStore } from '../stores/characterStore'
 import { useSettingsStore } from '../stores/settingsStore'
 
-export const DICE_SERVER = 'https://dice-room.dice-room.workers.dev'
+export const DICE_SERVER = import.meta.env.VITE_DICE_SERVER || 'https://dice-room.dice-room.workers.dev'
 
 const state = reactive({ status: 'disconnected', players: [] })
 
@@ -15,11 +15,14 @@ let retryTimer = null
 let retryDelay = 1000
 let wanted = null
 let pending = []
+// Bleibt für die Lebensdauer der Seite gleich. Der Server ersetzt beim Wiederverbinden
+// die alte Verbindung dieses Tabs, statt den Spieler doppelt anzuzeigen.
+const clientId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
 
+// Pflichtfeld: ohne "Name im Würfelraum" wird nicht verbunden
 function playerName() {
   const { settings } = useSettingsStore()
-  const { character } = useCharacterStore()
-  return (settings.dicePlayerName || character.name || 'Unbekannt').trim().slice(0, 30)
+  return String(settings.dicePlayerName || '').trim().slice(0, 30)
 }
 
 function slugifyRoom(value) {
@@ -36,19 +39,22 @@ function open() {
   clearTimeout(retryTimer)
   if (!wanted) return
   state.status = 'connecting'
-  const query = new URLSearchParams({ name: wanted.name })
+  const query = new URLSearchParams({ name: wanted.name, id: clientId })
   const url = `${DICE_SERVER.replace(/^http/, 'ws')}/api/room/${wanted.room}/ws?${query}`
   const ws = new WebSocket(url)
   socket = ws
 
+  // Eine alte, gerade schließende Verbindung darf die neue nicht beeinflussen.
   ws.onopen = () => {
+    if (socket !== ws) return
     retryDelay = 1000
     state.status = 'connected'
+    clearInterval(pingTimer)
     pingTimer = setInterval(() => ws.readyState === 1 && ws.send('ping'), 30000)
   }
 
   ws.onmessage = (event) => {
-    if (event.data === 'pong') return
+    if (socket !== ws || event.data === 'pong') return
     const msg = JSON.parse(event.data)
     if (msg.type === 'presence') state.players = msg.players
     if (msg.type === 'roll' && msg.roll.player === wanted?.name && pending.length) {
@@ -61,8 +67,8 @@ function open() {
   }
 
   ws.onclose = () => {
-    clearInterval(pingTimer)
     if (socket !== ws) return
+    clearInterval(pingTimer)
     socket = null
     pending = []
     state.status = 'disconnected'
@@ -83,6 +89,7 @@ function connect(room, name) {
 function disconnect() {
   wanted = null
   clearTimeout(retryTimer)
+  clearInterval(pingTimer)
   const ws = socket
   socket = null
   ws?.close()
@@ -180,24 +187,27 @@ function showOwnResult(roll, options = {}) {
 // Einmal in App.vue aufrufen: verbindet/trennt passend zu den Einstellungen.
 export function initDiceRoom() {
   const settingsStore = useSettingsStore()
-  const characterStore = useCharacterStore()
+  let typingTimer = null
+
+  function apply() {
+    const room = slugifyRoom(settingsStore.settings.diceRoom)
+    const name = playerName()
+    if (!settingsStore.settings.diceEnabled || !room || !name) {
+      disconnect()
+    } else if (wanted?.room !== room || wanted?.name !== name) {
+      connect(room, name)
+    }
+  }
+
+  // Nicht bei jedem getippten Buchstaben neu verbinden, erst wenn kurz Ruhe ist
   watch(
-    () => [
-      settingsStore.settings.diceEnabled,
-      slugifyRoom(settingsStore.settings.diceRoom),
-      settingsStore.settings.dicePlayerName,
-      characterStore.character.name
-    ],
-    ([enabled, room]) => {
-      const name = playerName()
-      if (!enabled || !room) {
-        disconnect()
-      } else if (wanted?.room !== room || wanted?.name !== name) {
-        connect(room, name)
-      }
-    },
-    { immediate: true }
+    () => [settingsStore.settings.diceRoom, settingsStore.settings.dicePlayerName],
+    () => {
+      clearTimeout(typingTimer)
+      typingTimer = setTimeout(apply, 800)
+    }
   )
+  watch(() => settingsStore.settings.diceEnabled, apply, { immediate: true })
 }
 
 export function useDiceRoom() {
@@ -205,9 +215,13 @@ export function useDiceRoom() {
   const characterStore = useCharacterStore()
 
   const connected = computed(() => state.status === 'connected')
-  const roomUrl = computed(
-    () => `${DICE_SERVER}/?raum=${slugifyRoom(settingsStore.settings.diceRoom)}`
-  )
+  const nameMissing = computed(() => !playerName())
+  // Name mitgeben, damit der Würfelraum nicht nach dem Namen fragt
+  const roomUrl = computed(() => {
+    const query = new URLSearchParams({ raum: slugifyRoom(settingsStore.settings.diceRoom) })
+    if (playerName()) query.set('name', playerName())
+    return `${DICE_SERVER}/?${query}`
+  })
 
   // Probe auf einen Zielwert. Erschöpfung (-10) wird automatisch abgezogen.
   // onResult(roll, evaluation) wird nach dem eigenen Wurf aufgerufen.
@@ -229,5 +243,5 @@ export function useDiceRoom() {
     return send({ type: 'roll', kind: 'free', notation, label }, { fury, onFury })
   }
 
-  return { state, connected, roomUrl, test, roll, slugifyRoom }
+  return { state, connected, nameMissing, roomUrl, test, roll, slugifyRoom }
 }
