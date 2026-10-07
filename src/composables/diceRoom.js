@@ -225,12 +225,13 @@ export function useDiceRoom() {
     return `${DICE_SERVER}/?${query}`
   })
 
-  // Probe auf einen Zielwert. Erschöpfung (-10) wird automatisch abgezogen.
+  // Probe auf einen Zielwert. Erschöpfung (-10) wird automatisch abgezogen,
+  // außer bei Proben, die nicht vom Charakter abhängen (exhaustion: false, z. B. Beschaffung).
   // onResult(roll, evaluation) wird nach dem eigenen Wurf aufgerufen.
-  function test(target, label, { onResult } = {}) {
+  function test(target, label, { onResult, exhaustion = true } = {}) {
     let finalTarget = Number(target) || 0
     let finalLabel = label
-    if (characterStore.character.exhaustion > 0) {
+    if (exhaustion && characterStore.character.exhaustion > 0) {
       finalTarget -= 10
       finalLabel = `${label} (−10 Erschöpfung)`
     }

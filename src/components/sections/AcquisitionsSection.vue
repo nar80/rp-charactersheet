@@ -59,7 +59,7 @@
                 <!-- Calculated Min Roll -->
                 <div class="q-mb-sm q-pa-sm rounded-borders" style="background-color: black; border: 2px solid #d4af37;">
                   <div class="text-body2 text-bold" style="color: #d4af37;">
-                    Mindestwurf: {{ acq.calculatedMinRoll }}
+                    Mindestwurf: {{ minRollFor(acq) }}
                   </div>
                   <div class="text-caption text-grey-4">
                     Profit Factor ({{ character.profitFactor.current }})
@@ -90,6 +90,12 @@
                             <span :class="attempt.success ? 'text-positive' : 'text-negative'">
                               {{ attempt.rollResult }} {{ attempt.success ? '✓' : '✗' }}
                             </span>
+                            <span v-if="attempt.degrees" class="text-grey-5 q-ml-xs">
+                              ({{ attempt.degrees }} {{ attempt.success ? 'EG' : 'MG' }})
+                            </span>
+                            <span v-if="attempt.rollBonus" class="text-grey-5 q-ml-xs">
+                              {{ attempt.rollBonus > 0 ? '+' : '' }}{{ attempt.rollBonus }} Bonus
+                            </span>
                             <span class="text-grey-6 q-ml-sm">(Mindestwurf: {{ attempt.calculatedMinRoll }})</span>
                           </q-item-label>
                           <q-item-label caption v-if="attempt.date">
@@ -101,17 +107,15 @@
                   </div>
 
                   <q-btn
-                    flat
+                    unelevated
                     dense
                     size="sm"
-                    icon="refresh"
+                    icon="casino"
                     color="primary"
-                    label="Wurf wiederholen"
+                    class="q-px-sm"
+                    :label="getAttemptCount(acq) ? 'Erneut würfeln' : 'Würfeln'"
                     @click="repeatRoll(acq.originalIndex)"
-                    :disable="getAttemptCount(acq) >= 5"
-                  >
-                    <q-tooltip v-if="getAttemptCount(acq) >= 5">Maximale Anzahl an Versuchen erreicht</q-tooltip>
-                  </q-btn>
+                  />
                 </div>
 
                 <!-- Notes -->
@@ -178,7 +182,10 @@
                 <!-- Calculated Min Roll -->
                 <div class="q-mb-sm q-pa-sm rounded-borders" style="background-color: black; border: 2px solid #4caf50;">
                   <div class="text-body2 text-bold text-positive">
-                    Mindestwurf: {{ acq.calculatedMinRoll }} - Erfolgreich!
+                    <template v-if="successfulAttempt(acq)">
+                      Erfolgreich bei Versuch {{ successfulAttempt(acq) }}
+                    </template>
+                    <template v-else>Nach 5 Versuchen erhalten</template>
                   </div>
                   <div class="text-caption text-grey-4">
                     Profit Factor ({{ character.profitFactor.current }})
@@ -208,6 +215,12 @@
                             <span class="text-bold">Versuch {{ attemptIdx + 1 }}:</span>
                             <span :class="attempt.success ? 'text-positive' : 'text-negative'">
                               {{ attempt.rollResult }} {{ attempt.success ? '✓' : '✗' }}
+                            </span>
+                            <span v-if="attempt.degrees" class="text-grey-5 q-ml-xs">
+                              ({{ attempt.degrees }} {{ attempt.success ? 'EG' : 'MG' }})
+                            </span>
+                            <span v-if="attempt.rollBonus" class="text-grey-5 q-ml-xs">
+                              {{ attempt.rollBonus > 0 ? '+' : '' }}{{ attempt.rollBonus }} Bonus
                             </span>
                             <span class="text-grey-6 q-ml-sm">(Mindestwurf: {{ attempt.calculatedMinRoll }})</span>
                           </q-item-label>
@@ -257,8 +270,8 @@
     </q-card-section>
 
     <!-- Add/Edit Dialog -->
-    <q-dialog v-model="showAddDialog">
-      <q-card style="min-width: 600px">
+    <q-dialog v-model="showAddDialog" :maximized="$q.screen.lt.sm">
+      <q-card style="width: 600px; max-width: 100vw">
         <q-card-section>
           <div class="text-h6">{{ editingIndex !== null ? 'Beschaffung bearbeiten' : 'Neue Beschaffung' }}</div>
         </q-card-section>
@@ -374,81 +387,64 @@
       </q-card>
     </q-dialog>
 
-    <!-- Repeat Roll Dialog -->
-    <q-dialog v-model="showRepeatDialog">
-      <q-card v-if="repeatAcquisition" style="min-width: 600px">
+    <!-- Beschaffungswurf -->
+    <q-dialog v-model="showRepeatDialog" :maximized="$q.screen.lt.sm">
+      <q-card v-if="repeatAcquisition" style="width: 460px; max-width: 100vw">
         <q-card-section>
-          <div class="text-h6">Wurf wiederholen</div>
-          <div class="text-subtitle2 text-grey-7">{{ repeatAcquisition?.item }}</div>
+          <div class="text-h6">Beschaffungswurf</div>
+          <div class="text-subtitle2 text-grey-6">
+            {{ repeatAcquisition.item }} · Versuch {{ getAttemptCount(repeatAcquisition) + 1 }} von 5
+          </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-section class="q-gutter-md">
-          <div class="text-body2">
-            Aktueller Versuch: {{ repeatAcquisition ? getAttemptCount(repeatAcquisition) + 1 : 1 }} von 5
-          </div>
-
           <q-input
-            v-model.number="rollResult"
-            label="Wurfergebnis"
+            v-model.number="rollBonus"
+            label="Bonus für diesen Wurf"
             type="number"
             filled
             dense
-            hint="Das Ergebnis deines W100-Wurfs"
-            :rules="[val => val !== null && val >= 1 && val <= 100 || 'Bitte einen Wert zwischen 1 und 100 eingeben']"
+            hint="z. B. Kontakte, Gefallen, Verhandlungsprobe"
           />
 
-          <q-select
-            v-model="repeatAcquisition.availability"
-            :options="availabilityOptions"
-            label="Verfügbarkeit"
-            filled
-            dense
-            emit-value
-            map-options
-            @update:model-value="updateRepeatAvailabilityMod"
-          />
-
-          <q-select
-            v-model="repeatAcquisition.amount"
-            :options="amountOptions"
-            label="Menge (Kategorie)"
-            filled
-            dense
-            emit-value
-            map-options
-            @update:model-value="updateRepeatAmountMod"
-          />
-
-          <q-select
-            v-model="repeatAcquisition.quality"
-            :options="qualityOptions"
-            label="Qualität"
-            filled
-            dense
-            emit-value
-            map-options
-            @update:model-value="updateRepeatQualityMod"
-          />
-
-          <q-input
-            v-model.number="repeatAcquisition.additionalMod"
-            label="Zusätzliche Modifikatoren"
-            type="number"
-            filled
-            dense
-          />
-
-          <!-- Calculated Min Roll Display -->
           <div class="q-pa-md rounded-borders" style="background-color: black; border: 2px solid #d4af37;">
-            <div class="text-h6" style="color: #d4af37;">Berechneter Mindestwurf: {{ calculatedRepeatMinRoll }}</div>
+            <div class="text-h6" style="color: #d4af37;">Mindestwurf: {{ calculatedRepeatMinRoll }}</div>
             <div class="text-caption text-grey-4">
               Profit Factor ({{ character.profitFactor.current }})
-              <span v-if="repeatAcquisition.availabilityMod !== 0"> {{ repeatAcquisition.availabilityMod > 0 ? '+' : '' }}{{ repeatAcquisition.availabilityMod }}</span>
-              <span v-if="repeatAcquisition.amountMod !== 0"> {{ repeatAcquisition.amountMod > 0 ? '+' : '' }}{{ repeatAcquisition.amountMod }}</span>
-              <span v-if="repeatAcquisition.qualityMod !== 0"> {{ repeatAcquisition.qualityMod > 0 ? '+' : '' }}{{ repeatAcquisition.qualityMod }}</span>
-              <span v-if="repeatAcquisition.additionalMod !== 0"> {{ repeatAcquisition.additionalMod > 0 ? '+' : '' }}{{ repeatAcquisition.additionalMod }}</span>
+              <span v-if="repeatAcquisition.availabilityMod"> {{ signed(repeatAcquisition.availabilityMod) }} ({{ repeatAcquisition.availability }})</span>
+              <span v-if="repeatAcquisition.amountMod"> {{ signed(repeatAcquisition.amountMod) }} ({{ repeatAcquisition.amount }})</span>
+              <span v-if="repeatAcquisition.qualityMod"> {{ signed(repeatAcquisition.qualityMod) }} ({{ repeatAcquisition.quality }})</span>
+              <span v-if="repeatAcquisition.additionalMod"> {{ signed(repeatAcquisition.additionalMod) }} (Zusätzlich)</span>
+              <span v-if="rollBonus"> {{ signed(rollBonus) }} (Bonus)</span>
+            </div>
+          </div>
+
+          <div v-if="!dice.connected.value || manualEntry" class="row items-start q-col-gutter-sm">
+            <div v-if="!dice.connected.value" class="col-12 text-caption text-grey-6">
+              Nicht mit dem Würfelraum verbunden – Ergebnis von Hand eintragen.
+            </div>
+            <div class="col">
+              <q-input
+                v-model.number="rollResult"
+                label="Wurfergebnis (W100)"
+                type="number"
+                filled
+                dense
+                autofocus
+                @keyup.enter="confirmRepeatRoll"
+              />
+            </div>
+            <div class="col-auto">
+              <q-btn
+                unelevated
+                label="Eintragen"
+                color="primary"
+                class="q-mt-xs"
+                :disable="!validRollResult"
+                @click="confirmRepeatRoll"
+              />
             </div>
           </div>
         </q-card-section>
@@ -457,17 +453,22 @@
 
         <q-card-actions align="right">
           <q-btn
+            v-if="dice.connected.value && !manualEntry"
             flat
-            label="Abbrechen"
+            no-caps
+            label="Von Hand eintragen"
             color="grey"
-            @click="cancelRepeatDialog"
+            class="q-mr-auto"
+            @click="manualEntry = true"
           />
+          <q-btn flat label="Abbrechen" color="grey" @click="cancelRepeatDialog" />
           <q-btn
-            flat
-            label="Wurf ausgeführt"
+            v-if="dice.connected.value"
+            unelevated
+            icon="casino"
+            :label="`Würfeln (${calculatedRepeatMinRoll})`"
             color="primary"
-            @click="confirmRepeatRoll"
-            :disable="!rollResult || rollResult < 1 || rollResult > 100"
+            @click="rollInDiceRoom"
           />
         </q-card-actions>
       </q-card>
@@ -478,8 +479,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useQuasar } from 'quasar'
 import { useCharacterStore } from '../../stores/characterStore'
+import { evaluateTest, useDiceRoom } from '../../composables/diceRoom'
 
+const $q = useQuasar()
+const dice = useDiceRoom()
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
 
@@ -489,6 +494,8 @@ const showCompleted = ref(false)
 const editingIndex = ref(null)
 const repeatIndex = ref(null)
 const rollResult = ref(null)
+const rollBonus = ref(0)
+const manualEntry = ref(false)
 
 // Availability options with modifiers
 const availabilityOptions = [
@@ -577,15 +584,27 @@ const calculatedMinRoll = computed(() => {
     (newAcquisition.value.additionalMod || 0)
 })
 
-const calculatedRepeatMinRoll = computed(() => {
-  if (!repeatAcquisition.value) return 0
-  const profitFactor = character.value.profitFactor.current || 0
-  return profitFactor +
-    (repeatAcquisition.value.availabilityMod || 0) +
-    (repeatAcquisition.value.amountMod || 0) +
-    (repeatAcquisition.value.qualityMod || 0) +
-    (repeatAcquisition.value.additionalMod || 0)
-})
+// Mindestwurf mit dem aktuellen Profit Factor
+const minRollFor = (acq, bonus = 0) =>
+  (character.value.profitFactor.current || 0) +
+  (acq.availabilityMod || 0) +
+  (acq.amountMod || 0) +
+  (acq.qualityMod || 0) +
+  (acq.additionalMod || 0) +
+  (Number(bonus) || 0)
+
+const calculatedRepeatMinRoll = computed(() =>
+  repeatAcquisition.value ? minRollFor(repeatAcquisition.value, rollBonus.value) : 0
+)
+
+const validRollResult = computed(() =>
+  Number.isInteger(rollResult.value) && rollResult.value >= 1 && rollResult.value <= 100
+)
+
+const signed = (value) => (value > 0 ? `+${value}` : `${value}`)
+
+// Nummer des erfolgreichen Versuchs (1-basiert) oder 0 bei Pity
+const successfulAttempt = (acq) => getAttempts(acq).findIndex(a => a.success) + 1
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Kein Datum'
@@ -655,21 +674,6 @@ const updateQualityMod = (value) => {
   newAcquisition.value.qualityMod = option ? option.mod : 0
 }
 
-const updateRepeatAvailabilityMod = (value) => {
-  const option = availabilityOptions.find(opt => opt.value === value)
-  repeatAcquisition.value.availabilityMod = option ? option.mod : 0
-}
-
-const updateRepeatAmountMod = (value) => {
-  const option = amountOptions.find(opt => opt.value === value)
-  repeatAcquisition.value.amountMod = option ? option.mod : 0
-}
-
-const updateRepeatQualityMod = (value) => {
-  const option = qualityOptions.find(opt => opt.value === value)
-  repeatAcquisition.value.qualityMod = option ? option.mod : 0
-}
-
 const editAcquisition = (index) => {
   editingIndex.value = index
   const acq = character.value.acquisitions[index]
@@ -706,50 +710,50 @@ const repeatRoll = (index) => {
   }
 
   rollResult.value = null
+  rollBonus.value = 0
+  manualEntry.value = false
   showRepeatDialog.value = true
 }
 
-const confirmRepeatRoll = () => {
-  // Improved validation
-  if (repeatIndex.value === null ||
-      !rollResult.value ||
-      typeof rollResult.value !== 'number' ||
-      rollResult.value < 1 ||
-      rollResult.value > 100) {
-    return
-  }
-
-  // Calculate min roll
-  const minRoll = calculatedRepeatMinRoll.value
-
-  // Create new attempt object
-  const newAttempt = {
-    rollResult: rollResult.value,
+// Versuch an der Beschaffung speichern (aus dem Würfelraum oder von Hand)
+const recordAttempt = (acq, result, minRoll, bonus) => {
+  const evaluation = evaluateTest(result, minRoll)
+  const attempts = Array.isArray(acq.attempts) ? acq.attempts : []
+  acq.attempts = [...attempts, {
+    rollResult: result,
     date: new Date().toISOString(),
-    availability: repeatAcquisition.value.availability,
-    availabilityMod: repeatAcquisition.value.availabilityMod,
-    amount: repeatAcquisition.value.amount,
-    amountMod: repeatAcquisition.value.amountMod,
-    quality: repeatAcquisition.value.quality,
-    qualityMod: repeatAcquisition.value.qualityMod,
-    additionalMod: repeatAcquisition.value.additionalMod || 0,
+    availability: acq.availability,
+    availabilityMod: acq.availabilityMod,
+    amount: acq.amount,
+    amountMod: acq.amountMod,
+    quality: acq.quality,
+    qualityMod: acq.qualityMod,
+    additionalMod: acq.additionalMod || 0,
+    rollBonus: Number(bonus) || 0,
     calculatedMinRoll: minRoll,
-    success: rollResult.value <= minRoll
-  }
+    success: evaluation.success,
+    degrees: evaluation.degrees
+  }]
+  acq.calculatedMinRoll = minRoll
+}
 
-  // Ensure attempts is an array
-  if (!Array.isArray(repeatAcquisition.value.attempts)) {
-    repeatAcquisition.value.attempts = []
-  }
+const rollInDiceRoom = () => {
+  // Das Original aus dem Store, damit das Ergebnis auch nach dem Schließen ankommt
+  const acq = character.value.acquisitions[repeatIndex.value]
+  const minRoll = calculatedRepeatMinRoll.value
+  const bonus = rollBonus.value
+  const attempt = getAttemptCount(acq) + 1
+  const sent = dice.test(minRoll, `Beschaffung: ${acq.item} (Versuch ${attempt}/5)`, {
+    exhaustion: false,
+    onResult: (roll) => recordAttempt(acq, roll.total, roll.target, bonus)
+  })
+  if (sent) cancelRepeatDialog()
+}
 
-  // Add attempt to array
-  repeatAcquisition.value.attempts.push(newAttempt)
-
-  // Update the main modifiers to the latest values
-  repeatAcquisition.value.calculatedMinRoll = minRoll
-
-  character.value.acquisitions[repeatIndex.value] = { ...repeatAcquisition.value }
-
+const confirmRepeatRoll = () => {
+  if (repeatIndex.value === null || !validRollResult.value) return
+  const acq = character.value.acquisitions[repeatIndex.value]
+  recordAttempt(acq, rollResult.value, calculatedRepeatMinRoll.value, rollBonus.value)
   cancelRepeatDialog()
 }
 
