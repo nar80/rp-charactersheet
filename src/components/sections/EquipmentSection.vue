@@ -3643,6 +3643,11 @@ const meleeTraitOptions = [
       "Nach Schaden WI-Wurf (-5 je Schadenspunkt). Bei Fehlschlag zusätzlich 1W10 Wuchtschaden.",
   },
   {
+    label: "Instabil",
+    value: "instabil",
+    description: "1W10: 1=halber Schaden, 2-9=normal, 10=doppelt.",
+  },
+  {
     label: "Kettenwaffe",
     value: "kettenwaffe",
     description:
@@ -4000,6 +4005,10 @@ const formatDamageDisplay = (weapon) => {
   }
 };
 
+const hasInstabilTrait = (weapon) =>
+  weapon.traits?.includes("instabil") ||
+  weapon.rangedTraits?.includes("instabil");
+
 const hasProvenTrait = (weapon) =>
   (isWeaponMelee(weapon) ? weapon.traits : weapon.rangedTraits)?.includes(
     "proven",
@@ -4100,14 +4109,27 @@ const copyDamageRoll = async (weapon) => {
   const roomNotes = [hasReissend && "Reißend", proven && `Proven ${proven}`]
     .filter(Boolean)
     .join(", ");
-  if (
-    dice.connected.value &&
-    dice.roll(roomCode, `Schaden – ${weapon.name}${roomNotes ? ` (${roomNotes})` : ""}`, {
-      fury: true,
-      onFury: (damageRoll) => confirmRighteousFury(weapon, damageRoll.total),
-    })
-  ) {
-    return;
+  const damageLabel = `Schaden – ${weapon.name}${roomNotes ? ` (${roomNotes})` : ""}`;
+  const furyOptions = {
+    fury: true,
+    onFury: (damageRoll) => confirmRighteousFury(weapon, damageRoll.total),
+  };
+  if (dice.connected.value) {
+    // Instabil: erst 1W10 (1 = halber, 10 = doppelter Schaden), dann der Schaden
+    // mit eingerechnetem Faktor, damit im Würfelraum gleich das Endergebnis steht.
+    const sent = hasInstabilTrait(weapon)
+      ? dice.roll("1d10", `Instabil – ${weapon.name} (1: halber, 10: doppelter Schaden)`, {
+          onResult: (instabil) => {
+            const effect = { 1: "halber Schaden", 10: "doppelter Schaden" }[instabil.total];
+            const code =
+              instabil.total === 1 ? `floor((${roomCode})/2)`
+              : instabil.total === 10 ? `(${roomCode})*2`
+              : roomCode;
+            dice.roll(code, `${damageLabel} – Instabil: ${effect || "normal"}`, furyOptions);
+          },
+        })
+      : dice.roll(roomCode, damageLabel, furyOptions);
+    if (sent) return;
   }
 
   const command = `/würfle generic eingabe: ${diceCode}`;
@@ -4115,7 +4137,7 @@ const copyDamageRoll = async (weapon) => {
   try {
     await navigator.clipboard.writeText(command);
     $q.notify({
-      message: `Kopiert: ${command}${proven ? ` – Proven ${proven} selbst anwenden` : ""}`,
+      message: `Kopiert: ${command}${proven ? ` – Proven ${proven} selbst anwenden` : ""}${hasInstabilTrait(weapon) ? " – Instabil: 1W10 selbst würfeln" : ""}`,
       color: "positive",
       icon: "content_copy",
       timeout: 2000,

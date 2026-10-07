@@ -135,7 +135,10 @@ function escapeHtml(text) {
 // "3d10kh2+4: [6d, 8, 9]+4 = 21" -> "[<s>6</s>, 8, 9] +4 = 21"
 // Suffix d = weggefallen, ^ = auf Mindestwert angehoben (Proven)
 function diceHtml(output) {
-  const body = escapeHtml(output.slice(output.indexOf(':') + 1).trim())
+  // "floor((…)/2)" (halber Schaden, z. B. Instabil) ohne das technische floor
+  const body = escapeHtml(
+    output.slice(output.indexOf(':') + 1).trim().replace(/^floor\((.*)\)(\s*=)/, '$1$2')
+  )
   return body.replace(/\[([^\]]*)\]/g, (_, dice) =>
     `[${dice
       .split(',')
@@ -165,6 +168,7 @@ function showOwnResult(roll, options = {}) {
     return
   }
 
+  options.onResult?.(roll)
   const fury = options.fury && hasNaturalTen(roll.output)
   const needsAnswer = fury && !!options.onFury
   const dice = diceHtml(roll.output)
@@ -242,8 +246,9 @@ export function useDiceRoom() {
   }
 
   // fury: eine gewürfelte 10 hervorheben; onFury(roll): Handler für "Bestätigen".
-  function roll(notation, label, { fury = false, onFury } = {}) {
-    return send({ type: 'roll', kind: 'free', notation, label }, { fury, onFury })
+  // onResult(roll) wird nach dem eigenen Wurf aufgerufen.
+  function roll(notation, label, { fury = false, onFury, onResult } = {}) {
+    return send({ type: 'roll', kind: 'free', notation, label }, { fury, onFury, onResult })
   }
 
   return { state, connected, nameMissing, roomUrl, test, roll, slugifyRoom }

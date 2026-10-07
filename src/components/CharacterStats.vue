@@ -80,13 +80,14 @@
               >{{ attr }}</div>
               <div
                 class="text-h6 text-bold text-center"
-                :class="attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary'"
+                :class="attrRollBase(attr) !== value ? 'text-positive' : 'text-primary'"
               >
-                {{ effectiveAttr(attr) }}
+                {{ attrRollBase(attr) }}
                 <q-tooltip v-if="attrBuffMod(attr) !== 0 || dice.connected.value || attrBonuses(attr).length">
                   <div v-if="attrBuffMod(attr) !== 0">
                     Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
                   </div>
+                  <div v-else-if="alwaysBonuses(attrBonuses(attr)).length">Basis {{ value }}</div>
                   <div v-for="b in attrBonuses(attr)" :key="b.id">
                     {{ formatBonus(b.value) }} {{ b.label }}{{ b.always ? ' (immer)' : '' }}
                   </div>
@@ -198,14 +199,20 @@
                   "
                   :input-class="[
                     'text-center text-h5 text-bold',
-                    attrBuffMod(attr) !== 0 ? 'text-positive' : 'text-primary',
+                    attrRollBase(attr) !== value ? 'text-positive' : 'text-primary',
                   ]"
                   class="centered-input"
                 >
-                  <!-- Buffs grün markieren statt eigener Zeile, damit die Karte nicht wächst -->
-                  <q-tooltip v-if="attrBuffMod(attr) !== 0">
-                    Basis {{ value }} {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
-                    = {{ effectiveAttr(attr) }}
+                  <!-- Buffs/Immer-Boni grün markieren statt eigener Zeile, damit die Karte nicht wächst -->
+                  <q-tooltip v-if="attrRollBase(attr) !== value">
+                    <div>Basis {{ value }}</div>
+                    <div v-if="attrBuffMod(attr) !== 0">
+                      {{ attrBuffMod(attr) > 0 ? "+" : "" }}{{ attrBuffMod(attr) }} durch Buffs
+                    </div>
+                    <div v-for="b in alwaysBonuses(attrBonuses(attr))" :key="b.id">
+                      {{ formatBonus(b.value) }} {{ b.label }} (immer)
+                    </div>
+                    <div>= {{ attrRollBase(attr) }}</div>
                   </q-tooltip>
                 </q-input>
                 <!-- Dots for increases -->

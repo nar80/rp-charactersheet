@@ -21,7 +21,10 @@ export const soundEnabled = ref(localStorage.getItem(STORAGE_KEY) !== '0')
 const DEFAULT_VOLUME = 100
 
 const readVolume = () => {
-  const raw = Number(localStorage.getItem(VOLUME_KEY))
+  // Nie gespeichert -> null; Number(null) waere 0 und damit stumm
+  const stored = localStorage.getItem(VOLUME_KEY)
+  if (stored === null || stored === '') return DEFAULT_VOLUME
+  const raw = Number(stored)
   return Number.isFinite(raw) && raw >= 0 && raw <= 100 ? raw : DEFAULT_VOLUME
 }
 

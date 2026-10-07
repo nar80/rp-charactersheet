@@ -3,7 +3,9 @@
     <q-card style="min-width: 340px">
       <q-card-section>
         <div class="text-h6">{{ title }}</div>
-        <div class="text-caption text-grey-6">Welche situativen Boni gelten?</div>
+        <div class="text-caption text-grey-6">
+          Welche situativen Boni gelten? „Immer“-Boni lassen sich für diesen Wurf abwählen.
+        </div>
       </q-card-section>
 
       <q-separator />
@@ -11,20 +13,11 @@
       <q-card-section class="q-py-sm">
         <div v-for="bonus in bonuses" :key="bonus.id">
           <q-checkbox
-            v-if="bonus.always"
-            :model-value="true"
-            disable
-            dense
-            class="q-my-xs"
-            :label="`${formatBonus(bonus.value)} ${bonus.label} (immer)`"
-          />
-          <q-checkbox
-            v-else
             v-model="selection"
             :val="bonus.id"
             dense
             class="q-my-xs"
-            :label="`${formatBonus(bonus.value)} ${bonus.label}`"
+            :label="`${formatBonus(bonus.value)} ${bonus.label}${bonus.always ? ' (immer)' : ''}`"
           />
         </div>
       </q-card-section>
@@ -72,22 +65,26 @@ const emit = defineEmits(['roll'])
 
 const isDamage = computed(() => typeof props.base === 'string')
 
+// "Immer"-Boni sind bei jedem Öffnen wieder vorausgewählt
 const selection = ref([])
 watch(open, (isOpen) => {
-  if (isOpen) selection.value = []
+  if (isOpen) selection.value = alwaysBonuses(props.bonuses).map(b => b.id)
 })
 
-const selected = computed(() =>
-  optionalBonuses(props.bonuses).filter(b => selection.value.includes(b.id))
+const chosen = computed(() => props.bonuses.filter(b => selection.value.includes(b.id)))
+const droppedAlways = computed(() =>
+  alwaysBonuses(props.bonuses).filter(b => !selection.value.includes(b.id))
 )
 const target = computed(() =>
   isDamage.value
-    ? addToNotation(props.base, [...alwaysBonuses(props.bonuses), ...selected.value])
-    : props.base + bonusSum(selected.value)
+    ? addToNotation(props.base, chosen.value)
+    : props.base -
+      bonusSum(droppedAlways.value) +
+      bonusSum(optionalBonuses(props.bonuses).filter(b => selection.value.includes(b.id)))
 )
 
 function confirm() {
-  emit('roll', target.value, rollLabel(props.title, [...alwaysBonuses(props.bonuses), ...selected.value]))
+  emit('roll', target.value, rollLabel(props.title, chosen.value))
   open.value = false
 }
 </script>
