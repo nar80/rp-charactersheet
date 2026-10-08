@@ -697,7 +697,16 @@ const saveAcquisition = () => {
 }
 
 const removeAcquisition = (index) => {
-  character.value.acquisitions.splice(index, 1)
+  const item = character.value.acquisitions[index]?.item || 'diese Beschaffung'
+  $q.dialog({
+    title: 'Beschaffung löschen',
+    message: `Willst du die Beschaffung "${item}" wirklich löschen?`,
+    cancel: 'Abbrechen',
+    ok: { label: 'Löschen', color: 'negative' },
+    persistent: true
+  }).onOk(() => {
+    character.value.acquisitions.splice(index, 1)
+  })
 }
 
 const repeatRoll = (index) => {

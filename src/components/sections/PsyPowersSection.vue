@@ -365,6 +365,7 @@
       :title="rollingTitle"
       :base="rollingBase"
       :bonuses="rolling?.roll.bonuses || []"
+      :fixed="rolling ? attributeMods(rolling.roll) : []"
       @roll="sendRoll"
     />
   </q-card>
@@ -373,6 +374,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useQuasar } from 'quasar'
 import { useCharacterStore } from '../../stores/characterStore'
 import { useDiceRoom } from '../../composables/diceRoom'
 import {
@@ -381,11 +383,13 @@ import {
   bonusSum,
   cleanBonuses,
   optionalBonuses,
-  rollLabel
+  rollLabel,
+  tagAttribute
 } from '../../composables/situationalBonuses'
 import SituationalBonusEditor from '../SituationalBonusEditor.vue'
 import SituationalRollDialog from '../SituationalRollDialog.vue'
 
+const $q = useQuasar()
 const characterStore = useCharacterStore()
 const { character } = storeToRefs(characterStore)
 const dice = useDiceRoom()
@@ -430,6 +434,18 @@ const damageNotation = (roll) =>
     String(Math.floor(characterStore.getEffectiveAttribute(attr) / 10))
   )
 
+// Buffs und "Immer"-Boni auf die verwendeten Attribute, für den Wurftext.
+// Probe: "+20 WK Navigator-Segen", Schaden: "+1 WKb Navigator-Segen"
+const attributeMods = (roll) => {
+  if (roll.kind !== 'damage') {
+    return tagAttribute(roll.attribute, characterStore.attributeModifiers(roll.attribute))
+  }
+  const attrs = new Set(
+    [...String(roll.damage || '').matchAll(/\b(KG|BF|ST|WI|GE|IN|WA|WK|CH)b\b/g)].map(m => m[1])
+  )
+  return [...attrs].flatMap(attr => characterStore.attributeBonusModifiers(attr))
+}
+
 const rollDisplay = (roll) =>
   roll.kind === 'damage'
     ? addToNotation(damageNotation(roll), alwaysBonuses(roll.bonuses))
@@ -455,7 +471,7 @@ const startRoll = (power, roll) => {
   if (!dice.connected.value) return
   if (!optionalBonuses(roll.bonuses).length) {
     const always = alwaysBonuses(roll.bonuses)
-    const label = rollLabel(rollName(power, roll), always)
+    const label = rollLabel(rollName(power, roll), [...attributeMods(roll), ...always])
     if (roll.kind === 'damage') {
       dice.roll(addToNotation(damageNotation(roll), always), label)
     } else {
@@ -566,7 +582,16 @@ const editPower = (index) => {
 }
 
 const removePower = (index) => {
-  characterStore.removePsiPower(index)
+  const name = character.value.psiPowers[index]?.name || 'diese Psy-Kraft'
+  $q.dialog({
+    title: 'Psy-Kraft löschen',
+    message: `Willst du die Psy-Kraft "${name}" wirklich löschen?`,
+    cancel: 'Abbrechen',
+    ok: { label: 'Löschen', color: 'negative' },
+    persistent: true
+  }).onOk(() => {
+    characterStore.removePsiPower(index)
+  })
 }
 
 const cancelPowerDialog = () => {

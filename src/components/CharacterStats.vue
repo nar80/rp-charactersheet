@@ -616,6 +616,7 @@
       :title="attrRollTitle(attrRollAttr)"
       :base="attrRollAttr ? attrRollBase(attrRollAttr) : 0"
       :bonuses="attrBonuses(attrRollAttr)"
+      :fixed="attrRollAttr ? attrBuffs(attrRollAttr) : []"
       @roll="(target, label) => dice.test(target, label)"
     />
   </div>
@@ -630,7 +631,6 @@ import NumberInput from "./NumberInput.vue";
 import { useDiceRoom } from "../composables/diceRoom";
 import {
   alwaysBonuses,
-  bonusSum,
   cleanBonuses,
   formatBonus,
   optionalBonuses,
@@ -681,7 +681,7 @@ const getAttributeName = (attr) => {
   return attributeNames[attr] || attr;
 };
 
-// Effective attribute value (base + active buffs)
+// Effective attribute value (base + active buffs + "Immer"-Boni)
 const effectiveAttr = (attr) => characterStore.getEffectiveAttribute(attr);
 
 // Total buff modifier for an attribute (0 if none active)
@@ -691,10 +691,13 @@ const updateAttribute = (attr, value) => {
   characterStore.updateAttribute(attr, value);
 };
 
-// Situative Boni gelten nur für Proben direkt auf das Attribut, nicht für Fertigkeiten
-// oder abgeleitete Werte. Deshalb ändern sie den angezeigten Attributwert nicht.
+// "Immer"-Boni stecken schon im effektiven Wert (gelten auch für Fertigkeiten und abgeleitete
+// Werte); die übrigen situativen Boni gelten nur für Proben direkt auf das Attribut.
 const attrBonuses = (attr) => character.value.attributeBonuses?.[attr] || [];
-const attrRollBase = (attr) => effectiveAttr(attr) + bonusSum(alwaysBonuses(attrBonuses(attr)));
+const attrRollBase = (attr) => effectiveAttr(attr);
+
+// Aktive Buffs auf das Attribut, für den Wurftext (Immer-Boni stehen in attrBonuses)
+const attrBuffs = (attr) => characterStore.attributeModifiers(attr, { always: false });
 
 const attrRollTitle = (attr) => {
   if (!attr) return "";
@@ -707,7 +710,10 @@ const attrRollAttr = ref(null);
 const rollAttribute = (attr) => {
   if (!dice.connected.value) return;
   if (!optionalBonuses(attrBonuses(attr)).length) {
-    dice.test(attrRollBase(attr), rollLabel(attrRollTitle(attr), alwaysBonuses(attrBonuses(attr))));
+    dice.test(
+      attrRollBase(attr),
+      rollLabel(attrRollTitle(attr), [...attrBuffs(attr), ...alwaysBonuses(attrBonuses(attr))])
+    );
     return;
   }
   attrRollAttr.value = attr;
@@ -789,7 +795,17 @@ const rollInitiative = async () => {
     diceCode = `1d10${totalMod}`;
   }
 
-  if (dice.connected.value && dice.roll(diceCode, "Initiative")) return;
+  // Wurftext: "Initiative (+2 GEb Apexalium, +1 Stimm, +2 Mod)"
+  const iniMods = [
+    ...characterStore.attributeBonusModifiers("GE"),
+    ...(character.value.buffs || [])
+      .filter((b) => b.active && b.effects?.INI)
+      .map((b) => ({ id: b.id, label: b.name, value: b.effects.INI })),
+    ...(character.value.initiativeModifier
+      ? [{ id: "mod", label: "Mod", value: character.value.initiativeModifier }]
+      : []),
+  ];
+  if (dice.connected.value && dice.roll(diceCode, rollLabel("Initiative", iniMods))) return;
 
   const command = `/würfle generic eingabe: ${diceCode}`;
 

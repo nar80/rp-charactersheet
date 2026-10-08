@@ -56,7 +56,9 @@ const props = defineProps({
   // Probe: Zielwert inklusive der "Immer"-Boni.
   // Schaden: Würfelausdruck ohne Boni (String), z. B. "2W10+4".
   base: { type: [Number, String], default: 0 },
-  bonuses: { type: Array, default: () => [] }
+  bonuses: { type: Array, default: () => [] },
+  // Schon in base enthaltene, feste Modifikatoren (Buffs u. ä.) – nur für den Wurftext
+  fixed: { type: Array, default: () => [] }
 })
 
 // roll(target, label) – target ist der Zielwert (Probe) oder der Würfelausdruck (Schaden);
@@ -84,7 +86,7 @@ const target = computed(() =>
 )
 
 function confirm() {
-  emit('roll', target.value, rollLabel(props.title, chosen.value))
+  emit('roll', target.value, rollLabel(props.title, [...props.fixed, ...chosen.value]))
   open.value = false
 }
 </script>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { defaultBuffs, createEmptyEffects } from '../data/buffs.js'
+import { alwaysBonuses, bonusSum, isDiceValue } from '../composables/situationalBonuses.js'
 
 const STORAGE_KEY = 'rp-character'
 
@@ -59,6 +60,7 @@ const createDefaultCharacter = () => ({
     selectedKgManeuver: null,
     selectedBfManeuver: null,
     selectedKgWeaponIndex: null,
+    selectedKgParryWeaponIndex: null,
     selectedBfWeaponIndex: null
   },
 
@@ -389,11 +391,38 @@ export const useCharacterStore = defineStore('character', () => {
     return mod
   })
 
-  // Effective attribute value = base + active buff modifiers.
-  // This is the value that should drive ALL calculations (skills, combat, movement, ...).
+  // Effective attribute value - drives ALL calculations (skills, combat, movement, ...).
+  // Basis + aktive Buffs + "Immer"-Boni des Attributs. Damit zählen Immer-Boni auch für
+  // Fertigkeiten, Initiative, Schaden (Attributbonus) und Psy-Kräfte.
   const getEffectiveAttribute = (attr) => {
     const base = character.value.attributes[attr] || 0
-    return base + (activeBuffModifiers.value[attr] || 0)
+    const always = bonusSum(alwaysBonuses(character.value.attributeBonuses?.[attr]))
+    return base + (activeBuffModifiers.value[attr] || 0) + always
+  }
+
+  // Für den Wurftext: aktive Buffs und "Immer"-Boni, die ein Attribut verändern.
+  // [{ id, label, value }], z. B. [{ label: 'Apexalium', value: 20 }]
+  const attributeModifiers = (attr, { always = true } = {}) => [
+    ...(character.value.buffs || [])
+      .filter(b => b.active && b.effects)
+      .map(b => ({
+        id: `buff-${b.id}`,
+        label: b.name,
+        value: (b.effects.ALL || 0) + (b.effects[attr] || 0)
+      })),
+    ...(always ? alwaysBonuses(character.value.attributeBonuses?.[attr]) : [])
+      .filter(b => !isDiceValue(b.value))
+  ].filter(m => Number(m.value))
+
+  // Für Schaden/Initiative: wie stark Buffs und "Immer"-Boni den Attributbonus (Zehnerstelle)
+  // ändern, z. B. [{ label: 'GEb Apexalium/Kraftgürtel', value: 2 }]. Leer ohne Auswirkung.
+  const attributeBonusModifiers = (attr) => {
+    const mods = attributeModifiers(attr)
+    const base = character.value.attributes[attr] || 0
+    const diff = Math.floor(getEffectiveAttribute(attr) / 10) - Math.floor(base / 10)
+    return diff && mods.length
+      ? [{ id: `${attr}b`, label: `${attr}b ${mods.map(m => m.label).join('/')}`, value: diff }]
+      : []
   }
 
   // Load from localStorage on init
@@ -888,6 +917,8 @@ export const useCharacterStore = defineStore('character', () => {
     deactivateAllBuffs,
     activeBuffModifiers,
     getEffectiveAttribute,
+    attributeModifiers,
+    attributeBonusModifiers,
     loadCharacter,
     resetCharacter,
     getSkillValue

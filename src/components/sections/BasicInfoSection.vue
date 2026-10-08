@@ -228,9 +228,22 @@
 <script setup>
 import { ref } from "vue";
 import { storeToRefs } from "pinia";
+import { useQuasar } from "quasar";
 import { useCharacterStore } from "../../stores/characterStore";
 
+const $q = useQuasar();
 const characterStore = useCharacterStore();
+
+const confirmDelete = (title, text, onOk) =>
+  $q
+    .dialog({
+      title,
+      message: `Willst du "${text}" wirklich löschen?`,
+      cancel: "Abbrechen",
+      ok: { label: "Löschen", color: "negative" },
+      persistent: true,
+    })
+    .onOk(onOk);
 const { character } = storeToRefs(characterStore);
 
 const newDisorder = ref("");
@@ -248,7 +261,8 @@ const addDisorder = () => {
 };
 
 const removeDisorder = (index) => {
-  character.value.insanity.disorders.splice(index, 1);
+  const disorders = character.value.insanity.disorders;
+  confirmDelete("Geisteskrankheit löschen", disorders[index], () => disorders.splice(index, 1));
 };
 
 const addMalignancy = () => {
@@ -259,6 +273,7 @@ const addMalignancy = () => {
 };
 
 const removeMalignancy = (index) => {
-  character.value.corruption.malignancies.splice(index, 1);
+  const malignancies = character.value.corruption.malignancies;
+  confirmDelete("Metastase löschen", malignancies[index], () => malignancies.splice(index, 1));
 };
 </script>

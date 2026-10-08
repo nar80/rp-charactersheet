@@ -102,18 +102,9 @@
             round
             size="sm"
             icon="refresh"
-            :color="kgModifier !== 0 || bfModifier !== 0 ? 'primary' : 'grey-7'"
-            :disable="kgModifier === 0 && bfModifier === 0"
-            @click="
-              activeKgModifiers = [];
-              activeBfModifiers = [];
-              selectedKgManeuver = null;
-              selectedBfManeuver = null;
-              selectedKgWeaponIndex = null;
-              selectedBfWeaponIndex = null;
-              kgModifier = 0;
-              bfModifier = 0;
-            "
+            :color="combatResettable ? 'primary' : 'grey-7'"
+            :disable="!combatResettable"
+            @click="resetCombat"
           >
             <q-tooltip>Modifikatoren zurücksetzen</q-tooltip>
           </q-btn>
@@ -587,15 +578,23 @@
                         size="md"
                         icon="refresh"
                         color="primary"
-                        :disable="
-                          getWeaponAmmo(weapon) >= parseInt(weapon.magazine)
-                        "
+                        :disable="!canReload(weapon)"
                         @click="reloadWeapon(weapon, index)"
                       >
                         <q-tooltip
-                          >Nachladen ({{ weapon.reload || "Voll" }})</q-tooltip
+                          >Nachladen ({{ weapon.reload || "Voll" }}){{
+                            ammoStockText(weapon) ? ` – ${ammoStockText(weapon)}` : ""
+                          }}</q-tooltip
                         >
                       </q-btn>
+                      <span
+                        v-if="weapon.ammoSource"
+                        class="text-caption q-ml-xs"
+                        :class="ammoStock(weapon) > 0 ? 'text-grey-5' : 'text-negative'"
+                      >
+                        {{ ammoSourceOf(weapon) ? `Vorrat: ${ammoStock(weapon)}` : "Keine Munition" }}
+                        <q-tooltip>{{ ammoStockText(weapon) }}</q-tooltip>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -872,7 +871,7 @@
               >
                 <q-item-section avatar>
                   <q-avatar color="grey-8" text-color="white" size="sm">
-                    {{ item.quantity || 1 }}
+                    {{ gearQuantity(item) }}
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
@@ -898,6 +897,9 @@
                     />
                     {{ item.name }}
                   </q-item-label>
+                  <q-item-label caption v-if="item.ammo" class="text-cyan-4">
+                    Munition ({{ item.ammoUnit === "magazines" ? "Magazine" : "Schuss" }})
+                  </q-item-label>
                   <q-item-label caption v-if="item.description">{{
                     item.description
                   }}</q-item-label>
@@ -919,7 +921,7 @@
                       icon="remove"
                       color="grey-6"
                       @click="changeGearQuantityByItem(item, -1)"
-                      :disable="item.quantity <= 1"
+                      :disable="gearQuantity(item) <= (item.ammo ? 0 : 1)"
                     />
                     <q-btn
                       flat
@@ -987,7 +989,7 @@
               >
                 <q-item-section avatar>
                   <q-avatar color="grey-8" text-color="white" size="sm">
-                    {{ item.quantity || 1 }}
+                    {{ gearQuantity(item) }}
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
@@ -1013,6 +1015,9 @@
                     />
                     {{ item.name }}
                   </q-item-label>
+                  <q-item-label caption v-if="item.ammo" class="text-cyan-4">
+                    Munition ({{ item.ammoUnit === "magazines" ? "Magazine" : "Schuss" }})
+                  </q-item-label>
                   <q-item-label caption v-if="item.description">{{
                     item.description
                   }}</q-item-label>
@@ -1034,7 +1039,7 @@
                       icon="remove"
                       color="grey-6"
                       @click="changeGearQuantityByItem(item, -1)"
-                      :disable="item.quantity <= 1"
+                      :disable="gearQuantity(item) <= (item.ammo ? 0 : 1)"
                     />
                     <q-btn
                       flat
@@ -1352,6 +1357,13 @@
                 {{ getWeaponAmmo(currentSelectedWeapon) }}/{{
                   currentSelectedWeapon.magazine
                 }}
+                <div
+                  v-if="currentSelectedWeapon.ammoSource"
+                  class="text-caption"
+                  :class="ammoStock(currentSelectedWeapon) > 0 ? 'text-grey-6' : 'text-negative'"
+                >
+                  {{ ammoStockText(currentSelectedWeapon) }}
+                </div>
               </div>
               <q-btn
                 flat
@@ -1361,6 +1373,7 @@
                 icon="refresh"
                 color="grey-5"
                 style="flex: 0 0 auto"
+                :disable="!canReload(currentSelectedWeapon)"
                 @click="
                   reloadWeapon(currentSelectedWeapon, currentSelectedWeaponIndex)
                 "
@@ -1775,11 +1788,7 @@
             label="Alle zurücksetzen"
             color="grey"
             @click="resetCurrentAll"
-            :disable="
-              currentActiveModifiers.length === 0 &&
-              !currentSelectedManeuver &&
-              !currentSelectedWeapon
-            "
+            :disable="!statResettable(currentModifierStat)"
           />
           <q-btn flat label="Schließen" color="primary" v-close-popup />
         </q-card-actions>
@@ -2040,6 +2049,24 @@
                 clearable
               />
 
+              <!-- Munitionsquelle: Gegenstand aus der Ausrüstung, der als Munition markiert ist -->
+              <q-select
+                v-if="!isMeleeWeapon"
+                v-model="newWeapon.ammoSource"
+                :options="ammoSourceOptions"
+                label="Munition aus"
+                filled
+                dense
+                emit-value
+                map-options
+                clearable
+                :hint="
+                  ammoSourceOptions.length
+                    ? 'Leer = unbegrenzt nachladen'
+                    : 'Erst einen Gegenstand in der Ausrüstung als Munition markieren'
+                "
+              />
+
               <!-- Fernkampf Traits -->
               <q-select
                 v-if="!isMeleeWeapon"
@@ -2130,6 +2157,40 @@
                 clearable
                 hint="Nur eine Zielvorrichtung möglich"
               />
+
+              <!-- Eigene Boni der Waffe (z. B. Zielvorrichtung, Talent für diese Waffe) -->
+              <div>
+                <div class="text-caption text-grey-6 q-mb-xs">
+                  Eigene Boni (gelten, wenn die Waffe im Kampf-Dialog gewählt ist)
+                </div>
+                <div
+                  v-for="(b, i) in newWeapon.bonuses || []"
+                  :key="b.id"
+                  class="row q-col-gutter-sm items-center q-mb-xs"
+                >
+                  <q-input v-model="b.label" label="Bezeichnung" filled dense class="col" />
+                  <q-input
+                    v-model.number="b.value"
+                    label="Wert"
+                    type="number"
+                    filled
+                    dense
+                    style="width: 80px"
+                  />
+                  <q-select
+                    v-model="b.target"
+                    :options="weaponBonusTargets"
+                    label="Für"
+                    filled
+                    dense
+                    emit-value
+                    map-options
+                    style="width: 130px"
+                  />
+                  <q-btn flat round dense icon="delete" color="negative" @click="newWeapon.bonuses.splice(i, 1)" />
+                </div>
+                <q-btn flat dense size="sm" icon="add" label="Bonus" color="primary" @click="addWeaponBonus" />
+              </div>
             </div>
           </q-tab-panel>
 
@@ -2501,8 +2562,33 @@
             type="number"
             filled
             dense
-            min="1"
+            :min="newGear.ammo ? 0 : 1"
           />
+
+          <!-- Munition: Waffen können daraus nachladen ("Munition aus" im Waffen-Dialog) -->
+          <div>
+            <q-checkbox v-model="newGear.ammo" label="Munition" color="cyan" />
+            <q-btn-toggle
+              v-if="newGear.ammo"
+              v-model="newGear.ammoUnit"
+              :options="[
+                { label: 'Schuss', value: 'rounds' },
+                { label: 'Magazine', value: 'magazines' },
+              ]"
+              dense
+              no-caps
+              unelevated
+              toggle-color="cyan-8"
+              class="q-ml-md"
+            />
+            <div v-if="newGear.ammo" class="text-caption text-grey-6 q-mt-xs">
+              {{
+                newGear.ammoUnit === "magazines"
+                  ? "Anzahl = Magazine/Zellen. Nachladen verbraucht 1 und füllt die Waffe ganz, Restladung verfällt."
+                  : "Anzahl = Schuss. Nachladen nimmt nur, was ins Magazin passt."
+              }}
+            </div>
+          </div>
 
           <q-select
             v-model="newGear.quality"
@@ -2585,7 +2671,7 @@ import {
 } from "../../composables/weaponSounds.js";
 import draggable from "vuedraggable";
 import { useDiceRoom } from "../../composables/diceRoom";
-import { cleanBonuses, formatBonus } from "../../composables/situationalBonuses";
+import { cleanBonuses, formatBonus, rollLabel, tagAttribute } from "../../composables/situationalBonuses";
 import SituationalBonusEditor from "../SituationalBonusEditor.vue";
 
 const $q = useQuasar();
@@ -2609,6 +2695,7 @@ const ensureCombatState = () => {
       selectedKgManeuver: null,
       selectedBfManeuver: null,
       selectedKgWeaponIndex: null,
+      selectedKgParryWeaponIndex: null,
       selectedBfWeaponIndex: null,
       kgAction: "attack",
     };
@@ -2741,14 +2828,21 @@ const selectedBfManeuver = computed({
 });
 
 // Selected weapons for modifier calculation - persisted
+// KG-Angriff und KG-Parade merken sich je eine eigene Waffe. Ältere Stände ohne
+// Parade-Waffe übernehmen die Angriffswaffe.
+const kgWeaponKey = () =>
+  kgAction.value === "parry" ? "selectedKgParryWeaponIndex" : "selectedKgWeaponIndex";
 const selectedKgWeaponIndex = computed({
   get: () => {
     ensureCombatState();
-    return character.value.combatState.selectedKgWeaponIndex;
+    const state = character.value.combatState;
+    return state[kgWeaponKey()] !== undefined
+      ? state[kgWeaponKey()]
+      : state.selectedKgWeaponIndex;
   },
   set: (val) => {
     ensureCombatState();
-    character.value.combatState.selectedKgWeaponIndex = val;
+    character.value.combatState[kgWeaponKey()] = val;
   },
 });
 const selectedBfWeaponIndex = computed({
@@ -3294,6 +3388,15 @@ const calculateWeaponBonus = (weapon, stat, maneuver) => {
     }
   }
 
+  // Eigene Boni der Waffe, je für KG-Angriff, KG-Parade oder BF
+  const target = stat === "KG" && actionFor(stat) === "parry" ? "KG_parry" : stat;
+  for (const b of weapon.bonuses || []) {
+    const value = Number(b.value) || 0;
+    if ((b.target || "BF") !== target || !value) continue;
+    bonus += value;
+    details.push(`${b.label}: ${value > 0 ? "+" : ""}${value}`);
+  }
+
   return { bonus, details };
 };
 
@@ -3586,17 +3689,75 @@ const updateCombatAttribute = (newAttribute) => {
   }
 };
 
-// Reset all modifiers, maneuver, and weapon for current stat
-const resetCurrentAll = () => {
-  if (currentModifierStat.value === "KG") {
+// Weicht KG bzw. BF vom Grundzustand ab? Nicht an der Modifikator-Summe festmachen:
+// +10 und -10 ergeben 0, sind aber trotzdem ausgewählt.
+const statResettable = (stat) => {
+  ensureCombatAttributes();
+  return stat === "KG"
+    ? activeKgModifiers.value.length > 0 ||
+        !!selectedKgManeuver.value ||
+        character.value.combatState.selectedKgWeaponIndex != null ||
+        character.value.combatState.selectedKgParryWeaponIndex != null ||
+        character.value.combatAttributes.kg !== "KG" ||
+        kgAction.value !== "attack"
+    : activeBfModifiers.value.length > 0 ||
+        !!selectedBfManeuver.value ||
+        selectedBfWeaponIndex.value != null ||
+        character.value.combatAttributes.bf !== "BF";
+};
+// Die im Kampf-Dialog gewählten Waffen werden per Index gemerkt. Ändert sich die Liste
+// (Löschen, Einlagern, Umsortieren), die Auswahl über das Waffenobjekt neu zuordnen,
+// sonst zeigt sie plötzlich auf eine andere Waffe.
+// Beim Laden eines anderen Charakters bleibt dessen eigene Auswahl unangetastet.
+watch(
+  () => ({ owner: character.value, list: [...(character.value.weapons || [])] }),
+  ({ owner, list: now }, previous) => {
+    const state = character.value.combatState;
+    if (!state || !previous || previous.owner !== owner) return;
+    const before = previous.list;
+    let changed = false;
+    for (const key of ["selectedKgWeaponIndex", "selectedKgParryWeaponIndex", "selectedBfWeaponIndex"]) {
+      const index = state[key];
+      if (index == null) continue;
+      const moved = now.indexOf(before[index]);
+      const next = moved >= 0 ? moved : null;
+      if (next !== index) {
+        state[key] = next;
+        changed = true;
+      }
+    }
+    if (changed) updateModifierTotals();
+  },
+);
+
+const combatResettable = computed(() => statResettable("KG") || statResettable("BF"));
+
+// Modifikatoren, Manöver, Waffe, Bezugsattribut (und bei KG Parade -> Angriff) zurücksetzen
+const resetStat = (stat) => {
+  ensureCombatAttributes();
+  if (stat === "KG") {
     activeKgModifiers.value = [];
     selectedKgManeuver.value = null;
-    selectedKgWeaponIndex.value = null;
+    character.value.combatState.selectedKgWeaponIndex = null;
+    character.value.combatState.selectedKgParryWeaponIndex = null;
+    character.value.combatAttributes.kg = "KG";
+    if (kgAction.value !== "attack") kgAction.value = "attack";
   } else {
     activeBfModifiers.value = [];
     selectedBfManeuver.value = null;
     selectedBfWeaponIndex.value = null;
+    character.value.combatAttributes.bf = "BF";
   }
+};
+
+const resetCurrentAll = () => {
+  resetStat(currentModifierStat.value);
+  updateModifierTotals();
+};
+
+const resetCombat = () => {
+  resetStat("KG");
+  resetStat("BF");
   updateModifierTotals();
 };
 
@@ -3935,9 +4096,31 @@ const newWeapon = ref({
   traits: [],
   mods: [],
   description: "",
+  ammoSource: null,
 });
 
 const weaponEditTab = ref("properties");
+
+// Eigene Waffen-Boni: [{ id, label, value, target: 'KG' | 'KG_parry' | 'BF' }]
+const weaponBonusTargets = [
+  { value: "KG", label: "KG Angriff" },
+  { value: "KG_parry", label: "KG Parade" },
+  { value: "BF", label: "BF" },
+];
+const addWeaponBonus = () => {
+  if (!newWeapon.value.bonuses) newWeapon.value.bonuses = [];
+  newWeapon.value.bonuses.push({
+    id: Date.now() + Math.random(),
+    label: "",
+    value: 10,
+    target: isMeleeWeapon.value ? "KG" : "BF",
+  });
+};
+// Leere Einträge (ohne Bezeichnung oder Wert 0) fallen beim Speichern weg
+const cleanWeaponBonuses = (bonuses = []) =>
+  bonuses
+    .map((b) => ({ ...b, label: String(b.label || "").trim(), value: Number(b.value) || 0 }))
+    .filter((b) => b.label && b.value);
 
 // Check if current weapon is melee
 const isMeleeWeapon = computed(() => {
@@ -4106,7 +4289,11 @@ const copyDamageRoll = async (weapon) => {
     weapon,
   );
   const proven = getProvenValue(weapon);
-  const roomNotes = [hasReissend && "Reißend", proven && `Proven ${proven}`]
+  const roomNotes = [
+    hasPenetration(weapon) && `DS ${weapon.penetration}`,
+    hasReissend && "Reißend",
+    proven && `Proven ${proven}`,
+  ]
     .filter(Boolean)
     .join(", ");
   const damageLabel = `Schaden – ${weapon.name}${roomNotes ? ` (${roomNotes})` : ""}`;
@@ -4167,7 +4354,7 @@ const confirmRighteousFury = (weapon, damageSoFar) => {
       if (!result.success) return;
       dice.roll(
         withProven(`1d10+${damageSoFar}`, weapon),
-        `Zorn des Imperators – ${weapon.name} (Gesamtschaden)`,
+        `Zorn des Imperators – ${weapon.name} (Gesamtschaden${hasPenetration(weapon) ? `, DS ${weapon.penetration}` : ""})`,
         {
           fury: true,
           onFury: (furyRoll) => confirmRighteousFury(weapon, furyRoll.total),
@@ -4177,11 +4364,19 @@ const confirmRighteousFury = (weapon, damageSoFar) => {
   });
 };
 
+// Buffs und "Immer"-Boni auf das (ggf. getauschte) Kampfattribut, für den Wurftext
+const combatAttributeMods = (stat) => {
+  ensureCombatAttributes();
+  const attr = character.value.combatAttributes[stat.toLowerCase()] || stat;
+  return tagAttribute(attr, characterStore.attributeModifiers(attr));
+};
+
 const rollCombatTest = () => {
   const stat = currentModifierStat.value;
+  const mods = combatAttributeMods(stat);
   if (isParry.value) {
     const weapon = currentSelectedWeapon.value?.name;
-    dice.test(currentTotal.value, `KG – Parade${weapon ? `, ${weapon}` : ""}`);
+    dice.test(currentTotal.value, rollLabel(`KG – Parade${weapon ? `, ${weapon}` : ""}`, mods));
     return;
   }
   // Ziel für die Bestätigung von "Zorn des Imperators" - nur Angriffe zählen
@@ -4198,7 +4393,7 @@ const rollCombatTest = () => {
     : stat === "KG"
       ? "Kampfgeschick"
       : "Ballistische Fertigkeit";
-  dice.test(currentTotal.value, label);
+  dice.test(currentTotal.value, rollLabel(label, mods));
 };
 
 // Armor state
@@ -4235,6 +4430,8 @@ const newGear = ref({
   description: "",
   isArtifact: false,
   isTrophy: false,
+  ammo: false,
+  ammoUnit: "rounds",
 });
 
 // Weapon functions
@@ -4265,6 +4462,7 @@ const editWeapon = (index) => {
     mods: weapon.mods || [],
     rangedTraits: weapon.rangedTraits || [],
     description: weapon.description || "",
+    bonuses: (weapon.bonuses || []).map((b) => ({ ...b })),
   };
   weaponEditTab.value = "properties";
   showAddWeaponDialog.value = true;
@@ -4273,12 +4471,11 @@ const editWeapon = (index) => {
 const saveWeapon = () => {
   if (!newWeapon.value.name) return;
 
+  const weapon = { ...newWeapon.value, bonuses: cleanWeaponBonuses(newWeapon.value.bonuses) };
   if (editingWeaponIndex.value !== null) {
-    characterStore.updateWeapon(editingWeaponIndex.value, {
-      ...newWeapon.value,
-    });
+    characterStore.updateWeapon(editingWeaponIndex.value, weapon);
   } else {
-    characterStore.addWeapon({ ...newWeapon.value });
+    characterStore.addWeapon(weapon);
   }
 
   cancelWeaponDialog();
@@ -4302,6 +4499,7 @@ const duplicateWeapon = () => {
   const copy = {
     ...newWeapon.value,
     name: newWeapon.value.name + " (Kopie)",
+    bonuses: cleanWeaponBonuses(newWeapon.value.bonuses),
   };
   characterStore.addWeapon(copy);
   cancelWeaponDialog();
@@ -4391,12 +4589,63 @@ const fireWeapon = (weapon, index, mode) => {
   playWeaponSound(weapon, mode, parseRof(weapon.rof)[mode]);
 };
 
-// Reload weapon (reset to magazine capacity)
+// --- Munitionsvorrat ---------------------------------------------------------
+// Waffen können aus einem Ausrüstungsgegenstand mit ammo: true nachladen (weapon.ammoSource
+// = dessen id). ammoUnit "rounds": Anzahl = Schuss, nachgeladen wird nur, was ins Magazin
+// passt. "magazines": Anzahl = Magazine/Zellen, eins pro Nachladen, Restladung verfällt.
+// Ohne Quelle wird wie bisher unbegrenzt nachgeladen.
+const ammoSourceOf = (weapon) =>
+  weapon?.ammoSource
+    ? character.value.gear.find((g) => g.ammo && g.id === weapon.ammoSource) || null
+    : null;
+
+// Verfügbarer Vorrat; verknüpfter, aber fehlender (gelöschter/eingelagerter) Gegenstand = 0
+const ammoStock = (weapon) => Number(ammoSourceOf(weapon)?.quantity) || 0;
+
+const ammoStockText = (weapon) => {
+  if (!weapon?.ammoSource) return "";
+  const source = ammoSourceOf(weapon);
+  if (!source) return "Munition nicht in der Ausrüstung";
+  const unit = source.ammoUnit === "magazines" ? " Mag." : "";
+  return `Vorrat: ${ammoStock(weapon)}${unit} ${source.name}`;
+};
+
+const canReload = (weapon) =>
+  !!weapon &&
+  getWeaponAmmo(weapon) < (parseInt(weapon.magazine) || 0) &&
+  (!weapon.ammoSource || ammoStock(weapon) > 0);
+
 const reloadWeapon = (weapon, index) => {
+  if (!canReload(weapon)) return;
   const maxAmmo = parseInt(weapon.magazine) || 0;
-  characterStore.updateWeapon(index, { currentAmmo: maxAmmo });
+  let loaded = maxAmmo;
+  const source = ammoSourceOf(weapon);
+  if (source) {
+    const stock = ammoStock(weapon);
+    if (source.ammoUnit === "magazines") {
+      source.quantity = stock - 1;
+    } else {
+      const take = Math.min(maxAmmo - getWeaponAmmo(weapon), stock);
+      source.quantity = stock - take;
+      loaded = getWeaponAmmo(weapon) + take;
+    }
+  }
+  characterStore.updateWeapon(index, { currentAmmo: loaded });
   playReloadSound(weapon);
 };
+
+const ammoSourceOptions = computed(() =>
+  character.value.gear
+    .filter((g) => g.ammo && g.id)
+    .map((g) => ({
+      value: g.id,
+      label: `${g.name} (${gearQuantity(g)} ${g.ammoUnit === "magazines" ? "Mag." : "Schuss"})`,
+    })),
+);
+
+// Munition darf auf 0 sinken, andere Gegenstände zählen mindestens 1
+const gearQuantity = (item) =>
+  item.ammo ? Number(item.quantity) || 0 : item.quantity || 1;
 
 // Check if weapon has ammo tracking (has magazine)
 const hasAmmoTracking = (weapon) => {
@@ -4730,11 +4979,14 @@ const editGear = (index) => {
   const gear = character.value.gear[index];
   newGear.value = {
     name: gear.name || "",
-    quantity: gear.quantity || 1,
+    quantity: gearQuantity(gear),
     quality: gear.quality || "",
     description: gear.description || "",
     isArtifact: gear.isArtifact || false,
     isTrophy: gear.isTrophy || false,
+    ammo: gear.ammo || false,
+    ammoUnit: gear.ammoUnit || "rounds",
+    id: gear.id,
   };
   showAddGearDialog.value = true;
 };
@@ -4766,6 +5018,10 @@ const getGearQualityColor = (quality) => {
 
 const saveGear = () => {
   if (!newGear.value.name) return;
+  // Munition braucht eine feste id, damit Waffen darauf verweisen können
+  if (newGear.value.ammo && !newGear.value.id) {
+    newGear.value.id = `gear-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  }
 
   if (editingGearIndex.value !== null) {
     characterStore.updateGear(editingGearIndex.value, { ...newGear.value });
@@ -4782,8 +5038,8 @@ const saveGear = () => {
 
 const changeGearQuantity = (index, delta) => {
   const item = character.value.gear[index];
-  const newQuantity = (item.quantity || 1) + delta;
-  if (newQuantity >= 1) {
+  const newQuantity = gearQuantity(item) + delta;
+  if (newQuantity >= (item.ammo ? 0 : 1)) {
     characterStore.updateGear(index, { quantity: newQuantity });
   }
 };
@@ -4855,6 +5111,8 @@ const cancelGearDialog = () => {
     description: "",
     isArtifact: false,
     isTrophy: false,
+    ammo: false,
+    ammoUnit: "rounds",
   };
 };
 </script>

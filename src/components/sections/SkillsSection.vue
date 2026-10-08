@@ -609,6 +609,7 @@
       :title="skillLabel(rollingSkill)"
       :base="rollingSkill ? skillTotal(rollingSkill) : 0"
       :bonuses="rollingSkill?.situationalBonuses || []"
+      :fixed="rollingSkill ? attributeMods(rollingSkill) : []"
       @roll="(target, label) => dice.test(target, label)"
     />
   </q-card>
@@ -625,7 +626,8 @@ import {
   bonusSum,
   cleanBonuses,
   optionalBonuses as optionalOf,
-  rollLabel
+  rollLabel,
+  tagAttribute
 } from '../../composables/situationalBonuses'
 import SituationalBonusEditor from '../SituationalBonusEditor.vue'
 import SituationalRollDialog from '../SituationalRollDialog.vue'
@@ -833,10 +835,17 @@ const skillTotal = (skill) => getSkillValue(skill) + bonusSum(alwaysBonuses(skil
 const skillLabel = (skill) =>
   skill ? `${skill.name}${skill.specialization ? ` - ${skill.specialization}` : ''}` : ''
 
+// Buffs und "Immer"-Boni des zugrundeliegenden Attributs, für den Wurftext
+const attributeMods = (skill) =>
+  tagAttribute(skill.attribute, characterStore.attributeModifiers(skill.attribute))
+
 const rollSkill = (skill) => {
   if (!dice.connected.value) return
   if (!optionalBonuses(skill).length) {
-    dice.test(skillTotal(skill), rollLabel(skillLabel(skill), alwaysBonuses(skill.situationalBonuses)))
+    dice.test(
+      skillTotal(skill),
+      rollLabel(skillLabel(skill), [...attributeMods(skill), ...alwaysBonuses(skill.situationalBonuses)])
+    )
     return
   }
   rollingSkill.value = skill

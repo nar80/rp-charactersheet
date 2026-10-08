@@ -33,6 +33,10 @@ export const rollLabel = (name, applied = []) =>
     ? `${name} (${applied.map(b => `${formatBonus(b.value)} ${b.label}`).join(', ')})`
     : name
 
+// Attribut-Modifikatoren in Fertigkeits-/Kampfwürfen kenntlich machen: "+20 ST Apexalium"
+export const tagAttribute = (attr, modifiers = []) =>
+  modifiers.map(m => ({ ...m, label: `${attr} ${m.label}` }))
+
 export const newBonus = (value = 10) => ({
   id: Date.now() + Math.random(),
   label: '',
