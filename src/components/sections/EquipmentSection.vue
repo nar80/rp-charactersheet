@@ -4350,6 +4350,7 @@ const confirmRighteousFury = (weapon, damageSoFar) => {
     lastAttackTargets[weapon.name] ??
     (isWeaponMelee(weapon) ? kgTotal.value : bfTotal.value);
   dice.test(target, `Bestätigung Zorn des Imperators – ${weapon.name}`, {
+    exhaustion: false, // steckt schon in kgTotal/bfTotal
     onResult: (roll, result) => {
       if (!result.success) return;
       dice.roll(
@@ -4376,7 +4377,7 @@ const rollCombatTest = () => {
   const mods = combatAttributeMods(stat);
   if (isParry.value) {
     const weapon = currentSelectedWeapon.value?.name;
-    dice.test(currentTotal.value, rollLabel(`KG – Parade${weapon ? `, ${weapon}` : ""}`, mods));
+    dice.test(currentTotal.value, rollLabel(`KG – Parade${weapon ? `, ${weapon}` : ""}`, mods), { exhaustion: false });
     return;
   }
   // Ziel für die Bestätigung von "Zorn des Imperators" - nur Angriffe zählen
@@ -4393,7 +4394,8 @@ const rollCombatTest = () => {
     : stat === "KG"
       ? "Kampfgeschick"
       : "Ballistische Fertigkeit";
-  dice.test(currentTotal.value, rollLabel(label, mods));
+  // Erschöpfung steckt schon im KG/BF-Modifikator (dort abwählbar), nicht doppelt abziehen
+  dice.test(currentTotal.value, rollLabel(label, mods), { exhaustion: false });
 };
 
 // Armor state
