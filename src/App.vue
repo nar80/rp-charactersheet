@@ -73,6 +73,9 @@
                 Würfelraum „{{ dice.slugifyRoom(settingsStore.currentRoom) }}“:
                 {{ { connected: 'verbunden', connecting: 'verbinde …', disconnected: 'getrennt' }[dice.state.status] }}
                 <div v-if="dice.state.players.length">Online: {{ dice.state.players.join(', ') }}</div>
+                <div v-if="roomMismatch" class="text-warning">
+                  Achtung: Der Raum spielt {{ roomMismatch }} – Proben werden trotzdem richtig ausgewertet
+                </div>
                 <div>Klick öffnet den Verlauf</div>
               </template>
             </q-tooltip>
@@ -104,12 +107,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, defineAsyncComponent } from 'vue'
+import { ref, computed, watch, watchEffect, defineAsyncComponent } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from './core/settingsStore'
-import { initDiceRoom, useDiceRoom } from './core/diceRoom'
+import { initDiceRoom, useDiceRoom, setDiceAvatar, makeThumbnail } from './core/diceRoom'
 import { useCharacterFile } from './core/characterFile'
 import { systems, findSystem, DEFAULT_SYSTEM } from './systems'
 
@@ -128,11 +131,28 @@ const headerInfo = computed(() => headerInfos[system.value.id])
 
 initDiceRoom()
 const dice = useDiceRoom()
-const diceStatusColor = computed(() => ({
-  connected: 'positive',
-  connecting: 'warning',
-  disconnected: 'negative'
-})[dice.state.status])
+// Portrait des offenen Bogens als Avatar im Würfelraum (auch nach System- oder Charakterwechsel)
+watch(
+  () => system.value.useStore().character.portrait,
+  async (portrait) => {
+    const thumbnail = portrait ? await makeThumbnail(portrait) : ''
+    // Inzwischen geändert? Dann gilt der neuere Aufruf
+    if (portrait === system.value.useStore().character.portrait) setDiceAvatar(thumbnail)
+  },
+  { immediate: true }
+)
+
+// Spielt der Raum ein anderes System als der offene Bogen? (Name des Raum-Systems oder '')
+const roomMismatch = computed(() => {
+  const roomSystem = dice.state.roomSystem
+  if (!roomSystem || roomSystem === system.value.id) return ''
+  return dice.state.server?.systems?.find((s) => s.id === roomSystem)?.name || roomSystem
+})
+const diceStatusColor = computed(() =>
+  dice.state.status === 'connected' && roomMismatch.value
+    ? 'warning'
+    : { connected: 'positive', connecting: 'warning', disconnected: 'negative' }[dice.state.status]
+)
 
 // Systemabhängige Optik: Themes hängen sich an body[data-system]
 watchEffect(() => {

@@ -38,7 +38,7 @@
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useCairnStore } from '../stores/characterStore'
-import { useCairnDice, evaluateSave } from '../composables/dice'
+import { useCairnDice } from '../composables/dice'
 import { scars } from '../data/tables'
 
 const props = defineProps({ entry: { type: Object, required: true } })
@@ -84,8 +84,8 @@ async function roll(step) {
     const label = `Verletzung ${scar.value.title}: ${step.label}`
     if (step.type === 'save') {
       const value = store.character.attributes.WK.value
-      const r = await cairnDice.rollValue('1d20', `${label} (WK ${value})`)
-      const result = evaluateSave(r.total, value)
+      const result = await cairnDice.saveValue(value, `${label} (WK)`)
+      const r = result
       store.applyScarStep(props.entry.id, step, r.total, { success: result.success })
       notify(`${step.label}: ${r.total} gegen ${value}`, result.text, result.success ? 'positive' : 'negative')
     } else {

@@ -43,7 +43,8 @@ export function useDiceRoom() {
     }
     return core.test(finalTarget, finalLabel, {
       present(roll) {
-        const result = evaluateTest(roll.total, roll.target)
+        // Neuer Würfelraum liefert die Auswertung mit (gleiche Regel); älterer: selbst auswerten
+        const result = roll.outcome ?? evaluateTest(roll.total, roll.target)
         onResult?.(roll, result)
         return {
           html: false,

@@ -6,14 +6,19 @@ import { useSettingsStore } from './settingsStore'
 
 export const DICE_SERVER = import.meta.env.VITE_DICE_SERVER || 'https://dice-room.dice-room.workers.dev'
 
-const state = reactive({ status: 'disconnected', players: [] })
+// server: Begrüßung des Würfelraums ({ version, systems }); null = älterer Server ohne Begrüßung.
+// roomSystem: welches System der Raum spielt (stellt die SL im Würfelraum ein).
+const state = reactive({ status: 'disconnected', players: [], server: null, roomSystem: null })
 
 let socket = null
 let pingTimer = null
 let retryTimer = null
 let retryDelay = 1000
 let wanted = null
+// Eigene Würfe, die auf ihr Ergebnis warten: { requestId, options }
 let pending = []
+// Avatar im Würfelraum (Vorschaubild des Portraits); '' = keins
+let avatar = ''
 // Bleibt für die Lebensdauer der Seite gleich. Der Server ersetzt beim Wiederverbinden
 // die alte Verbindung dieses Tabs, statt den Spieler doppelt anzuzeigen.
 const clientId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
@@ -56,11 +61,19 @@ function open() {
     if (socket !== ws || event.data === 'pong') return
     const msg = JSON.parse(event.data)
     if (msg.type === 'presence') state.players = msg.players
-    if (msg.type === 'roll' && msg.roll.player === wanted?.name && pending.length) {
-      showOwnResult(msg.roll, pending.shift())
+    if (msg.type === 'welcome') {
+      state.server = { version: msg.version, systems: msg.systems || [] }
+      state.roomSystem = msg.system || null
+      sendProfile()
+    }
+    if (msg.type === 'room') state.roomSystem = msg.system
+    if (msg.type === 'roll') {
+      const own = takePending(msg.roll.requestId, msg.roll.player === wanted?.name)
+      if (own) showOwnResult(msg.roll, own.options)
     }
     if (msg.type === 'error') {
-      pending.shift()?.onError?.(msg.message)
+      // Fehler ohne Kennung (z. B. ungültige Nachricht) gehören zu keinem Wurf
+      if (msg.requestId || !state.server) takePending(msg.requestId, true)?.options?.onError?.(msg.message)
       Notify.create({ message: `Würfelraum: ${msg.message}`, color: 'negative', icon: 'error' })
     }
   }
@@ -72,6 +85,8 @@ function open() {
     flushPending('Verbindung zum Würfelraum getrennt')
     state.status = 'disconnected'
     state.players = []
+    state.server = null
+    state.roomSystem = null
     if (wanted) {
       retryTimer = setTimeout(open, retryDelay)
       retryDelay = Math.min(retryDelay * 2, 15000)
@@ -90,7 +105,18 @@ function connect(room, name) {
 function flushPending(reason) {
   const waiting = pending
   pending = []
-  for (const options of waiting) options?.onError?.(reason)
+  for (const entry of waiting) entry.options?.onError?.(reason)
+}
+
+// Eigenen wartenden Wurf zu einem Ergebnis finden. Neuer Server: über die Kennung (requestId),
+// damit zwei Geräte mit demselben Namen sich nicht die Ergebnisse wegnehmen. Älterer Server
+// ohne Kennung: wie früher der älteste eigene Wurf, wenn der Name passt (legacyMatch).
+function takePending(requestId, legacyMatch) {
+  if (requestId) {
+    const index = pending.findIndex((p) => p.requestId === requestId)
+    return index >= 0 ? pending.splice(index, 1)[0] : null
+  }
+  return legacyMatch && !state.server ? pending.shift() : null
 }
 
 function disconnect() {
@@ -103,12 +129,53 @@ function disconnect() {
   ws?.close()
   state.status = 'disconnected'
   state.players = []
+  state.server = null
+  state.roomSystem = null
+}
+
+// Avatar an den Raum schicken (ab Würfelraum-Version 2; ältere Server kennen das nicht)
+function sendProfile() {
+  if (socket?.readyState !== 1 || (state.server?.version ?? 1) < 2) return
+  // Wird gerade der Raum gewechselt (z. B. anderer Bogen mit anderem Raum), nicht in den alten Raum
+  // schicken – das welcome des neuen Raums schickt den Avatar ohnehin
+  if (wanted?.room !== slugifyRoom(useSettingsStore().currentRoom)) return
+  socket.send(JSON.stringify({ type: 'profile', avatar }))
+}
+
+// Vom Bogen aufgerufen, wenn sich das Portrait ändert (oder System/Charakter wechselt)
+export function setDiceAvatar(dataUrl) {
+  if ((dataUrl || '') === avatar) return
+  avatar = dataUrl || ''
+  sendProfile()
+}
+
+// Portrait auf ein kleines Vorschaubild verkleinern (Würfelraum-Avatar, ca. 3–5 KB)
+export function makeThumbnail(dataUrl, size = 64) {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      ctx.imageSmoothingQuality = 'high'
+      // Mittiges Quadrat (Portraits sind schon quadratisch, andere Bilder werden beschnitten)
+      const side = Math.min(image.naturalWidth, image.naturalHeight)
+      ctx.drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, size, size)
+      let data = canvas.toDataURL('image/webp', 0.8)
+      if (!data.startsWith('data:image/webp')) data = canvas.toDataURL('image/jpeg', 0.8)
+      resolve(data)
+    }
+    image.onerror = () => resolve('')
+    image.src = dataUrl
+  })
 }
 
 function send(payload, options) {
   if (socket?.readyState !== 1) return false
-  pending.push(options)
-  socket.send(JSON.stringify(payload))
+  const requestId = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
+  pending.push({ requestId, options })
+  socket.send(JSON.stringify({ ...payload, requestId }))
   return true
 }
 
@@ -205,5 +272,12 @@ export function useDiceRoom() {
     return send({ type: 'roll', kind: 'free', notation, label }, options)
   }
 
-  return { state, connected, nameMissing, roomUrl, test, roll, slugifyRoom }
+  // Ab Würfelraum-Version 2: Probe eines Systems. Der Server würfelt, wertet aus und schickt das
+  // Ergebnis als roll.outcome mit – im Verlauf sehen alle Erfolg/Misserfolg.
+  const supportsChecks = computed(() => (state.server?.version ?? 1) >= 2)
+  function check(system, checkName, params, label, options = {}) {
+    return send({ type: 'roll', system, check: checkName, ...params, label }, options)
+  }
+
+  return { state, connected, nameMissing, roomUrl, test, roll, check, supportsChecks, slugifyRoom }
 }

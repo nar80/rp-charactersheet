@@ -1,4 +1,5 @@
 // Cairn-Würfe über den gemeinsamen Würfelraum
+import { Notify } from 'quasar'
 import { useDiceRoom } from '@/core/diceRoom'
 import { useCairnStore, ATTRIBUTES } from '../stores/characterStore'
 import { d } from '../data/generator'
@@ -21,21 +22,53 @@ export function useCairnDice() {
   const dice = useDiceRoom()
   const store = useCairnStore()
 
-  function save(key, { label, onResult } = {}) {
+  // Rettungswurf als Promise: { total, success, text, room }.
+  // Neuer Würfelraum: als Cairn-Probe (Server wertet aus, im Verlauf sehen alle Erfolg/Misserfolg).
+  // Älterer Würfelraum: freier W20, ausgewertet im Blatt. Ohne Verbindung: lokal.
+  function saveValue(value, label) {
+    if (dice.connected.value && dice.supportsChecks.value) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Keine Antwort vom Würfelraum')), 15000)
+        const sent = dice.check('cairn', 'save', { target: value }, label, {
+          present(roll) {
+            clearTimeout(timer)
+            const result = roll.outcome ?? evaluateSave(roll.total, value)
+            resolve({ total: roll.total, ...result, room: true })
+            return false
+          },
+          onError: (message) => {
+            clearTimeout(timer)
+            reject(new Error(message))
+          }
+        })
+        if (!sent) {
+          clearTimeout(timer)
+          reject(new Error('Würfelraum nicht verbunden'))
+        }
+      })
+    }
+    return rollValue('1d20', `${label} (${value})`).then((r) => ({ ...r, ...evaluateSave(r.total, value) }))
+  }
+
+  // Rettungswurf-Knopf am Attribut: würfeln und Ergebnis einblenden
+  async function save(key, { label, onResult } = {}) {
     const value = store.character.attributes[key].value
     const name = ATTRIBUTES.find((a) => a.key === key)?.name || key
-    return dice.roll('1d20', label || `Rettungswurf ${name} (${value})`, {
-      present(roll) {
-        const result = evaluateSave(roll.total, value)
-        onResult?.(roll, result)
-        return {
-          html: false,
-          message: `${roll.label}: ${roll.total}`,
-          caption: result.text,
-          color: result.success ? 'positive' : 'negative'
-        }
-      }
-    })
+    try {
+      const r = await saveValue(value, label || `Rettungswurf ${name}`)
+      onResult?.(r)
+      Notify.create({
+        message: `${label || `Rettungswurf ${name}`}: ${r.total} gegen ${value}`,
+        caption: r.text,
+        color: r.success ? 'positive' : 'negative',
+        icon: 'casino',
+        position: 'top'
+      })
+      return true
+    } catch (error) {
+      Notify.create({ type: 'negative', position: 'top', message: `Wurf fehlgeschlagen: ${error.message}` })
+      return false
+    }
   }
 
   // Angriff: beeinträchtigt = W4, verstärkt = W12, mehrere Waffen = höchster Würfel zählt (S. 18)
@@ -93,5 +126,5 @@ export function useCairnDice() {
     return Promise.resolve(rollLocal(notation))
   }
 
-  return { connected: dice.connected, save, attack, free, rollValue }
+  return { connected: dice.connected, save, saveValue, attack, free, rollValue }
 }

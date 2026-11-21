@@ -141,7 +141,7 @@ import { useQuasar } from 'quasar'
 import { storeToRefs } from 'pinia'
 import NumberInput from '@/core/components/NumberInput.vue'
 import { useCairnStore, ATTRIBUTES, MAX_ARMOR } from '../stores/characterStore'
-import { useCairnDice, evaluateSave } from '../composables/dice'
+import { useCairnDice } from '../composables/dice'
 import { scars } from '../data/tables'
 
 const $q = useQuasar()
@@ -205,8 +205,8 @@ const CONDITION_HINTS = {
 async function criticalSave() {
   const value = store.character.attributes.ST.value
   try {
-    const r = await cairnDice.rollValue('1d20', `Rettungswurf gegen kritischen Schaden (ST ${value})`)
-    const result = evaluateSave(r.total, value)
+    const r = await cairnDice.saveValue(value, 'Rettungswurf gegen kritischen Schaden (ST)')
+    const result = r
     const outcome = store.resolveCriticalSave(result.success)
     const caption = {
       ok: 'Du bleibst auf den Beinen.',
