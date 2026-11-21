@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const STORAGE_KEY = 'rp-settings'
 
@@ -16,8 +16,10 @@ export const useSettingsStore = defineStore('settings', () => {
     exportWithTimestamp: false, // Add timestamp to exported filename
     enableAttributeSwap: false, // Allow swapping KG/BF base attribute (e.g. use Wahrnehmung instead)
     diceEnabled: false,
-    diceRoom: 'gruppe',
-    dicePlayerName: ''
+    diceRoom: 'gruppe', // Vorgabe für Systeme ohne eigenen Raum (und Wert aus der Zeit vor diceRooms)
+    diceRooms: {}, // Würfelraum je System, z. B. { rogueTrader: 'gruppe', cairn: 'wald' }
+    dicePlayerName: '',
+    lastSystem: 'rogueTrader'
   })
 
   // Default values for new settings
@@ -33,8 +35,10 @@ export const useSettingsStore = defineStore('settings', () => {
     exportWithTimestamp: false,
     enableAttributeSwap: false,
     diceEnabled: false,
-    diceRoom: 'gruppe',
-    dicePlayerName: ''
+    diceRoom: 'gruppe', // Vorgabe für Systeme ohne eigenen Raum (und Wert aus der Zeit vor diceRooms)
+    diceRooms: {}, // Würfelraum je System, z. B. { rogueTrader: 'gruppe', cairn: 'wald' }
+    dicePlayerName: '',
+    lastSystem: 'rogueTrader'
   }
 
   // Load from localStorage on init
@@ -68,7 +72,18 @@ export const useSettingsStore = defineStore('settings', () => {
   // Initialize
   loadFromStorage()
 
+  // Raum des aktuell angezeigten Systems (lastSystem setzt der Router). Ändern betrifft nur dieses System.
+  const roomFor = (systemId) => settings.value.diceRooms?.[systemId] ?? settings.value.diceRoom
+  const currentRoom = computed({
+    get: () => roomFor(settings.value.lastSystem),
+    set: (value) => {
+      settings.value.diceRooms = { ...settings.value.diceRooms, [settings.value.lastSystem]: value }
+    }
+  })
+
   return {
-    settings
+    settings,
+    roomFor,
+    currentRoom
   }
 })

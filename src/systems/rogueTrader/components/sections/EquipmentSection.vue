@@ -2656,9 +2656,9 @@ import { ref, computed, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useCharacterStore } from "../../stores/characterStore";
-import { useSettingsStore } from "../../stores/settingsStore";
+import { useSettingsStore } from "@/core/settingsStore";
 import ArmorVisualization from "../ArmorVisualization.vue";
-import NumberInput from "../NumberInput.vue";
+import NumberInput from "@/core/components/NumberInput.vue";
 import CombatBuffsPanel from "../CombatBuffsPanel.vue";
 import CombatNotesPanel from "../CombatNotesPanel.vue";
 import {

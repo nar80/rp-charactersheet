@@ -6,8 +6,7 @@ import { Quasar, Dark, Dialog, Notify } from 'quasar'
 import '@quasar/extras/material-icons/material-icons.css'
 import 'quasar/src/css/index.sass'
 
-// Import WH40k Theme
-import './assets/wh40k-theme.css'
+// Themes laden die Systeme selbst (systems/*/index.js)
 
 import App from './App.vue'
 import router from './router'

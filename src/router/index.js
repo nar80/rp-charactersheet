@@ -1,20 +1,29 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import CharacterSheetView from '../views/CharacterSheetView.vue'
+import { systems, findSystem, DEFAULT_SYSTEM } from '../systems'
+import { useSettingsStore } from '../core/settingsStore'
+
+const systemRoutes = systems.flatMap((system) => [
+  { path: `/${system.slug}`, name: `${system.id}-sheet`, component: system.sheet, meta: { system: system.id } },
+  { path: `/${system.slug}/einstellungen`, name: `${system.id}-settings`, component: system.settings, meta: { system: system.id } }
+])
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // Startseite: zuletzt benutztes System
     {
       path: '/',
-      name: 'characterSheet',
-      component: CharacterSheetView
+      redirect: () => `/${(findSystem(useSettingsStore().settings.lastSystem) || DEFAULT_SYSTEM).slug}`
     },
-    {
-      path: '/settings',
-      name: 'settings',
-      component: () => import('../views/SettingsView.vue')
-    }
+    // Alte Adresse aus der Zeit vor mehreren Systemen
+    { path: '/settings', redirect: `/${DEFAULT_SYSTEM.slug}/einstellungen` },
+    ...systemRoutes,
+    { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
+})
+
+router.afterEach((to) => {
+  if (to.meta.system) useSettingsStore().settings.lastSystem = to.meta.system
 })
 
 export default router

@@ -627,7 +627,7 @@ import { computed, ref, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useCharacterStore } from "../stores/characterStore";
-import NumberInput from "./NumberInput.vue";
+import NumberInput from "@/core/components/NumberInput.vue";
 import { useDiceRoom } from "../composables/diceRoom";
 import {
   alwaysBonuses,
@@ -940,8 +940,9 @@ const calculatedRank = computed(() => {
   top: 50px;
   z-index: 999;
   background: var(--q-dark);
-  padding: 16px;
-  margin: -16px -16px 16px -16px;
+  /* Seitlich kein negativer Rand: sonst ragt der Balken 16px über die Seite (horizontales Scrollen) */
+  padding: 16px 0;
+  margin: -16px 0 16px 0;
 }
 
 .attribute-card {

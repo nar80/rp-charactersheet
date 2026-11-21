@@ -8,7 +8,9 @@
 // Datei einzeln zu drehen, wird ihr Spitzenpegel gemessen und auf ein
 // einheitliches Ziel gerechnet.
 
-const BASE = 'sounds/weapons'
+// Ab der App-Wurzel, nicht relativ: Der Bogen liegt unter /rogue-trader/…, ein relativer
+// Pfad würde dort auf /rogue-trader/sounds/… zeigen (liefert die HTML-Seite statt der Datei).
+const BASE = `${import.meta.env.BASE_URL}sounds/weapons`
 
 // Zielspitzenpegel nach Normalisierung. Die Rohdateien reichen von 0,32 bis
 // 0,96 - ohne Angleichung waere Plasma dreimal so laut wie der Trockenschuss.

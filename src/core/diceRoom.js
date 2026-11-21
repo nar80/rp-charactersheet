@@ -2,8 +2,7 @@
 // Gewürfelt wird auf dem Server, alle im Raum sehen den Wurf.
 import { computed, reactive, watch } from 'vue'
 import { Notify } from 'quasar'
-import { useCharacterStore } from '../stores/characterStore'
-import { useSettingsStore } from '../stores/settingsStore'
+import { useSettingsStore } from './settingsStore'
 
 export const DICE_SERVER = import.meta.env.VITE_DICE_SERVER || 'https://dice-room.dice-room.workers.dev'
 
@@ -61,7 +60,7 @@ function open() {
       showOwnResult(msg.roll, pending.shift())
     }
     if (msg.type === 'error') {
-      pending.shift()
+      pending.shift()?.onError?.(msg.message)
       Notify.create({ message: `Würfelraum: ${msg.message}`, color: 'negative', icon: 'error' })
     }
   }
@@ -70,7 +69,7 @@ function open() {
     if (socket !== ws) return
     clearInterval(pingTimer)
     socket = null
-    pending = []
+    flushPending('Verbindung zum Würfelraum getrennt')
     state.status = 'disconnected'
     state.players = []
     if (wanted) {
@@ -86,7 +85,16 @@ function connect(room, name) {
   open()
 }
 
+// Wer auf ein Ergebnis wartet, erfährt, dass keins mehr kommt. Sonst würde das nächste
+// Ergebnis (evtl. in einem anderen Raum) den Optionen eines alten Wurfs zugeordnet.
+function flushPending(reason) {
+  const waiting = pending
+  pending = []
+  for (const options of waiting) options?.onError?.(reason)
+}
+
 function disconnect() {
+  flushPending('Würfelraum gewechselt')
   wanted = null
   clearTimeout(retryTimer)
   clearInterval(pingTimer)
@@ -104,37 +112,13 @@ function send(payload, options) {
   return true
 }
 
-// Rogue Trader: W100 gleich oder unter Zielwert, je volle 10 Punkte Abstand = 1 Grad.
-// Ab AUTO_FAIL_FROM misslingt immer, 01 gelingt immer (gleich wie im Würfelraum).
-const AUTO_FAIL_FROM = 95
-
-export function evaluateTest(roll, target) {
-  const success = roll < AUTO_FAIL_FROM && (roll === 1 || roll <= target)
-  // Automatischer Erfolg/Misserfolg gegen den Zielwert hat keine Grade
-  const degrees = success === (roll <= target) ? Math.floor(Math.abs(target - roll) / 10) : 0
-  const word = success
-    ? degrees === 1 ? 'Erfolgsgrad' : 'Erfolgsgrade'
-    : degrees === 1 ? 'Misserfolgsgrad' : 'Misserfolgsgrade'
-  return {
-    success,
-    degrees,
-    text: `${success ? 'Erfolg' : 'Misserfolg'}${degrees ? ` · ${degrees} ${word}` : ''}`
-  }
-}
-
-function hasNaturalTen(output) {
-  return [...output.matchAll(/\[([^\]]*)\]/g)].some(([, dice]) =>
-    dice.split(',').some((d) => !d.trim().endsWith('d') && parseInt(d, 10) === 10)
-  )
-}
-
-function escapeHtml(text) {
+export function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 }
 
 // "3d10kh2+4: [6d, 8, 9]+4 = 21" -> "[<s>6</s>, 8, 9] +4 = 21"
 // Suffix d = weggefallen, ^ = auf Mindestwert angehoben (Proven)
-function diceHtml(output) {
+export function diceHtml(output) {
   // "floor((…)/2)" (halber Schaden, z. B. Instabil) ohne das technische floor
   const body = escapeHtml(
     output.slice(output.indexOf(':') + 1).trim().replace(/^floor\((.*)\)(\s*=)/, '$1$2')
@@ -153,40 +137,20 @@ function diceHtml(output) {
   )
 }
 
+// Ergebnis des eigenen Wurfs anzeigen. Das System kann über options.present(roll)
+// eine eigene Anzeige liefern (Quasar-Notify-Optionen), sonst wird neutral angezeigt.
 function showOwnResult(roll, options = {}) {
-  if (roll.kind === 'test') {
-    const result = evaluateTest(roll.total, roll.target)
-    options.onResult?.(roll, result)
-    Notify.create({
-      message: `${roll.label || 'Probe'}: ${String(roll.total).padStart(2, '0')} gegen ${roll.target}`,
-      caption: result.text,
-      color: result.success ? 'positive' : 'negative',
-      icon: 'casino',
-      position: 'top',
-      timeout: 4000
-    })
-    return
-  }
-
-  options.onResult?.(roll)
-  const fury = options.fury && hasNaturalTen(roll.output)
-  const needsAnswer = fury && !!options.onFury
-  const dice = diceHtml(roll.output)
+  const custom = options.present?.(roll)
+  if (custom === false) return
   Notify.create({
     html: true,
     message: escapeHtml(`${roll.label || 'Wurf'}: ${roll.total}`),
-    caption: fury ? `${dice} · 10 gewürfelt – Zorn des Imperators möglich!` : dice,
-    color: fury ? 'deep-orange' : 'grey-9',
-    icon: fury ? 'local_fire_department' : 'casino',
+    caption: diceHtml(roll.output || ''),
+    color: 'grey-9',
+    icon: 'casino',
     position: 'top',
-    // Bestätigungsanfragen bleiben stehen, bis man einen der Buttons klickt
-    timeout: needsAnswer ? 0 : fury ? 15000 : 4000,
-    actions: needsAnswer
-      ? [
-          { label: 'Bestätigen', color: 'white', handler: () => options.onFury(roll) },
-          { label: 'Ignorieren', color: 'white' }
-        ]
-      : []
+    timeout: 4000,
+    ...custom
   })
 }
 
@@ -196,7 +160,7 @@ export function initDiceRoom() {
   let typingTimer = null
 
   function apply() {
-    const room = slugifyRoom(settingsStore.settings.diceRoom)
+    const room = slugifyRoom(settingsStore.currentRoom)
     const name = playerName()
     if (!settingsStore.settings.diceEnabled || !room || !name) {
       disconnect()
@@ -205,9 +169,10 @@ export function initDiceRoom() {
     }
   }
 
-  // Nicht bei jedem getippten Buchstaben neu verbinden, erst wenn kurz Ruhe ist
+  // Nicht bei jedem getippten Buchstaben neu verbinden, erst wenn kurz Ruhe ist.
+  // Der Raum hängt am System: Wechsel zwischen den Bögen verbindet in den Raum des anderen Systems.
   watch(
-    () => [settingsStore.settings.diceRoom, settingsStore.settings.dicePlayerName],
+    () => [settingsStore.currentRoom, settingsStore.settings.dicePlayerName],
     () => {
       clearTimeout(typingTimer)
       typingTimer = setTimeout(apply, 800)
@@ -216,39 +181,28 @@ export function initDiceRoom() {
   watch(() => settingsStore.settings.diceEnabled, apply, { immediate: true })
 }
 
+// Systemneutral: Das jeweilige Spielsystem legt fest, wie Würfe ausgewertet und angezeigt
+// werden (options.present), und ruft onResult(roll) nach dem eigenen Wurf auf.
 export function useDiceRoom() {
   const settingsStore = useSettingsStore()
-  const characterStore = useCharacterStore()
 
   const connected = computed(() => state.status === 'connected')
   const nameMissing = computed(() => !playerName())
   // Name mitgeben, damit der Würfelraum nicht nach dem Namen fragt
   const roomUrl = computed(() => {
-    const query = new URLSearchParams({ raum: slugifyRoom(settingsStore.settings.diceRoom) })
+    const query = new URLSearchParams({ raum: slugifyRoom(settingsStore.currentRoom) })
     if (playerName()) query.set('name', playerName())
     return `${DICE_SERVER}/?${query}`
   })
 
-  // Probe auf einen Zielwert. Erschöpfung (-10) wird automatisch abgezogen,
-  // außer bei Proben, die nicht vom Charakter abhängen (exhaustion: false, z. B. Beschaffung).
-  // onResult(roll, evaluation) wird nach dem eigenen Wurf aufgerufen.
-  function test(target, label, { onResult, exhaustion = true } = {}) {
-    let finalTarget = Number(target) || 0
-    let finalLabel = label
-    if (exhaustion && characterStore.character.exhaustion > 0) {
-      finalTarget -= 10
-      finalLabel = `${label} (−10 Erschöpfung)`
-    }
-    return send(
-      { type: 'roll', kind: 'test', target: finalTarget, label: finalLabel },
-      { onResult }
-    )
+  // W100-Probe auf dem Server (kind "test"), Zielwert wird mitgespeichert
+  function test(target, label, options = {}) {
+    return send({ type: 'roll', kind: 'test', target: Number(target) || 0, label }, options)
   }
 
-  // fury: eine gewürfelte 10 hervorheben; onFury(roll): Handler für "Bestätigen".
-  // onResult(roll) wird nach dem eigenen Wurf aufgerufen.
-  function roll(notation, label, { fury = false, onFury, onResult } = {}) {
-    return send({ type: 'roll', kind: 'free', notation, label }, { fury, onFury, onResult })
+  // Freier Wurf in Würfelnotation, z. B. "1d20" oder "2d10+3"
+  function roll(notation, label, options = {}) {
+    return send({ type: 'roll', kind: 'free', notation, label }, options)
   }
 
   return { state, connected, nameMissing, roomUrl, test, roll, slugifyRoom }

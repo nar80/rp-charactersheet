@@ -9,6 +9,7 @@ const STORAGE_KEY = 'rp-character'
 const createDefaultCharacter = () => ({
   // Basic Info
   name: '',
+  portrait: '', // Data-URL, 256×256
   player: '',
   careerPath: '',
   rank: '',

@@ -1,6 +1,11 @@
 # RP Charakterbogen
 
-Ein digitaler Charakterbogen für Pen&Paper-Rollenspiele, primär für Warhammer 40k Rogue Trader.
+Ein digitaler Charakterbogen für Pen&Paper-Rollenspiele mit mehreren Spielsystemen:
+
+- **Rogue Trader** (Warhammer 40k) – `/rogue-trader`
+- **Cairn** (dt. Ausgabe v1.13) – `/cairn`
+
+Das System wird oben links gewechselt. Alle Systeme teilen sich Würfelraum, Export/Import und Einstellungen.
 
 ## Features
 
@@ -63,23 +68,31 @@ Das Projekt kann einfach auf Netlify deployt werden:
 ## Projektstruktur
 
 ```
-rp-charactersheet/
-├── src/
-│   ├── stores/              # Pinia Stores
-│   │   └── characterStore.js
-│   ├── views/               # Haupt-Ansichten
-│   │   ├── CharacterSheetView.vue
-│   │   └── SettingsView.vue
-│   ├── components/
-│   │   └── sections/        # Bogen-Sektionen
-│   │       ├── BasicInfoSection.vue
-│   │       ├── AttributesSection.vue
-│   │       └── SkillsSection.vue
-│   ├── router/              # Vue Router
-│   └── main.js
-├── index.html
-└── vite.config.js
+src/
+├── App.vue              # Hülle: Header, Systemwechsel, Export/Import
+├── router/              # Routen je System: /<slug> und /<slug>/einstellungen
+├── core/                # gemeinsam für alle Systeme
+│   ├── diceRoom.js      # Würfelraum-Verbindung (Auswertung macht das System)
+│   ├── characterFile.js # Export/Import { system, character, settings }
+│   ├── settingsStore.js
+│   └── components/      # NumberInput, Würfelraum- und Export-Einstellungen
+└── systems/
+    ├── index.js         # Liste aller Systeme
+    ├── rogueTrader/     # stores/, components/, views/, data/, composables/, assets/
+    └── cairn/
 ```
+
+### Neues System anlegen
+
+1. Ordner `src/systems/<name>/` mit `index.js` anlegen (Vorlage: `systems/cairn/index.js`):
+   `id`, `slug`, `name`, `motto`, `icon`, `useStore`, `isValidCharacter`, `sheet`, `settings`, `headerInfo`.
+2. Der Store braucht `character`, `loadCharacter(data)` und `resetCharacter()` sowie einen eigenen
+   localStorage-Schlüssel.
+3. Würfe über `useDiceRoom()` aus `core/diceRoom.js`; die Auswertung kommt über `options.present(roll)`.
+4. Das System in `src/systems/index.js` eintragen.
+
+Optik: Themes hängen sich an `body[data-system="<id>"]`. Das Rogue-Trader-Theme ist das Grundtheme;
+andere Systeme färben es über die CSS-Variablen um (siehe `systems/cairn/assets/cairn-theme.css`).
 
 ## Verwendung
 

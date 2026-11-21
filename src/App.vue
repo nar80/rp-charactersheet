@@ -2,52 +2,75 @@
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-dark">
       <q-toolbar>
-        <div class="row items-center q-gutter-md no-wrap">
-          <div>
-            <div class="text-h6" style="font-family: 'Cinzel', serif; letter-spacing: 0.05em; line-height: 1.2;">
-              ROGUE TRADER
-            </div>
-            <div class="imperial-motto" style="font-size: 0.65em; margin-top: -2px;">
-              Per Aspera Ad Astra
-            </div>
-          </div>
-          <q-separator vertical dark style="height: 40px;" />
-          <router-link to="/" class="text-white text-decoration-none">
-            <q-btn flat dense label="Charakterbogen" />
-          </router-link>
-          <router-link to="/settings" class="text-white text-decoration-none">
-            <q-btn flat dense label="Einstellungen" />
-          </router-link>
+        <!-- Auf dem Handy (xs) nur Icons, ohne Motto und Charakter-Info, damit nichts überläuft -->
+        <div class="row items-center no-wrap" :class="$q.screen.gt.xs ? 'q-gutter-md' : 'q-gutter-xs'">
+          <q-btn-dropdown flat dense no-caps class="system-switch" dropdown-icon="expand_more">
+            <template #label>
+              <div class="text-left">
+                <div class="system-title" :class="$q.screen.gt.xs ? 'text-h6' : 'text-subtitle1'">{{ system.name.toUpperCase() }}</div>
+                <div v-if="$q.screen.gt.xs" class="imperial-motto system-motto">{{ system.motto }}</div>
+              </div>
+            </template>
+            <q-list>
+              <q-item-label header>System wechseln</q-item-label>
+              <q-item
+                v-for="s in systems"
+                :key="s.id"
+                v-close-popup
+                clickable
+                :active="s.id === system.id"
+                :to="`/${s.slug}`"
+              >
+                <q-item-section avatar><q-icon :name="s.icon" /></q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ s.name }}</q-item-label>
+                  <q-item-label caption>{{ s.motto }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+          <q-separator v-if="$q.screen.gt.xs" vertical dark style="height: 40px;" />
+          <q-btn
+            flat dense
+            :round="!$q.screen.gt.xs"
+            :icon="$q.screen.gt.xs ? undefined : 'description'"
+            :label="$q.screen.gt.xs ? 'Charakterbogen' : undefined"
+            :to="`/${system.slug}`"
+          >
+            <q-tooltip v-if="!$q.screen.gt.xs">Charakterbogen</q-tooltip>
+          </q-btn>
+          <q-btn
+            flat dense
+            :round="!$q.screen.gt.xs"
+            :icon="$q.screen.gt.xs ? undefined : 'settings'"
+            :label="$q.screen.gt.xs ? 'Einstellungen' : undefined"
+            :to="`/${system.slug}/einstellungen`"
+          >
+            <q-tooltip v-if="!$q.screen.gt.xs">Einstellungen</q-tooltip>
+          </q-btn>
         </div>
 
-
-        <q-space />
-
-        <!-- Character Info in Center -->
-        <div v-if="character.name" class="text-center q-mx-md">
-          <div class="text-subtitle1 text-weight-medium" style="white-space: nowrap;">
-            {{ character.name }}
-            <span v-if="character.careerPath" class="text-grey-6">• {{ character.careerPath }}</span>
-            <span class="text-grey-6">• Rang {{ calculatedRank }}</span>
-          </div>
+        <!-- Charakter-Info nimmt den freien Platz und wird bei Platzmangel abgeschnitten statt überzulaufen;
+             auf dem Handy (xs) ausgeblendet, dort steht der Name im Bogen -->
+        <div v-if="$q.screen.gt.xs" class="col row justify-center q-mx-md header-info">
+          <component :is="headerInfo" />
         </div>
+        <q-space v-else />
 
-        <q-space />
-
-        <div class="row items-center q-gutter-sm">
+        <div class="row items-center no-wrap" :class="$q.screen.gt.xs ? 'q-gutter-sm' : ''">
           <q-btn
             flat
             dense
             round
             icon="casino"
             :color="settings.diceEnabled ? diceStatusColor : 'grey-7'"
-            v-bind="settings.diceEnabled && !dice.nameMissing.value ? { href: dice.roomUrl.value, target: '_blank' } : { to: '/settings' }"
+            v-bind="settings.diceEnabled && !dice.nameMissing.value ? { href: dice.roomUrl.value, target: '_blank' } : { to: `/${system.slug}/einstellungen` }"
           >
             <q-tooltip>
               <template v-if="!settings.diceEnabled">Würfelraum aus – in den Einstellungen aktivieren</template>
               <template v-else-if="dice.nameMissing.value">„Name im Würfelraum“ fehlt – in den Einstellungen eintragen</template>
               <template v-else>
-                Würfelraum „{{ dice.slugifyRoom(settings.diceRoom) }}“:
+                Würfelraum „{{ dice.slugifyRoom(settingsStore.currentRoom) }}“:
                 {{ { connected: 'verbunden', connecting: 'verbinde …', disconnected: 'getrennt' }[dice.state.status] }}
                 <div v-if="dice.state.players.length">Online: {{ dice.state.players.join(', ') }}</div>
                 <div>Klick öffnet den Verlauf</div>
@@ -55,23 +78,11 @@
             </q-tooltip>
           </q-btn>
 
-          <q-btn
-            flat
-            dense
-            round
-            icon="upload_file"
-            @click="handleImport"
-          >
+          <q-btn flat dense round icon="upload_file" @click="fileInput.click()">
             <q-tooltip>Charakter importieren</q-tooltip>
           </q-btn>
 
-          <q-btn
-            flat
-            dense
-            round
-            icon="download"
-            @click="handleExport"
-          >
+          <q-btn flat dense round icon="download" @click="exportCharacter">
             <q-tooltip>Charakter exportieren</q-tooltip>
           </q-btn>
         </div>
@@ -82,7 +93,6 @@
       <router-view />
     </q-page-container>
 
-    <!-- Import Dialog -->
     <input
       ref="fileInput"
       type="file"
@@ -94,18 +104,27 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, defineAsyncComponent } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { useCharacterStore } from './stores/characterStore'
-import { useSettingsStore } from './stores/settingsStore'
-import { initDiceRoom, useDiceRoom } from './composables/diceRoom'
+import { useSettingsStore } from './core/settingsStore'
+import { initDiceRoom, useDiceRoom } from './core/diceRoom'
+import { useCharacterFile } from './core/characterFile'
+import { systems, findSystem, DEFAULT_SYSTEM } from './systems'
 
 const $q = useQuasar()
-const characterStore = useCharacterStore()
+const route = useRoute()
 const settingsStore = useSettingsStore()
-const { character } = storeToRefs(characterStore)
 const { settings } = storeToRefs(settingsStore)
+
+const system = computed(() => findSystem(route.meta.system) || DEFAULT_SYSTEM)
+
+// Header-Info je System nur einmal laden
+const headerInfos = Object.fromEntries(
+  systems.map((s) => [s.id, s.headerInfo ? defineAsyncComponent(s.headerInfo) : null])
+)
+const headerInfo = computed(() => headerInfos[system.value.id])
 
 initDiceRoom()
 const dice = useDiceRoom()
@@ -115,114 +134,26 @@ const diceStatusColor = computed(() => ({
   disconnected: 'negative'
 })[dice.state.status])
 
-// Update CSS variable for aquila opacity
+// Systemabhängige Optik: Themes hängen sich an body[data-system]
+watchEffect(() => {
+  document.body.dataset.system = system.value.id
+  document.title = `${system.value.name} – Charakterbogen`
+})
+
+// Aquila-Wasserzeichen (Rogue Trader)
 watchEffect(() => {
   document.documentElement.style.setProperty(
     '--aquila-opacity',
-    settings.value.aquilaOpacity / 100
+    system.value.id === 'rogueTrader' ? settings.value.aquilaOpacity / 100 : 0
   )
 })
 
 const fileInput = ref(null)
-
-// Rank calculation (based on spent XP)
-const calculatedRank = computed(() => {
-  const spent = character.value.experience.spent;
-
-  if (spent < 5000) return 0;
-  if (spent >= 5000 && spent <= 6999) return 1;
-  if (spent >= 7000 && spent <= 9999) return 2;
-  if (spent >= 10000 && spent <= 12999) return 3;
-  if (spent >= 13000 && spent <= 16999) return 4;
-  if (spent >= 17000 && spent <= 20999) return 5;
-  if (spent >= 21000 && spent <= 24999) return 6;
-  if (spent >= 25000 && spent <= 29999) return 7;
-  if (spent >= 30000 && spent <= 34999) return 8;
-  if (spent >= 35000 && spent <= 44999) return 9;
-
-  return 10; // Max rank
-})
-
-const handleExport = () => {
-  const exportData = {
-    character: characterStore.character,
-    settings: settingsStore.settings
-  }
-  const dataStr = JSON.stringify(exportData, null, 2)
-  const dataBlob = new Blob([dataStr], { type: 'application/json' })
-
-  // Build filename with optional timestamp
-  let filename = exportData.character.name || 'character'
-  if (settings.value.exportWithTimestamp) {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const hours = String(now.getHours()).padStart(2, '0')
-    const minutes = String(now.getMinutes()).padStart(2, '0')
-    // Sekunden, damit mehrere Exporte innerhalb einer Minute nicht denselben
-    // Dateinamen bekommen und sich gegenseitig ueberschreiben
-    const seconds = String(now.getSeconds()).padStart(2, '0')
-    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
-    filename = `${timestamp}_${filename}`
-  }
-
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(dataBlob)
-  link.download = `${filename}.json`
-  link.click()
-
-  $q.notify({
-    type: 'positive',
-    message: 'Charakter exportiert',
-    position: 'top'
-  })
-}
-
-const handleImport = () => {
-  fileInput.value.click()
-}
+const { exportCharacter, importFile } = useCharacterFile(system)
 
 const onFileSelected = (event) => {
   const file = event.target.files[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result)
-
-      // Support both old format (just character) and new format (character + settings)
-      const charData = data.character || data
-      if (!charData || typeof charData !== 'object' || !charData.attributes) {
-        throw new Error('Ungültiges Charakter-Format')
-      }
-
-      if (data.character) {
-        characterStore.loadCharacter(data.character)
-        if (data.settings) {
-          Object.assign(settingsStore.settings, data.settings)
-        }
-      } else {
-        characterStore.loadCharacter(data)
-      }
-
-      $q.notify({
-        type: 'positive',
-        message: 'Charakter importiert',
-        position: 'top'
-      })
-    } catch (error) {
-      $q.notify({
-        type: 'negative',
-        message: 'Fehler beim Importieren',
-        position: 'top'
-      })
-    }
-  }
-  reader.readAsText(file)
-
-  // Reset input
+  if (file) importFile(file)
   event.target.value = ''
 }
 </script>
@@ -234,5 +165,22 @@ body {
 
 .text-decoration-none {
   text-decoration: none;
+}
+
+.header-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.system-title {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.system-motto {
+  font-size: 0.65em;
+  margin-top: -2px;
+  text-transform: none;
 }
 </style>

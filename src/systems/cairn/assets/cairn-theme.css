@@ -1,0 +1,16 @@
+/* Cairn: das Grundtheme (Rogue Trader) wird über seine Variablen in Wald- und Moostöne umgefärbt.
+   Greift nur, solange body[data-system="cairn"] gesetzt ist (App.vue). */
+body[data-system='cairn'] {
+  --imperial-gold: #a8b98a;
+  --accent-rgb: 168, 185, 138;
+  --imperial-bronze: #6f8150;
+  --imperial-brass: #8f9d6e;
+  --dark-gold: #5d6c43;
+
+  --parchment-dark: #20251f;
+  --parchment-medium: #2c3229;
+  --parchment-light: #3a4136;
+
+  --blood-red: #7a2e1f;
+  --imperial-purple: #3d4a2a;
+}

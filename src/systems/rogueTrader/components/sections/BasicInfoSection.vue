@@ -7,72 +7,78 @@
     <q-separator />
 
     <q-card-section>
-      <div class="row q-col-gutter-md">
-        <!-- Name -->
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="character.name"
-            label="Charaktername"
-            filled
-            dense
-            @update:model-value="updateField('name', $event)"
-          />
-        </div>
+      <!-- Schmal (Handy): Felder unter das Portrait, sonst daneben -->
+      <div class="row" style="gap: 16px;">
+        <PortraitField v-model="character.portrait" :size="160" />
+        <div class="col-12 col-sm">
+          <div class="row q-col-gutter-md">
+            <!-- Name -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="character.name"
+                label="Charaktername"
+                filled
+                dense
+                @update:model-value="updateField('name', $event)"
+              />
+            </div>
 
-        <!-- Player -->
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="character.player"
-            label="Spielername"
-            filled
-            dense
-            @update:model-value="updateField('player', $event)"
-          />
-        </div>
+            <!-- Player -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="character.player"
+                label="Spielername"
+                filled
+                dense
+                @update:model-value="updateField('player', $event)"
+              />
+            </div>
 
-        <!-- Career Path -->
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="character.careerPath"
-            label="Karrierepfad"
-            filled
-            dense
-            @update:model-value="updateField('careerPath', $event)"
-          />
-        </div>
+            <!-- Career Path -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="character.careerPath"
+                label="Karrierepfad"
+                filled
+                dense
+                @update:model-value="updateField('careerPath', $event)"
+              />
+            </div>
 
-        <!-- Homeworld -->
-        <div class="col-12 col-md-6">
-          <q-input
-            v-model="character.homeworld"
-            label="Heimatwelt"
-            filled
-            dense
-            @update:model-value="updateField('homeworld', $event)"
-          />
-        </div>
+            <!-- Homeworld -->
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="character.homeworld"
+                label="Heimatwelt"
+                filled
+                dense
+                @update:model-value="updateField('homeworld', $event)"
+              />
+            </div>
 
-        <!-- Motivation -->
-        <div class="col-12">
-          <q-input
-            v-model="character.motivation"
-            label="Motivation"
-            filled
-            dense
-            @update:model-value="updateField('motivation', $event)"
-          />
-        </div>
+            <!-- Motivation -->
+            <div class="col-12">
+              <q-input
+                v-model="character.motivation"
+                label="Motivation"
+                filled
+                dense
+                @update:model-value="updateField('motivation', $event)"
+              />
+            </div>
 
-        <!-- Description -->
-        <div class="col-12">
-          <q-input
-            v-model="character.description"
-            label="Beschreibung"
-            type="textarea"
-            filled
-            rows="3"
-            @update:model-value="updateField('description', $event)"
-          />
+            <!-- Description -->
+            <div class="col-12">
+              <q-input
+                v-model="character.description"
+                label="Beschreibung"
+                type="textarea"
+                filled
+                rows="3"
+                @update:model-value="updateField('description', $event)"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </q-card-section>
@@ -230,6 +236,7 @@ import { ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuasar } from "quasar";
 import { useCharacterStore } from "../../stores/characterStore";
+import PortraitField from "@/core/components/PortraitField.vue";
 
 const $q = useQuasar();
 const characterStore = useCharacterStore();

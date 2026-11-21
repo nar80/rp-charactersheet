@@ -65,7 +65,7 @@
 <script setup>
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useSettingsStore } from '../stores/settingsStore'
+import { useSettingsStore } from '@/core/settingsStore'
 import CharacterStats from '../components/CharacterStats.vue'
 import BasicInfoSection from '../components/sections/BasicInfoSection.vue'
 import SkillsSection from '../components/sections/SkillsSection.vue'
